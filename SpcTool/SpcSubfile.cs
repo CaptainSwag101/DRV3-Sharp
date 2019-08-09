@@ -200,7 +200,7 @@ namespace SpcTool
 
     public static class ListExtensions
     {
-        public static int LastIndexOf(this List<byte> list, List<byte> seq, int index)
+        public static int LastIndexOf(this List<byte> list, List<byte> seq, int index, byte compressionLevel = 1)
         {
             if (list.Count - index < seq.Count)
             {
@@ -208,12 +208,36 @@ namespace SpcTool
             }
 
             // Start at the end of the index and work backwards
-            for (int i = index; i >= 0; --i)
+            if (compressionLevel == 0)  // Max compression, very slow
             {
+                for (int i = index; i >= 0; --i)
+                {
+                    bool found = true;
+                    for (int j = 0; j < seq.Count; ++j)
+                    {
+                        if (list[i + j] != seq[j])
+                        {
+                            found = false;
+                            break;
+                        }
+                    }
+
+                    if (found)
+                    {
+                        return i;
+                    }
+                }
+            }
+            else if (compressionLevel == 1) // Less compression, way faster
+            {
+                int foundIndex = list.LastIndexOf(seq[0], index);
+                if (foundIndex == -1)
+                    return -1;
+
                 bool found = true;
                 for (int j = 0; j < seq.Count; ++j)
                 {
-                    if (list[i + j] != seq[j])
+                    if (list[foundIndex + j] != seq[j])
                     {
                         found = false;
                         break;
@@ -222,7 +246,7 @@ namespace SpcTool
 
                 if (found)
                 {
-                    return i;
+                    return foundIndex;
                 }
             }
 

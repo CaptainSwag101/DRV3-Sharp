@@ -7,6 +7,7 @@ namespace SpcTool
     {
         static void Main(string[] args)
         {
+            // This is just some test code for verifying and benchmarking SPC compression. It will be replaced later.
             SpcFile spc = new SpcFile();
             spc.Load(args[0]);
 
