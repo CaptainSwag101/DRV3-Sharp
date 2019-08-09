@@ -70,7 +70,7 @@ namespace SpcTool
 
         public void Save(string filepath)
         {
-            BinaryWriter writer = new BinaryWriter(new FileStream(filepath, FileMode.OpenOrCreate));
+            BinaryWriter writer = new BinaryWriter(new FileStream(filepath, FileMode.Create));
 
             writer.Write(new ASCIIEncoding().GetBytes("CPS."));
             writer.Write(Unknown1);
