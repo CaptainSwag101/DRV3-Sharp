@@ -200,7 +200,7 @@ namespace SpcTool
 
     public static class ListExtensions
     {
-        public static int LastIndexOf(this List<byte> list, List<byte> seq, int index, byte compressionLevel = 1)
+        public static int LastIndexOf(this List<byte> list, List<byte> seq, int index, byte compressionLevel = 0)
         {
             if (list.Count - index < seq.Count)
             {
@@ -208,27 +208,38 @@ namespace SpcTool
             }
 
             // Start at the end of the index and work backwards
-            if (compressionLevel == 0)  // Max compression, very slow
+            if (compressionLevel == 0)  // Max compression, very slow for large files
             {
-                for (int i = index; i >= 0; --i)
+                int foundIndex = list.LastIndexOf(seq[0], index);
+                while (foundIndex > -1)
                 {
+                    // Check if the whole sequence matches
                     bool found = true;
                     for (int j = 0; j < seq.Count; ++j)
                     {
-                        if (list[i + j] != seq[j])
+                        if (list[foundIndex + j] != seq[j])
                         {
                             found = false;
                             break;
                         }
                     }
-
+                    
                     if (found)
                     {
-                        return i;
+                        // If the whole sequence matches, we've found the index we need
+                        return foundIndex;
+                    }
+                    else
+                    {
+                        // If not, start the search over again from the previous found index if possible
+                        if (foundIndex - 1 < 0)
+                            return -1;
+
+                        foundIndex = list.LastIndexOf(seq[0], foundIndex - 1);
                     }
                 }
             }
-            else if (compressionLevel == 1) // Less compression, way faster
+            else if (compressionLevel == 1) // Less compression, way faster for large files
             {
                 int foundIndex = list.LastIndexOf(seq[0], index);
                 if (foundIndex == -1)
