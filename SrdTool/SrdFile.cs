@@ -1,52 +1,132 @@
-﻿using System;
+﻿using SrdTool.BlockTypes;
+using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Text;
-using SrdTool.Blocks;
+//using Scarlet.Drawing;
 
 namespace SrdTool
 {
     class SrdFile
     {
-        public List<Block> Blocks = new List<Block>();
+        public string Filepath;
+        public List<Block> Blocks;
 
-        public void Load(string filepath)
+        public void Load(string srdPath)
         {
-            BinaryReader reader = new BinaryReader(new MemoryStream(File.ReadAllBytes(filepath)));
+            FileInfo info = new FileInfo(srdPath);
+            if (!info.Exists)
+            {
+                Console.WriteLine("ERROR: {0} does not exist.", info.FullName);
+                return;
+            }
 
-            // Read blocks
+            if (info.Extension.ToLower() != ".srd")
+            {
+                Console.WriteLine("ERROR: Input file does not have the \".srd\" extension.");
+                return;
+            }
+
+            Filepath = srdPath;
+
+            BinaryReader reader = new BinaryReader(new FileStream(srdPath, FileMode.Open));
+            Blocks = ReadBlocks(ref reader);
+
+            reader.Close();
+        }
+
+        public static List<Block> ReadBlocks(ref BinaryReader reader)
+        {
+            List<Block> blockList = new List<Block>();
+
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                Block block = new Block();
+                Block block;
 
-                block.Type = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+                string blockType = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+                switch (blockType)
+                {
+                    default:
+                        block = new UnknownBlock(ref reader, blockType);
+                        break;
+                }
+                blockList.Add(block);
 
-                // Read raw data, then swap endianness
-                byte[] b1 = reader.ReadBytes(4);
-                Array.Reverse(b1);
-                int dataLength = BitConverter.ToInt32(b1, 0);
-
-                byte[] b2 = reader.ReadBytes(4);
-                Array.Reverse(b2);
-                int subdataLength = BitConverter.ToInt32(b2, 0);
-
-                byte[] b3 = reader.ReadBytes(4);
-                Array.Reverse(b3);
-                block.Unknown = BitConverter.ToInt32(b3, 0);
-
-                block.Data = reader.ReadBytes(dataLength);
                 Utils.ReadPadding(ref reader);
+            }
 
-                block.Subdata = reader.ReadBytes(subdataLength);
-                Utils.ReadPadding(ref reader);
+            return blockList;
+        }
 
-                Blocks.Add(block);
+        /*
+        public void ExtractImages(bool extractMipmaps = false)
+        {
+            Console.WriteLine("Searching for texture data in {0}:", Filepath);
+
+            string srdvPath = Filepath + 'v';
+            if (!File.Exists(srdvPath))
+            {
+                Console.WriteLine("ERROR: No SRDV file found.");
+                return;
+            }
+
+            // Create the folder given by the RSF block and extract images
+            // into it instead of into the program's root directory
+            Directory.CreateDirectory(ResourceFolder.Name);
+
+            // Iterate through blocks and extract image data
+            int txrIndex = 0;
+            foreach (Block block in Blocks)
+            {
+                if (block is TxrBlock)
+                {
+                    Console.WriteLine(string.Format("Extracting texture index {0}: {1}", txrIndex++, ((TxrBlock)block).ResourceBlock.StringData));
+                    ((TxrBlock)block).ExtractImages(srdvPath, ResourceFolder.Name, extractMipmaps);
+                }
             }
         }
 
-        public void Save(string filepath)
+        public void ReplaceImages(string replacementImagePath, int indexToReplace, bool generateMipmaps)
         {
+            Console.WriteLine("Searching for texture data in {0}:", Filepath);
 
+            string srdvPath = Filepath + 'v';
+            if (!File.Exists(srdvPath))
+            {
+                Console.WriteLine("ERROR: No SRDV file found.");
+                return;
+            }
+
+            // Iterate through the TXR blocks and replace the requested block
+            int txrIndex = 0;
+            foreach (Block block in Blocks)
+            {
+                if (block is TxrBlock)
+                {
+                    if (txrIndex == indexToReplace)
+                    {
+                        Console.WriteLine(string.Format("Replacing texture index {0}: {1}", txrIndex, ((TxrBlock)block).ResourceBlock.StringData));
+                        ((TxrBlock)block).ReplaceImages(srdvPath, replacementImagePath, generateMipmaps);
+                    }
+                    else
+                    {
+                        Console.WriteLine(string.Format("Skipping texture index {0}: {1}", txrIndex, ((TxrBlock)block).ResourceBlock.StringData));
+                    }
+                    txrIndex++;
+                }
+            }
+
+            // Save the SDR file
+            File.Delete(Filepath);
+            BinaryWriter srdWriter = new BinaryWriter(File.OpenWrite(Filepath));
+            foreach (Block block in Blocks)
+            {
+                block.WriteData(ref srdWriter);
+                Utils.WritePadding(ref srdWriter);
+            }
+            srdWriter.Close();
         }
+        */
     }
 }

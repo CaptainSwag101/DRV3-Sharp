@@ -71,8 +71,7 @@ namespace SpcTool
                 // Find the largest matching sequence in the window
                 int foundIndex = -1;
                 int foundLength = 1;
-                List<byte> seq = new List<byte>(65);
-                seq.Add(lookahead[0]);
+                List<byte> seq = new List<byte>(65) { lookahead[0] };
 
                 for (; foundLength <= lookaheadLength; ++foundLength)
                 {
@@ -192,9 +191,11 @@ namespace SpcTool
             CompressionFlag = 1;
         }
 
+        // The 4-step method seems to be faster than the 3-step method slightly
+        // taken from: https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64BitsDiv
         private byte reverseBits(byte b)
         {
-            return (byte)((b * 0x0202020202 & 0x010884422010) % 1023);
+            return (byte)((((b * (ulong)0x80200802) & (ulong)0x0884422110) * (ulong)0x0101010101) >> 32);
         }
     }
 

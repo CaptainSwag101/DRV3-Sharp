@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29201.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpcTool", "SpcTool\SpcTool.csproj", "{7B57C883-FCED-441C-B4E7-08C0815F6A2F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SrdTool", "SrdTool\SrdTool.csproj", "{16E333B9-E560-4491-9189-D9213DC83ECE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SrdTool", "SrdTool\SrdTool.csproj", "{8A5CECF8-5B08-4132-9BCD-76337AD365BF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{7B57C883-FCED-441C-B4E7-08C0815F6A2F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7B57C883-FCED-441C-B4E7-08C0815F6A2F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7B57C883-FCED-441C-B4E7-08C0815F6A2F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{16E333B9-E560-4491-9189-D9213DC83ECE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{16E333B9-E560-4491-9189-D9213DC83ECE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{16E333B9-E560-4491-9189-D9213DC83ECE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{16E333B9-E560-4491-9189-D9213DC83ECE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A5CECF8-5B08-4132-9BCD-76337AD365BF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A5CECF8-5B08-4132-9BCD-76337AD365BF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A5CECF8-5B08-4132-9BCD-76337AD365BF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A5CECF8-5B08-4132-9BCD-76337AD365BF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
