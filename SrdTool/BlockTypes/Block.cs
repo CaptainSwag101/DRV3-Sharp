@@ -9,7 +9,7 @@ namespace SrdTool.BlockTypes
 {
     abstract class Block
     {
-        public int Unknown; // 1 for $CFH blocks, 0 for everything else
+        public int Unknown0C; // 1 for $CFH blocks, 0 for everything else
         public List<Block> Children = new List<Block>();
 
         public abstract void WriteData(ref BinaryWriter writer);

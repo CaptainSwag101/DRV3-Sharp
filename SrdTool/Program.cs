@@ -26,7 +26,7 @@ namespace SrdTool
                 return;
             }
 
-            SrdFile srd = new SrdFile();
+            SrdData srd = new SrdData();
             srd.Load(args[0]);
 
             Console.WriteLine("\"{0}\" contains the following blocks:\n", info.FullName);

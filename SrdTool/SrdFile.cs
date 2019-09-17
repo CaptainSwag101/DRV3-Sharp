@@ -8,7 +8,7 @@ using System.Text;
 
 namespace SrdTool
 {
-    class SrdFile
+    class SrdData
     {
         public string Filepath;
         public List<Block> Blocks;

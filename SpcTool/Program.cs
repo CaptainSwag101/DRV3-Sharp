@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 
 namespace SpcTool
 {
@@ -9,14 +11,15 @@ namespace SpcTool
         private static bool pauseAfterComplete = false;
         private static string operation = "";
         private static string input = "";
-        private static string subfile = "";
+        private static List<string> subfiles = new List<string>();
         private static string output = "";
 
         static void Main(string[] args)
         {
             Console.WriteLine("SPC Tool by CaptainSwag101\n" +
-                "Version 0.0.1, built on 2019-08-10\n");
+                "Version 0.0.2, built on 2019-09-17\n");
 
+            // Parse input argument
             if (args.Length == 0)
                 return;
 
@@ -33,10 +36,40 @@ namespace SpcTool
                 return;
             }
 
-            SpcFile spc = new SpcFile();
-            spc.Load(args[0]);
+            // If the first argument is a valid SPC file, it is the input
+            input = args[0];
 
-            if (args.Length <= 1)
+            // Parse operation argument
+            // If command starts with "--", it is our operation to perform
+            if (args.Length > 1 && args[1].StartsWith("--"))
+            {
+                switch (args[1].ToLower().TrimStart('-'))
+                {
+                    case "extract":
+                    case "inject":
+                        operation = args[1].ToLower().TrimStart('-');
+                        break;
+
+                    default:
+                        Console.WriteLine("ERROR: Invalid operation specified.");
+                        break;
+                }
+            }
+
+            // Parse subfile arguments
+            for (int i = 2; i < args.Length; ++i)
+            {
+                // If you want to implement both "*" and "?"
+                string regexModifiedString = "^" + Regex.Escape(args[i]).Replace("\\?", ".").Replace("\\*", ".*") + "$";
+                subfiles.Add(regexModifiedString);
+            }
+
+            // Load the input file
+            SpcFile spc = new SpcFile();
+            spc.Load(input);
+
+            // Execute operation
+            if (operation == "" || subfiles.Count == 0)
             {
                 Console.WriteLine("\"{0}\" contains the following subfiles:\n", info.Name);
                 foreach (SpcSubfile subfile in spc.Subfiles)
@@ -63,50 +96,40 @@ namespace SpcTool
                     stopwatch.Stop();
                     Console.WriteLine(" Done! Took {0}", stopwatch.Elapsed.ToString());
                     */
+                    
 
                     Console.WriteLine();
                 }
             }
             else
             {
-                string argCommand = "";
-                for (int a = 1; a < args.Length; ++a)
+                switch (operation)
                 {
-                    if (args[a].StartsWith("--"))
-                    {
-                        argCommand = args[a].TrimStart('-').ToLower();
-                        continue;
-                    }
-                    else
-                    {
-                        switch (argCommand)
+                    case "extract":
+                        // Setup an output directory for extracted files
+                        string outDir = info.DirectoryName + '\\' + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
+                        Directory.CreateDirectory(outDir);
+                        foreach (string name in subfiles)
                         {
-                            case "input":
-                                input = args[a];
-                                break;
-
-                            case "extract":
-                                subfile = args[a];
-                                operation = argCommand;
-                                break;
-
-                            case "insert":
-                                subfile = args[a];
-                                operation = argCommand;
-                                break;
-
-                            case "output":
-                                output = args[a];
-                                break;
-
-                            default:
-                                Console.WriteLine("ERROR: Unknown command \"--{0}\".", argCommand);
-                                Console.WriteLine("Press Enter to close...");
-                                Console.Read();
-                                return;
+                            foreach (SpcSubfile subfile in spc.Subfiles)
+                            {
+                                if (Regex.IsMatch(subfile.Name, name))
+                                {
+                                    Console.Write("Extracting \"{0}\"... ", subfile.Name);
+                                    spc.ExtractSubfile(subfile.Name, outDir);
+                                    Console.WriteLine("Done!");
+                                }
+                            }
                         }
-                    }
+                        break;
+
+                    case "inject":
+
+                        break;
+
                 }
+                
+                
             }
 
             if (pauseAfterComplete)

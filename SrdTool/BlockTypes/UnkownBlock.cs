@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SrdTool.BlockTypes
 {
-    class UnknownBlock : Block
+    sealed class UnknownBlock : Block
     {
         public string BlockType;
         public byte[] Data;
@@ -27,7 +27,7 @@ namespace SrdTool.BlockTypes
 
             byte[] bUnknown = reader.ReadBytes(4);
             Array.Reverse(bUnknown);
-            Unknown = BitConverter.ToInt32(bUnknown);
+            Unknown0C = BitConverter.ToInt32(bUnknown);
 
             if (dataLength > 0)
             {
@@ -41,7 +41,7 @@ namespace SrdTool.BlockTypes
                 Utils.ReadPadding(ref reader);
 
                 BinaryReader subReader = new BinaryReader(new MemoryStream(subdata));
-                Children = SrdFile.ReadBlocks(ref subReader);
+                Children = SrdData.ReadBlocks(ref subReader);
                 subReader.Close();
             }
         }
@@ -67,7 +67,7 @@ namespace SrdTool.BlockTypes
             writer.Write((int)0);
 
             // Write unknown
-            byte[] bUnknown = BitConverter.GetBytes(Unknown);
+            byte[] bUnknown = BitConverter.GetBytes(Unknown0C);
             Array.Reverse(bUnknown);
             writer.Write(bUnknown);
 
