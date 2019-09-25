@@ -97,13 +97,15 @@ namespace SpcTool
                         Task[] extractTasks = new Task[subfilesToExtract.Count];
 
                         // IMPORTANT: Do testing to see if .NET Core 3.0 broke for loops,
-                        // it seems like we're looping farther than should be possible, but only for this loop.
+                        // it seems like we're looping one value farther than should be possible, but only in this particular for loop.
                         // We're getting an off-by-one error despite all my logic saying we shouldn't be.
+                        // Perhaps this is a bug in .NET Core 3.0?
 
-                        //for (int s = 0; s < subfilesToExtract.Count; ++s)
-                        foreach (string subfileName in subfilesToExtract)
+                        //for (int s = 0; s < subfilesToExtract.Count; ++s) // for loop
+                        foreach (string subfileName in subfilesToExtract) // foreach loop
                         {
-                            extractTasks[subfilesToExtract.IndexOf(subfileName)] = taskFactory.StartNew(() => spc.ExtractSubfile(subfileName, outDir));
+                            //extractTasks[s] = taskFactory.StartNew(() => spc.ExtractSubfile(subfilesToExtract[s], outDir)); // for loop
+                            extractTasks[subfilesToExtract.IndexOf(subfileName)] = taskFactory.StartNew(() => spc.ExtractSubfile(subfileName, outDir)); // foreach loop
                         }
 
                         // Wait until all target subfiles have been extracted
