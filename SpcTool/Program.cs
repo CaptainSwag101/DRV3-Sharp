@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace SpcTool
 {
@@ -11,13 +12,13 @@ namespace SpcTool
         private static bool pauseAfterComplete = false;
         private static string operation = "";
         private static string input = "";
-        private static List<string> subfiles = new List<string>();
+        private static List<string> targets = new List<string>();
         private static string output = "";
 
         static void Main(string[] args)
         {
             Console.WriteLine("SPC Tool by CaptainSwag101\n" +
-                "Version 0.0.2, built on 2019-09-17\n");
+                "Version 0.0.2, built on 2019-09-25\n");
 
             // Parse input argument
             if (args.Length == 0)
@@ -26,7 +27,7 @@ namespace SpcTool
             FileInfo info = new FileInfo(args[0]);
             if (!info.Exists)
             {
-                Console.WriteLine("ERROR: \"{0}\" does not exist.", args[0]);
+                Console.WriteLine($"ERROR: \"{args[0]}\" does not exist.");
                 return;
             }
 
@@ -56,12 +57,11 @@ namespace SpcTool
                 }
             }
 
-            // Parse subfile arguments
+            // Parse target arguments
             for (int i = 2; i < args.Length; ++i)
             {
-                // If you want to implement both "*" and "?"
                 string regexModifiedString = "^" + Regex.Escape(args[i]).Replace("\\?", ".").Replace("\\*", ".*") + "$";
-                subfiles.Add(regexModifiedString);
+                targets.Add(regexModifiedString);
             }
 
             // Load the input file
@@ -69,16 +69,66 @@ namespace SpcTool
             spc.Load(input);
 
             // Execute operation
-            if (operation == "" || subfiles.Count == 0)
+            if (operation != "" && targets.Count > 0)
             {
-                Console.WriteLine("\"{0}\" contains the following subfiles:\n", info.Name);
+                switch (operation)
+                {
+                    case "extract":
+                        // Setup an output directory for extracted files
+                        string outDir = info.DirectoryName + '\\' + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
+                        Directory.CreateDirectory(outDir);
+
+                        // Generate list of subfiles to be extracted
+                        List<string> subfilesToExtract = new List<string>();
+                        for (int t = 0; t < targets.Count; ++t)
+                        {
+                            foreach (SpcSubfile subfile in spc.Subfiles)
+                            {
+                                if (Regex.IsMatch(subfile.Name, targets[t]))
+                                {
+                                    Console.WriteLine($"Extracting \"{subfile.Name}\"...");
+                                    subfilesToExtract.Add(subfile.Name);
+                                }
+                            }
+                        }
+
+                        // Extract the subfiles using Tasks
+                        TaskFactory taskFactory = new TaskFactory();
+                        Task[] extractTasks = new Task[subfilesToExtract.Count];
+
+                        // IMPORTANT: Do testing to see if .NET Core 3.0 broke for loops,
+                        // it seems like we're looping farther than should be possible, but only for this loop.
+                        // We're getting an off-by-one error despite all my logic saying we shouldn't be.
+
+                        //for (int s = 0; s < subfilesToExtract.Count; ++s)
+                        foreach (string subfileName in subfilesToExtract)
+                        {
+                            extractTasks[subfilesToExtract.IndexOf(subfileName)] = taskFactory.StartNew(() => spc.ExtractSubfile(subfileName, outDir));
+                        }
+
+                        // Wait until all target subfiles have been extracted
+                        Task.WaitAll(extractTasks);
+
+                        break;
+
+                    case "inject":
+
+                        break;
+
+                }
+                
+                
+            }
+            else
+            {
+                Console.WriteLine($"\"{info.Name}\" contains the following subfiles:\n");
                 foreach (SpcSubfile subfile in spc.Subfiles)
                 {
-                    Console.WriteLine("File name: {0}", subfile.Name);
-                    Console.WriteLine("\tCompression flag: {0}", subfile.CompressionFlag);
-                    Console.WriteLine("\tUnknown flag: {0}", subfile.UnknownFlag);
-                    Console.WriteLine("\tCurrent size: {0} bytes", subfile.CurrentSize.ToString("n0"));
-                    Console.WriteLine("\tOriginal size: {0} bytes", subfile.OriginalSize.ToString("n0"));
+                    Console.WriteLine($"File name: {subfile.Name}");
+                    Console.WriteLine($"\tCompression flag: {subfile.CompressionFlag}");
+                    Console.WriteLine($"\tUnknown flag: {subfile.UnknownFlag}");
+                    Console.WriteLine($"\tCurrent size: {subfile.CurrentSize.ToString("n0")} bytes");
+                    Console.WriteLine($"\tOriginal size: {subfile.OriginalSize.ToString("n0")} bytes");
 
                     /*
                     // This is just some test code for verifying and benchmarking SPC compression. It will be replaced later.
@@ -96,40 +146,10 @@ namespace SpcTool
                     stopwatch.Stop();
                     Console.WriteLine(" Done! Took {0}", stopwatch.Elapsed.ToString());
                     */
-                    
+
 
                     Console.WriteLine();
                 }
-            }
-            else
-            {
-                switch (operation)
-                {
-                    case "extract":
-                        // Setup an output directory for extracted files
-                        string outDir = info.DirectoryName + '\\' + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
-                        Directory.CreateDirectory(outDir);
-                        foreach (string name in subfiles)
-                        {
-                            foreach (SpcSubfile subfile in spc.Subfiles)
-                            {
-                                if (Regex.IsMatch(subfile.Name, name))
-                                {
-                                    Console.Write("Extracting \"{0}\"... ", subfile.Name);
-                                    spc.ExtractSubfile(subfile.Name, outDir);
-                                    Console.WriteLine("Done!");
-                                }
-                            }
-                        }
-                        break;
-
-                    case "inject":
-
-                        break;
-
-                }
-                
-                
             }
 
             if (pauseAfterComplete)
