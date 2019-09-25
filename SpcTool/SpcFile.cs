@@ -116,7 +116,7 @@ namespace SpcTool
                     outputLocation.TrimEnd('\\');
                     outputLocation.TrimEnd('/');
                     subfile.Decompress();
-                    using (FileStream output = new FileStream(outputLocation + '\\' + filename, FileMode.Create))
+                    using (FileStream output = new FileStream(outputLocation + Path.DirectorySeparatorChar + filename, FileMode.Create))
                     {
                         output.Write(subfile.Data);
                     }

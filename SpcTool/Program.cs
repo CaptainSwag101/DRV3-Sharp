@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -75,7 +75,7 @@ namespace SpcTool
                 {
                     case "extract":
                         // Setup an output directory for extracted files
-                        string outDir = info.DirectoryName + '\\' + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
+                        string outDir = info.DirectoryName + Path.DirectorySeparatorChar + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
                         Directory.CreateDirectory(outDir);
 
                         // Generate list of subfiles to be extracted
