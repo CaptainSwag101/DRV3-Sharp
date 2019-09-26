@@ -13,7 +13,7 @@ namespace SpcTool
         private static string operation = "";
         private static string input = "";
         private static List<string> targets = new List<string>();
-        private static string output = "";
+        private static string output = null;
 
         static void Main(string[] args)
         {
@@ -75,37 +75,33 @@ namespace SpcTool
                 {
                     case "extract":
                         // Setup an output directory for extracted files
-                        string outDir = info.DirectoryName + Path.DirectorySeparatorChar + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
-                        Directory.CreateDirectory(outDir);
+                        output ??= info.DirectoryName + Path.DirectorySeparatorChar + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
+                        Directory.CreateDirectory(output);
 
-                        // Generate list of subfiles to be extracted
+                        // Generate list of subfiles to be extracted that match the target regex
                         List<string> subfilesToExtract = new List<string>();
-                        for (int t = 0; t < targets.Count; ++t)
+                        foreach (string regex in targets)
                         {
                             foreach (SpcSubfile subfile in spc.Subfiles)
                             {
-                                if (Regex.IsMatch(subfile.Name, targets[t]))
+                                if (Regex.IsMatch(subfile.Name, regex))
                                 {
-                                    Console.WriteLine($"Extracting \"{subfile.Name}\"...");
                                     subfilesToExtract.Add(subfile.Name);
                                 }
                             }
                         }
 
                         // Extract the subfiles using Tasks
-                        TaskFactory taskFactory = new TaskFactory();
                         Task[] extractTasks = new Task[subfilesToExtract.Count];
 
-                        // IMPORTANT: Do testing to see if .NET Core 3.0 broke for loops,
-                        // it seems like we're looping one value farther than should be possible, but only in this particular for loop.
-                        // We're getting an off-by-one error despite all my logic saying we shouldn't be.
-                        // Perhaps this is a bug in .NET Core 3.0?
-
-                        //for (int s = 0; s < subfilesToExtract.Count; ++s) // for loop
-                        foreach (string subfileName in subfilesToExtract) // foreach loop
+                        // IMPORTANT: If we ever switch to a for loop instead of foreach,
+                        // make sure to make a local scoped copy of the subfile name in order to prevent
+                        // threading weirdness from passing the wrong string value and causing random issues.
+                        foreach (string subfileName in subfilesToExtract)
                         {
-                            //extractTasks[s] = taskFactory.StartNew(() => spc.ExtractSubfile(subfilesToExtract[s], outDir)); // for loop
-                            extractTasks[subfilesToExtract.IndexOf(subfileName)] = taskFactory.StartNew(() => spc.ExtractSubfile(subfileName, outDir)); // foreach loop
+                            Console.WriteLine($"Extracting \"{subfileName}\"...");
+
+                            extractTasks[subfilesToExtract.IndexOf(subfileName)] = Task.Factory.StartNew(() => spc.ExtractSubfile(subfileName, output));
                         }
 
                         // Wait until all target subfiles have been extracted
