@@ -156,6 +156,7 @@ namespace SpcTool
                 }
 
                 // Is this redundant?
+                // Probably not, since just above we increment pos.
                 if (pos >= CurrentSize)
                 {
                     break;

@@ -115,17 +115,21 @@ namespace SpcTool
                 {
                     outputLocation.TrimEnd('\\');
                     outputLocation.TrimEnd('/');
-                    subfile.Decompress();
-                    using (FileStream output = new FileStream(outputLocation + Path.DirectorySeparatorChar + filename, FileMode.Create))
+
+                    if (decompress)
                     {
-                        output.Write(subfile.Data);
+                        subfile.Decompress();
                     }
+
+                    using FileStream output = new FileStream(outputLocation + Path.DirectorySeparatorChar + filename, FileMode.Create);
+                    output.Write(subfile.Data);
+                    output.Close();
 
                     return;
                 }
             }
 
-            Console.WriteLine("ERROR: Unable to find a subfile with that name.");
+            Console.WriteLine($"ERROR: Unable to find a subfile called \"{filename}\".");
         }
 
         /// <summary>
@@ -135,7 +139,59 @@ namespace SpcTool
         /// <param name="compress">Whether the subfile should be compressed before inserting. Unless you know what you're doing, leave this set to "true".</param>
         public void InsertSubfile(string filename, bool compress = true)
         {
+            FileInfo info = new FileInfo(filename);
 
+            if (!info.Exists)
+            {
+                Console.WriteLine($"ERROR: Target file\"{info.FullName}\" does not exist.");
+                return;
+            }
+
+            // Check if a subfile already exists with the specified name
+            int existingIndex = -1;
+            for (int s = 0; s < Subfiles.Count; ++s)
+            {
+                if (info.Name == Subfiles[s].Name)
+                {
+                    Console.WriteLine("The specified file already exists within the SPC archive. Overwrite? (Y/N)");
+                    string yesNo = Console.ReadLine().ToLowerInvariant();
+                    if (yesNo.StartsWith("y"))
+                    {
+                        existingIndex = s;
+                        break;
+                    }
+
+                    return;
+                }
+            }
+
+            using BinaryReader reader = new BinaryReader(new FileStream(filename, FileMode.Open));
+            int subfileSize = (int)reader.BaseStream.Length;
+            SpcSubfile subfileToInject = new SpcSubfile
+            {
+                CompressionFlag = 1,
+                UnknownFlag = (short)(subfileSize > ushort.MaxValue ? 8 : 4),   // this is a guess as to what this flag means, seems like it might relate to size?
+                CurrentSize = subfileSize,
+                OriginalSize = subfileSize,
+                Name = info.Name,
+                Data = reader.ReadBytes(subfileSize)
+            };
+            reader.Close();
+
+            if (compress)
+            {
+                subfileToInject.Compress();
+            }
+
+            // Check if a subfile already exists with the specified name and replace
+            if (existingIndex != -1)
+            {
+                Subfiles[existingIndex] = subfileToInject;
+                return;
+            }
+
+            // We should only reach this code if there is not an existing subfile with the same name
+            Subfiles.Add(subfileToInject);
         }
     }
 }
