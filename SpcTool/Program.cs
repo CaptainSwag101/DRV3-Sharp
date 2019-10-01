@@ -102,13 +102,13 @@ namespace SpcTool
                                 stopwatch.Start();
                                 subfile.Decompress();
                                 stopwatch.Stop();
-                                Console.WriteLine(" Done! Took {0}", stopwatch.Elapsed.ToString());
+                                Console.WriteLine($" Done! Took {stopwatch.Elapsed.ToString()}");
 
                                 Console.Write("Compressing...");
                                 stopwatch.Restart();
                                 subfile.Compress();
                                 stopwatch.Stop();
-                                Console.WriteLine(" Done! Took {0}", stopwatch.Elapsed.ToString());
+                                Console.WriteLine($" Done! Took {stopwatch.Elapsed.ToString()}");
                             }
 
                             Console.WriteLine();
@@ -163,11 +163,15 @@ namespace SpcTool
                         {
                             Console.WriteLine($"Inserting \"{subfileName}\"...");
 
-                            insertTasks[targets.IndexOf(subfileName)] = Task.Factory.StartNew(() => spc.InsertSubfile(subfileName));
+                            insertTasks[targets.IndexOf(subfileName)] = new Task(() => spc.InsertSubfile(subfileName));
                         }
 
                         // Wait until all target subfiles have been inserted
-                        Task.WaitAll(insertTasks);
+                        foreach (Task task in insertTasks)
+                        {
+                            task.Start();
+                            task.Wait();
+                        }
 
                         // Save the spc file
                         spc.Save(input);
