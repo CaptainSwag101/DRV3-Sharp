@@ -105,7 +105,7 @@ namespace SpcTool
                                 Console.WriteLine(" Done! Took {0}", stopwatch.Elapsed.ToString());
 
                                 Console.Write("Compressing...");
-                                stopwatch.Start();
+                                stopwatch.Restart();
                                 subfile.Compress();
                                 stopwatch.Stop();
                                 Console.WriteLine(" Done! Took {0}", stopwatch.Elapsed.ToString());
