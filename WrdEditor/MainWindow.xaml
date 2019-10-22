@@ -1,0 +1,30 @@
+﻿<Window x:Class="WrdEditor.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WrdEditor"
+        mc:Ignorable="d"
+        Title="WRD Editor by CaptainSwag101" Height="450" Width="800">
+    <Grid>
+        <Menu x:Name="MainMenu" Height="24" VerticalAlignment="Top">
+            <MenuItem x:Name="FileMenuList" Header="_File" Height="24" Width="30">
+                <MenuItem x:Name="NewScriptMenuItem" Header="_New Script" Height="24" Width="200"
+                          Click="NewScriptMenuItem_Click"/>
+                <MenuItem x:Name="OpenScriptMenuItem" Header="_Open Script..." Height="24" Width="200"
+                          Click="OpenScriptMenuItem_Click"/>
+                <MenuItem x:Name="SaveScriptMenuItem" Header="_Save Script" Height="24" Width="200"
+                          Click="SaveScriptMenuItem_Click"/>
+                <MenuItem x:Name="SaveScriptAsMenuItem" Header="Save Script _As..." Height="24" Width="200"
+                          Click="SaveScriptAsMenuItem_Click"/>
+            </MenuItem>
+        </Menu>
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,24,0,24" >
+            <TextBox x:Name="wrdCommandTextBox" FontFamily="Consolas"/>
+        </ScrollViewer>
+        <StatusBar VerticalAlignment="Bottom" Height="24">
+            <TextBlock x:Name="statusText" Text="No file loaded."/>
+        </StatusBar>
+
+    </Grid>
+</Window>
