@@ -11,93 +11,91 @@ namespace SpcTool
         private byte[] Unknown1;
         private int Unknown2;
 
-        public void Load(string filepath)
+        public void Load(string spcPath)
         {
-            using (BinaryReader reader = new BinaryReader(new MemoryStream(File.ReadAllBytes(filepath))))
+            using BinaryReader reader = new BinaryReader(new FileStream(spcPath, FileMode.Open));
+
+            // Verify the magic value, it could either be "CPS." (the one we want) or "$CFH" (most files in the console version, unusable for now)
+            string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+            if (magic == "$CFH")
             {
-                // Verify the magic value, it could either be "CPS." (the one we want) or "$CFH" (most files in the console version, unusable for now)
-                string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
-                if (magic == "$CFH")
-                {
-                    // decompress using SRD method first, then resume
-                    return;
-                }
+                // decompress using SRD method first, then resume
+                return;
+            }
 
-                if (magic != "CPS.")
-                {
-                    Console.WriteLine("ERROR: Not a valid SPC file, magic number invalid.");
-                    return;
-                }
+            if (magic != "CPS.")
+            {
+                Console.WriteLine("ERROR: Not a valid SPC file, magic number invalid.");
+                return;
+            }
 
-                // Read the first set of data
-                Unknown1 = reader.ReadBytes(0x24);
-                int fileCount = reader.ReadInt32();
-                Unknown2 = reader.ReadInt32();
+            // Read the first set of data
+            Unknown1 = reader.ReadBytes(0x24);
+            int fileCount = reader.ReadInt32();
+            Unknown2 = reader.ReadInt32();
+            reader.BaseStream.Seek(0x10, SeekOrigin.Current);
+
+            // Verify file table header, should be "Root"
+            if (!new ASCIIEncoding().GetString(reader.ReadBytes(4)).Equals("Root"))
+            {
+                Console.WriteLine("ERROR: Not a valid SPC file, table header invalid.");
+                return;
+            }
+            reader.BaseStream.Seek(0x0C, SeekOrigin.Current);
+
+            // For each subfile in the table, read the corresponding data
+            for (int i = 0; i < fileCount; ++i)
+            {
+                SpcSubfile subfile = new SpcSubfile
+                {
+                    CompressionFlag = reader.ReadInt16(),
+                    UnknownFlag = reader.ReadInt16(),
+                    CurrentSize = reader.ReadInt32(),
+                    OriginalSize = reader.ReadInt32()
+                };
+
+                int nameLength = reader.ReadInt32();
                 reader.BaseStream.Seek(0x10, SeekOrigin.Current);
+                int namePadding = (0x10 - (nameLength + 1) % 0x10) % 0x10;
+                subfile.Name = new ASCIIEncoding().GetString(reader.ReadBytes(nameLength));
+                reader.BaseStream.Seek(namePadding + 1, SeekOrigin.Current);    // Discard the null terminator
 
-                // Verify file table header, should be "Root"
-                if (!new ASCIIEncoding().GetString(reader.ReadBytes(4)).Equals("Root"))
-                {
-                    Console.WriteLine("ERROR: Not a valid SPC file, table header invalid.");
-                    return;
-                }
-                reader.BaseStream.Seek(0x0C, SeekOrigin.Current);
+                int dataPadding = (0x10 - subfile.CurrentSize % 0x10) % 0x10;
+                subfile.Data = reader.ReadBytes(subfile.CurrentSize);
+                reader.BaseStream.Seek(dataPadding, SeekOrigin.Current);
 
-                // For each subfile in the table, read the corresponding data
-                for (int i = 0; i < fileCount; ++i)
-                {
-                    SpcSubfile subfile = new SpcSubfile
-                    {
-                        CompressionFlag = reader.ReadInt16(),
-                        UnknownFlag = reader.ReadInt16(),
-                        CurrentSize = reader.ReadInt32(),
-                        OriginalSize = reader.ReadInt32()
-                    };
-
-                    int nameLength = reader.ReadInt32();
-                    reader.BaseStream.Seek(0x10, SeekOrigin.Current);
-                    int namePadding = (0x10 - (nameLength + 1) % 0x10) % 0x10;
-                    subfile.Name = new ASCIIEncoding().GetString(reader.ReadBytes(nameLength));
-                    reader.BaseStream.Seek(namePadding + 1, SeekOrigin.Current);    // Discard the null terminator
-
-                    int dataPadding = (0x10 - subfile.CurrentSize % 0x10) % 0x10;
-                    subfile.Data = reader.ReadBytes(subfile.CurrentSize);
-                    reader.BaseStream.Seek(dataPadding, SeekOrigin.Current);
-
-                    Subfiles.Add(subfile);
-                }
+                Subfiles.Add(subfile);
             }
         }
 
-        public void Save(string filepath)
+        public void Save(string spcPath)
         {
-            using (BinaryWriter writer = new BinaryWriter(new FileStream(filepath, FileMode.Create)))
+            using BinaryWriter writer = new BinaryWriter(new FileStream(spcPath, FileMode.Create));
+
+            writer.Write(new ASCIIEncoding().GetBytes("CPS."));
+            writer.Write(Unknown1);
+            writer.Write(Subfiles.Count);
+            writer.Write(Unknown2);
+            writer.Write(new byte[0x10]);
+            writer.Write(new ASCIIEncoding().GetBytes("Root"));
+            writer.Write(new byte[0x0C]);
+
+            foreach (SpcSubfile subfile in Subfiles)
             {
-                writer.Write(new ASCIIEncoding().GetBytes("CPS."));
-                writer.Write(Unknown1);
-                writer.Write(Subfiles.Count);
-                writer.Write(Unknown2);
+                writer.Write(subfile.CompressionFlag);
+                writer.Write(subfile.UnknownFlag);
+                writer.Write(subfile.CurrentSize);
+                writer.Write(subfile.OriginalSize);
+                writer.Write(subfile.Name.Length);
                 writer.Write(new byte[0x10]);
-                writer.Write(new ASCIIEncoding().GetBytes("Root"));
-                writer.Write(new byte[0x0C]);
 
-                foreach (SpcSubfile subfile in Subfiles)
-                {
-                    writer.Write(subfile.CompressionFlag);
-                    writer.Write(subfile.UnknownFlag);
-                    writer.Write(subfile.CurrentSize);
-                    writer.Write(subfile.OriginalSize);
-                    writer.Write(subfile.Name.Length);
-                    writer.Write(new byte[0x10]);
+                int namePadding = (0x10 - (subfile.Name.Length + 1) % 0x10) % 0x10;
+                writer.Write(new ASCIIEncoding().GetBytes(subfile.Name));
+                writer.Write(new byte[namePadding + 1]);
 
-                    int namePadding = (0x10 - (subfile.Name.Length + 1) % 0x10) % 0x10;
-                    writer.Write(new ASCIIEncoding().GetBytes(subfile.Name));
-                    writer.Write(new byte[namePadding + 1]);
-
-                    int dataPadding = (0x10 - subfile.CurrentSize % 0x10) % 0x10;
-                    writer.Write(subfile.Data);
-                    writer.Write(new byte[dataPadding]);
-                }
+                int dataPadding = (0x10 - subfile.CurrentSize % 0x10) % 0x10;
+                writer.Write(subfile.Data);
+                writer.Write(new byte[dataPadding]);
             }
         }
 
@@ -170,7 +168,7 @@ namespace SpcTool
             SpcSubfile subfileToInject = new SpcSubfile
             {
                 CompressionFlag = 1,
-                UnknownFlag = (short)(subfileSize > ushort.MaxValue ? 8 : 4),   // this is a guess as to what this flag means, seems like it might relate to size?
+                UnknownFlag = (short)(subfileSize > ushort.MaxValue ? 8 : 4),   // seems like this flag might relate to size? This is a BIG guess though.
                 CurrentSize = subfileSize,
                 OriginalSize = subfileSize,
                 Name = info.Name,

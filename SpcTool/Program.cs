@@ -16,7 +16,8 @@ namespace SpcTool
         private static List<string> targets = new List<string>();
         private static string output = null;
 
-        private static IReadOnlyList<string> validOperations = new string[] { "list", "bench", "extract", "insert" };
+        private static readonly Dictionary<string, int> validOperations = new Dictionary<string, int> {
+            { "list", 0 }, { "bench", 0 }, { "extract", -1 }, { "insert", -1 } };
 
         static void Main(string[] args)
         {
@@ -48,7 +49,7 @@ namespace SpcTool
             if (args.Length > 1 && args[1].StartsWith("--"))
             {
                 string op = args[1].TrimStart('-').ToLowerInvariant();
-                if (validOperations.Any(op.Contains))
+                if (validOperations.Keys.Any(op.Contains))
                 {
                     operation = op;
                 }
@@ -74,9 +75,9 @@ namespace SpcTool
             {
                 Console.WriteLine("ERROR: No operation specified.");
             }
-            else if (targets.Count == 0)
+            else if (validOperations[operation] != -1 && targets.Count != validOperations[operation])
             {
-                Console.WriteLine("ERROR: No target(s) specified.");
+                Console.WriteLine($"ERROR: Invalid number of target(s) specified, expected {validOperations[operation]}.");
             }
             else
             {
