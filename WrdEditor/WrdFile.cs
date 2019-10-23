@@ -7,7 +7,7 @@ namespace WrdEditor
 {
     class WrdFile
     {
-        public List<Tuple<string, List<string>>> Commands = new List<Tuple<string, List<string>>>();    // Opcode, Arguments[]
+        public List<(string Opcode, List<string> Arguments)> Commands = new List<(string Opcode, List<string> Arguments)>();    // Opcode, Arguments[]
 
         public void Load(string wrdPath)
         {
@@ -114,7 +114,7 @@ namespace WrdEditor
                     ++argNumber;
                 }
 
-                Commands.Add(new Tuple<string, List<string>>(opcodeName, args));
+                Commands.Add((opcodeName, args));
             }
         }
 
@@ -124,7 +124,7 @@ namespace WrdEditor
             // then iterate through it to get the offset addresses.
             List<byte> commandData = new List<byte>();
             List<ushort> labelOffsets = new List<ushort>();
-            List<Tuple<ushort, ushort>> localBranchData = new List<Tuple<ushort, ushort>>();
+            List<(ushort ID, ushort Offset)> localBranchData = new List<(ushort ID, ushort Offset)>();
             List<string> labelNames = new List<string>();
             List<string> parameters = new List<string>();
             ushort stringCount = 0;
@@ -132,11 +132,11 @@ namespace WrdEditor
             foreach (var tuple in Commands)
             {
                 // First, check the opcode to see if there's any additional processing we need to do
-                switch (tuple.Item1)
+                switch (tuple.Opcode)
                 {
                     case "LAB":
                         labelOffsets.Add((ushort)commandData.Count);
-                        labelNames.Add(tuple.Item2[0]);
+                        labelNames.Add(tuple.Arguments[0]);
                         break;
 
                     case "LOC":
@@ -145,27 +145,27 @@ namespace WrdEditor
 
                     case "LBN":
                         // Save the branch number AND the offset
-                        localBranchData.Add(new Tuple<ushort, ushort>(ushort.Parse(tuple.Item2[0]), (ushort)commandData.Count));
+                        localBranchData.Add((ushort.Parse(tuple.Arguments[0]), (ushort)commandData.Count));
                         break;
                 }
 
                 // Next, encode the opcode into commandData
                 commandData.Add(0x70);
-                byte opcodeId = (byte)Array.IndexOf(WrdCommandHelper.OpcodeNames, tuple.Item1);
+                byte opcodeId = (byte)Array.IndexOf(WrdCommandHelper.OpcodeNames, tuple.Opcode);
                 commandData.Add(opcodeId);
 
                 // Then, iterate through each argument and process/save it according to its type
-                for (int argNum = 0; argNum < tuple.Item2.Count; ++argNum)
+                for (int argNum = 0; argNum < tuple.Arguments.Count; ++argNum)
                 {
                     switch (WrdCommandHelper.ArgTypeLists[opcodeId][argNum])
                     {
                         case 0: // Plaintext parameter
                             {
-                                int found = parameters.IndexOf(tuple.Item2[argNum]);
+                                int found = parameters.IndexOf(tuple.Arguments[argNum]);
                                 if (found == -1)
                                 {
                                     found = parameters.Count;
-                                    parameters.Add(tuple.Item2[argNum]);
+                                    parameters.Add(tuple.Arguments[argNum]);
                                 }
 
                                 byte[] encodedArg = BitConverter.GetBytes((ushort)found);
@@ -177,7 +177,7 @@ namespace WrdEditor
                         case 1: // Raw number
                         case 2: // Dialogue string
                             {
-                                byte[] encodedArg = BitConverter.GetBytes(ushort.Parse(tuple.Item2[argNum]));
+                                byte[] encodedArg = BitConverter.GetBytes(ushort.Parse(tuple.Arguments[argNum]));
                                 Array.Reverse(encodedArg);  // Switch to big-endian
                                 commandData.AddRange(encodedArg);
                                 break;
@@ -186,7 +186,7 @@ namespace WrdEditor
                         case 3: // Label
                             {
                                 // Note: we can probably simplify this since we already added the label name just above
-                                int found = labelNames.IndexOf(tuple.Item2[argNum]);
+                                int found = labelNames.IndexOf(tuple.Arguments[argNum]);
                                 byte[] encodedArg = BitConverter.GetBytes((ushort)found);
                                 Array.Reverse(encodedArg);  // Switch to big-endian
                                 commandData.AddRange(encodedArg);
@@ -225,8 +225,8 @@ namespace WrdEditor
             writer.BaseStream.Seek(0, SeekOrigin.End);
             foreach (var localBranch in localBranchData)
             {
-                writer.Write(BitConverter.GetBytes(localBranch.Item1)); // branch number
-                writer.Write(BitConverter.GetBytes(localBranch.Item2)); // branch offset
+                writer.Write(BitConverter.GetBytes(localBranch.ID));        // branch number
+                writer.Write(BitConverter.GetBytes(localBranch.Offset));    // branch offset
             }
 
             // Write label offsets pointer & data
@@ -246,9 +246,9 @@ namespace WrdEditor
             writer.BaseStream.Seek(0, SeekOrigin.End);
             foreach (string labelName in labelNames)
             {
-                writer.Write((byte)labelName.Length);  // string length
+                writer.Write((byte)labelName.Length);                   // string length
                 writer.Write(new ASCIIEncoding().GetBytes(labelName));  // string
-                writer.Write((byte)0);  // null terminator
+                writer.Write((byte)0);                                  // null terminator
             }
 
             // Write plaintext parameters pointer & data
@@ -258,9 +258,9 @@ namespace WrdEditor
             writer.BaseStream.Seek(0, SeekOrigin.End);
             foreach (string parameter in parameters)
             {
-                writer.Write((byte)parameter.Length);  // string length
+                writer.Write((byte)parameter.Length);                   // string length
                 writer.Write(new ASCIIEncoding().GetBytes(parameter));  // string
-                writer.Write((byte)0);  // null terminator
+                writer.Write((byte)0);                                  // null terminator
             }
 
             writer.Flush(); // Just in case

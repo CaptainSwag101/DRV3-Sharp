@@ -151,7 +151,7 @@ namespace WrdEditor
                     }
                 }
 
-                Tuple<string, List<string>> tuple = new Tuple<string, List<string>>(opcode, args.ToList());
+                (string Opcode, List<string> Arguments) tuple = (opcode, args.ToList());
                 loadedWrd.Commands.Add(tuple);
             }
 
