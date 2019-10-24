@@ -231,124 +231,7 @@ namespace DatTool
             {
                 for (int valueNum = 0; valueNum < ValueInfo.Count; ++valueNum)
                 {
-                    switch (ValueInfo[valueNum].Type)
-                    {
-                        case "u8":
-                            if (!byte.TryParse(entry[valueNum], out byte u8))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not an 8-bit unsigned integer.");
-                                return;
-                            }
-                            structData.Add(u8);
-                            break;
-
-                        case "u16":
-                            if (!ushort.TryParse(entry[valueNum], out ushort u16))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not a 16-bit unsigned integer.");
-                                return;
-                            }
-                            structData.AddRange(BitConverter.GetBytes(u16));
-                            break;
-
-                        case "u32":
-                            if (!uint.TryParse(entry[valueNum], out uint u32))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not a 32-bit unsigned integer.");
-                                return;
-                            }
-                            structData.AddRange(BitConverter.GetBytes(u32));
-                            break;
-
-                        case "u64":
-                            if (!ulong.TryParse(entry[valueNum], out ulong u64))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not a 64-bit unsigned integer.");
-                                return;
-                            }
-                            structData.AddRange(BitConverter.GetBytes(u64));
-                            break;
-
-                        case "s8":
-                            if (!sbyte.TryParse(entry[valueNum], out sbyte s8))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not an 8-bit signed integer.");
-                                return;
-                            }
-                            structData.Add((byte)s8);
-                            break;
-
-                        case "s16":
-                            if (!short.TryParse(entry[valueNum], out short s16))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not a 16-bit signed integer.");
-                                return;
-                            }
-                            structData.AddRange(BitConverter.GetBytes(s16));
-                            break;
-
-                        case "s32":
-                            if (!int.TryParse(entry[valueNum], out int s32))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not a 32-bit signed integer.");
-                                return;
-                            }
-                            structData.AddRange(BitConverter.GetBytes(s32));
-                            break;
-
-                        case "s64":
-                            if (!long.TryParse(entry[valueNum], out long s64))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not a 64-bit signed integer.");
-                                return;
-                            }
-                            structData.AddRange(BitConverter.GetBytes(s64));
-                            break;
-
-                        case "f32":
-                            if (!float.TryParse(entry[valueNum], out float f32))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not a 32-bit float.");
-                                return;
-                            }
-                            structData.AddRange(BitConverter.GetBytes(f32));
-                            break;
-
-                        case "f64":
-                            if (!double.TryParse(entry[valueNum], out double f64))
-                            {
-                                Console.WriteLine($"ERROR: Value in row {StructEntries.IndexOf(entry)}, column {valueNum} is not a 64-bit float.");
-                                return;
-                            }
-                            structData.AddRange(BitConverter.GetBytes(f64));
-                            break;
-
-                        case "LABEL":
-                        case "REFER":
-                        case "ASCII":
-                            int found8 = utf8Strings.IndexOf(entry[valueNum]);
-                            if (found8 == -1)
-                            {
-                                found8 = utf8Strings.Count;
-                                utf8Strings.Add(entry[valueNum]);
-                            }
-                            structData.AddRange(BitConverter.GetBytes((ushort)found8));
-                            break;
-
-                        case "UTF16":
-                            int found16 = utf16Strings.IndexOf(entry[valueNum]);
-                            if (found16 == -1)
-                            {
-                                found16 = utf8Strings.Count;
-                                utf8Strings.Add(entry[valueNum]);
-                            }
-                            structData.AddRange(BitConverter.GetBytes((ushort)found16));
-                            break;
-
-                        default:
-                            Console.WriteLine($"ERROR: The data type in column {StructEntries.IndexOf(entry)} is invalid.");
-                            return;
-                    }
+                    structData.AddRange(valueStringToBytes(entry[valueNum], ValueInfo[valueNum].Type, StructEntries.IndexOf(entry), valueNum, ref utf8Strings, ref utf16Strings));
                 }
             }
 
@@ -374,6 +257,116 @@ namespace DatTool
 
             writer.Flush(); // Just in case
             writer.Close();
+        }
+
+        private byte[] valueStringToBytes(string value, string valueType, int valueRow, int valueColumn, ref List<string> utf8Strings, ref List<string> utf16Strings)
+        {
+            switch (valueType)
+            {
+                case "u8":
+                    if (!byte.TryParse(value, out byte u8))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not an 8-bit unsigned integer.");
+                        return null;
+                    }
+                    return new byte[] { u8 };
+
+                case "u16":
+                    if (!ushort.TryParse(value, out ushort u16))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not a 16-bit unsigned integer.");
+                        return null;
+                    }
+                    return BitConverter.GetBytes(u16);
+
+                case "u32":
+                    if (!uint.TryParse(value, out uint u32))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not a 32-bit unsigned integer.");
+                        return null;
+                    }
+                    return BitConverter.GetBytes(u32);
+
+                case "u64":
+                    if (!ulong.TryParse(value, out ulong u64))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not a 64-bit unsigned integer.");
+                        return null;
+                    }
+                    return BitConverter.GetBytes(u64);
+
+                case "s8":
+                    if (!sbyte.TryParse(value, out sbyte s8))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not an 8-bit signed integer.");
+                        return null;
+                    }
+                    return new byte[] { (byte)s8 };
+
+                case "s16":
+                    if (!short.TryParse(value, out short s16))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not a 16-bit signed integer.");
+                        return null;
+                    }
+                    return BitConverter.GetBytes(s16);
+
+                case "s32":
+                    if (!int.TryParse(value, out int s32))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not a 32-bit signed integer.");
+                        return null;
+                    }
+                    return BitConverter.GetBytes(s32);
+
+                case "s64":
+                    if (!long.TryParse(value, out long s64))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not a 64-bit signed integer.");
+                        return null;
+                    }
+                    return BitConverter.GetBytes(s64);
+
+                case "f32":
+                    if (!float.TryParse(value, out float f32))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not a 32-bit float.");
+                        return null;
+                    }
+                    return BitConverter.GetBytes(f32);
+
+                case "f64":
+                    if (!double.TryParse(value, out double f64))
+                    {
+                        Console.WriteLine($"ERROR: Value in row {valueRow}, column {valueColumn} is not a 64-bit float.");
+                        return null;
+                    }
+                    return BitConverter.GetBytes(f64);
+
+                case "LABEL":
+                case "REFER":
+                case "ASCII":
+                    int found8 = utf8Strings.IndexOf(value);
+                    if (found8 == -1)
+                    {
+                        found8 = utf8Strings.Count;
+                        utf8Strings.Add(value);
+                    }
+                    return BitConverter.GetBytes((ushort)found8);
+
+                case "UTF16":
+                    int found16 = utf16Strings.IndexOf(value);
+                    if (found16 == -1)
+                    {
+                        found16 = utf8Strings.Count;
+                        utf8Strings.Add(value);
+                    }
+                    return BitConverter.GetBytes((ushort)found16);
+
+                default:
+                    Console.WriteLine($"ERROR: The data type in column {valueRow} is invalid.");
+                    return null;
+            }
         }
     }
 }
