@@ -7,11 +7,10 @@ namespace StxTool
 {
     class StxFile
     {
-        public List<Tuple<List<string>, uint>> StringTables = new List<Tuple<List<string>, uint>>();    // table, unknown
-
+        public List<(List<string> Strings, uint Unknown)> StringTables = new List<(List<string> Strings, uint Unknown)>();
         public void Load(string stxPath)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(File.ReadAllBytes(stxPath)));
+            using BinaryReader reader = new BinaryReader(new FileStream(stxPath, FileMode.Open));
 
             // Verify the magic value, it should be "STXT"
             string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
@@ -41,20 +40,20 @@ namespace StxTool
 
             uint tableOffset = reader.ReadUInt32();
 
-            var tableInfo = new List<Tuple<uint, uint>>();    // unknown, stringCount
+            var tableInfo = new List<(uint Unknown, uint StringCount)>();    // unknown, stringCount
             for (int t = 0; t < tableCount; ++t)
             {
-                tableInfo.Add(new Tuple<uint, uint>(reader.ReadUInt32(), reader.ReadUInt32()));
+                tableInfo.Add((reader.ReadUInt32(), reader.ReadUInt32()));
                 // Align to nearest 16-byte boundary?
                 reader.BaseStream.Seek(8, SeekOrigin.Current);
             }
 
             reader.BaseStream.Seek(tableOffset, SeekOrigin.Begin);
-            foreach (Tuple<uint, uint> table in tableInfo)
+            foreach (var table in tableInfo)
             {
                 List<string> strings = new List<string>();
 
-                for (int s = 0; s < table.Item2; ++s)
+                for (int s = 0; s < table.StringCount; ++s)
                 {
                     uint stringId = reader.ReadUInt32();
                     uint stringOffset = reader.ReadUInt32();
@@ -84,13 +83,65 @@ namespace StxTool
                     reader.BaseStream.Seek(returnPos, SeekOrigin.Begin);
                 }
 
-                StringTables.Add(new Tuple<List<string>, uint>(strings, table.Item1));
+                StringTables.Add((strings, table.Unknown));
             }
         }
 
         public void Save(string stxPath)
         {
+            using BinaryWriter writer = new BinaryWriter(new FileStream(stxPath, FileMode.Create));
 
+            writer.Write(new ASCIIEncoding().GetBytes("STXTJPLL"));
+
+            writer.Write(StringTables.Count);
+            writer.Write((int)0);   // tableOffset, to be written later
+
+            // Write table info
+            foreach (var table in StringTables)
+            {
+                writer.Write(table.Unknown);
+                writer.Write(table.Strings.Count);
+                writer.Write((ulong)0); // Pad to nearest 16-byte boundary
+            }
+
+            // Write tableOffset
+            long lastPos = writer.BaseStream.Position;
+            writer.BaseStream.Seek(0x0C, SeekOrigin.Begin);
+            writer.Write((uint)lastPos);
+            writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
+
+            // Write temporary padding for string IDs/offset
+            foreach (var table in StringTables)
+            {
+                writer.Write(new byte[(8 * table.Strings.Count)]);
+            }
+
+            // Write string data & corresponding ID/offset pair
+            long infoPairPos = lastPos;
+            foreach (var table in StringTables)
+            {
+                uint strId = 0;
+                foreach (string str in table.Strings)
+                {
+                    // Write ID/offset pair
+                    long strPos = writer.BaseStream.Position;
+                    writer.BaseStream.Seek(infoPairPos, SeekOrigin.Begin);
+                    writer.Write(strId++);
+                    writer.Write((uint)strPos);
+                    writer.BaseStream.Seek(strPos, SeekOrigin.Begin);
+
+                    // Increment infoPairPos 8 bytes to next entry position
+                    infoPairPos += 8;
+
+                    // Write string data
+                    byte[] strData = new UnicodeEncoding(false, false).GetBytes(str);
+                    writer.Write(strData);
+                    writer.Write((ushort)0);
+                }
+            }
+
+            writer.Flush(); // Just in case
+            writer.Close();
         }
     }
 }

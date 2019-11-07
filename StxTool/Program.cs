@@ -32,7 +32,7 @@ namespace StxTool
                     StxFile stx = new StxFile();
                     stx.Load(info.FullName);
 
-                    using StreamWriter writer = new StreamWriter(info.FullName.TrimEnd(info.Extension.ToCharArray()) + ".txt", false);
+                    using StreamWriter writer = new StreamWriter(info.FullName.Replace(info.Extension, "") + ".txt", false);
                     foreach (var tuple in stx.StringTables)
                     {
                         writer.WriteLine("{");
@@ -73,11 +73,11 @@ namespace StxTool
                                 table.Add(line.Replace(@"\n", "\n").Replace(@"\r", "\r"));
                             }
 
-                            stx.StringTables.Add(new Tuple<List<string>, uint>(table, 8));
+                            stx.StringTables.Add((table, 8));
                         }
                     }
 
-                    stx.Save(info.FullName.TrimEnd(info.Extension.ToCharArray()) + ".stx");
+                    stx.Save(info.FullName.Replace(info.Extension, "") + ".stx");
                 }
                 else
                 {
