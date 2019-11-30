@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SpcTool
+namespace V3Lib.Spc
 {
-    class SpcSubfile
+    public class SpcSubfile
     {
         public string Name;
         public byte[] Data;

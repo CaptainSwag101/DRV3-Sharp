@@ -6,4 +6,8 @@
     <StartupObject>SrdTool.Program</StartupObject>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\V3Lib\V3Lib.csproj" />
+  </ItemGroup>
+
 </Project>

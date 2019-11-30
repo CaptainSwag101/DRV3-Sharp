@@ -6,4 +6,8 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\V3Lib\V3Lib.csproj" />
+  </ItemGroup>
+
 </Project>

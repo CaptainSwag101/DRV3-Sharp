@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace SrdTool.BlockTypes
+namespace V3Lib.Srd.BlockTypes
 {
-    sealed class VtxBlock : Block
+    public sealed class VtxBlock : Block
     {
         public int Unknown10;
         public int Unknown14;
@@ -56,7 +56,7 @@ namespace SrdTool.BlockTypes
                 Utils.ReadPadding(ref reader);
 
                 BinaryReader subReader = new BinaryReader(new MemoryStream(subdata));
-                Children = SrdData.ReadBlocks(ref subReader);
+                Children = SrdFile.ReadBlocks(ref subReader);
                 subReader.Close();
             }
         }

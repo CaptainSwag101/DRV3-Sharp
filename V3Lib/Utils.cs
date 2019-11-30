@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SrdTool
+namespace V3Lib
 {
-    class Utils
+    public class Utils
     {
         // Annoyingly, there's no easy way to read a null-terminated ASCII string in .NET
         // (or maybe I'm just a moron), so we have to do it manually.

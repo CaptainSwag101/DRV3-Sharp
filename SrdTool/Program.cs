@@ -1,7 +1,8 @@
-﻿using SrdTool.BlockTypes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using V3Lib.Srd;
+using V3Lib.Srd.BlockTypes;
 
 namespace SrdTool
 {
@@ -26,7 +27,7 @@ namespace SrdTool
                 return;
             }
 
-            SrdData srd = new SrdData();
+            SrdFile srd = new SrdFile();
             srd.Load(args[0]);
 
             Console.WriteLine("\"{0}\" contains the following blocks:\n", info.FullName);

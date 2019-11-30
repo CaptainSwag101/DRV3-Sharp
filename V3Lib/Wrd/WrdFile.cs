@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace WrdEditor
+namespace V3Lib.Wrd
 {
-    class WrdFile
+    public class WrdFile
     {
         public List<(string Opcode, List<string> Arguments)> Commands = new List<(string Opcode, List<string> Arguments)>();    // Opcode, Arguments[]
 

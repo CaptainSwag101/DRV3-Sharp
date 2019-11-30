@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace WrdEditor
+namespace V3Lib.Wrd
 {
-    class WrdCommandHelper
+    public class WrdCommandHelper
     {
         public static string[] OpcodeNames = new string[]
         {
             "FLG",      // Set Flag
             "IFF",      // If Flag
-            "WAK",      // Wake? Work? (Seems to be used to configure game engine parameters)
+            "WAK",      // Work ("waaku") (Seems to be used to configure game engine parameters)
             "IFW",      // If WAK
             "SWI",      // Begin switch statement
             "CAS",      // Switch Case

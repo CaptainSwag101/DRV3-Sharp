@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace DatTool
+namespace V3Lib.Dat
 {
-    class DatFile
+    public class DatFile
     {
         public List<(string Name, string Type)> ValueInfo = new List<(string Name, string Type)>();
         public List<List<string>> StructEntries = new List<List<string>>();

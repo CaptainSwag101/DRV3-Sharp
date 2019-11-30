@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SrdTool.BlockTypes
+namespace V3Lib.Srd.BlockTypes
 {
-    abstract class Block
+    public abstract class Block
     {
         public int Unknown0C; // 1 for $CFH blocks, 0 for everything else
         public List<Block> Children = new List<Block>();

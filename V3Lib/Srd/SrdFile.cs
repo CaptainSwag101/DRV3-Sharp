@@ -1,14 +1,14 @@
-﻿using SrdTool.BlockTypes;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Text;
 //using Scarlet.Drawing;
+using V3Lib.Srd.BlockTypes;
 
-namespace SrdTool
+namespace V3Lib.Srd
 {
-    class SrdData
+    public class SrdFile
     {
         public string Filepath;
         public List<Block> Blocks;

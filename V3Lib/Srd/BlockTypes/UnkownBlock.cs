@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SrdTool.BlockTypes
+namespace V3Lib.Srd.BlockTypes
 {
-    sealed class UnknownBlock : Block
+    public sealed class UnknownBlock : Block
     {
         public string BlockType;
         public byte[] Data;
@@ -41,7 +41,7 @@ namespace SrdTool.BlockTypes
                 Utils.ReadPadding(ref reader);
 
                 BinaryReader subReader = new BinaryReader(new MemoryStream(subdata));
-                Children = SrdData.ReadBlocks(ref subReader);
+                Children = SrdFile.ReadBlocks(ref subReader);
                 subReader.Close();
             }
         }

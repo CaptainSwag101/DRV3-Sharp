@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace SpcTool
+namespace V3Lib.Spc
 {
-    class SpcFile
+    public class SpcFile
     {
         public List<SpcSubfile> Subfiles = new List<SpcSubfile>();
         private byte[] Unknown1;

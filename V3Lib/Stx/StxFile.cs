@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace StxTool
+namespace V3Lib.Stx
 {
-    class StxFile
+    public class StxFile
     {
         public List<(List<string> Strings, uint Unknown)> StringTables = new List<(List<string> Strings, uint Unknown)>();
         public void Load(string stxPath)
