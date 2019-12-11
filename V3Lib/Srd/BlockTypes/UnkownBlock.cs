@@ -17,17 +17,9 @@ namespace V3Lib.Srd.BlockTypes
             BlockType = type;
 
             // Switch from big-endian to little-endian
-            byte[] bDataLength = reader.ReadBytes(4);
-            Array.Reverse(bDataLength);
-            int dataLength = BitConverter.ToInt32(bDataLength);
-
-            byte[] bSubdataLength = reader.ReadBytes(4);
-            Array.Reverse(bSubdataLength);
-            int subdataLength = BitConverter.ToInt32(bSubdataLength);
-
-            byte[] bUnknown = reader.ReadBytes(4);
-            Array.Reverse(bUnknown);
-            Unknown0C = BitConverter.ToInt32(bUnknown);
+            int dataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+            int subdataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+            Unknown0C = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
 
             if (dataLength > 0)
             {
@@ -58,18 +50,14 @@ namespace V3Lib.Srd.BlockTypes
             }
             else
             {
-                byte[] bDataLength = BitConverter.GetBytes(Data.Length);
-                Array.Reverse(bDataLength);
-                writer.Write(bDataLength);
+                writer.Write(Utils.SwapEndian(BitConverter.GetBytes(Data.Length)));
             }
 
             // Write dummy subdata size to be replaced later
             writer.Write((int)0);
 
             // Write unknown
-            byte[] bUnknown = BitConverter.GetBytes(Unknown0C);
-            Array.Reverse(bUnknown);
-            writer.Write(bUnknown);
+            writer.Write(Utils.SwapEndian(BitConverter.GetBytes(Unknown0C)));
 
             // Write main block data
             if (Data != null)
@@ -94,9 +82,7 @@ namespace V3Lib.Srd.BlockTypes
             writer.BaseStream.Seek(-(subdataLength + Data.Length + 4), SeekOrigin.Current);
 
             // Write the true subdata size
-            byte[] bSubdataLength = BitConverter.GetBytes(subdataLength);
-            Array.Reverse(bSubdataLength);
-            writer.Write(bSubdataLength);
+            writer.Write(Utils.SwapEndian(BitConverter.GetBytes(subdataLength)));
 
             // Seek forwards to the end of subdata
             writer.BaseStream.Seek(Data.Length + subdataLength, SeekOrigin.Current);

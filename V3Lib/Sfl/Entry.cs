@@ -6,7 +6,7 @@ namespace V3Lib.Sfl
 {
     public abstract class Entry
     {
-        public uint Id { get; set; }
-        public ushort Unknown1 { get; set; }
+        public uint Id;
+        public ushort Unknown1;
     }
 }

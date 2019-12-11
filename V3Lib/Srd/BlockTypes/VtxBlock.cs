@@ -26,17 +26,9 @@ namespace V3Lib.Srd.BlockTypes
         public VtxBlock(ref BinaryReader reader)
         {
             // Switch from big-endian to little-endian
-            byte[] bDataLength = reader.ReadBytes(4);
-            Array.Reverse(bDataLength);
-            int dataLength = BitConverter.ToInt32(bDataLength);
-
-            byte[] bSubdataLength = reader.ReadBytes(4);
-            Array.Reverse(bSubdataLength);
-            int subdataLength = BitConverter.ToInt32(bSubdataLength);
-
-            byte[] bUnknown = reader.ReadBytes(4);
-            Array.Reverse(bUnknown);
-            Unknown0C = BitConverter.ToInt32(bUnknown);
+            int dataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+            int subdataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+            Unknown0C = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
 
             // Read and parse data
             if (dataLength > 0)

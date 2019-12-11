@@ -4,7 +4,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SflEditor"
-        xmlns:collections="clr-namespace:System.Collections.Generic;assembly=System.Runtime"
         xmlns:sfl="clr-namespace:V3Lib.Sfl;assembly=V3Lib"
         xmlns:sflEntryTypes="clr-namespace:V3Lib.Sfl.EntryTypes;assembly=V3Lib"
         mc:Ignorable="d"
@@ -24,35 +23,7 @@
         </Menu>
         <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,24,0,0" >
             <TreeView x:Name="sflTreeView">
-                <TreeView.Resources>
-                    <HierarchicalDataTemplate DataType="{x:Type sfl:Table}" ItemsSource="{Binding Entries}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Table "/>
-                            <TextBlock Text="{Binding Id}" />
-                            <TextBlock Text=" [" Foreground="Blue" />
-                            <TextBlock Text="{Binding Entries.Count}" Foreground="Blue" />
-                            <TextBlock Text="]" Foreground="Blue" />
-                        </StackPanel>
-                    </HierarchicalDataTemplate>
-                    <DataTemplate DataType="{x:Type sflEntryTypes:DataEntry}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Entry "/>
-                            <TextBlock Text="{Binding Id}" />
-                            <TextBlock Text=" (" Foreground="Green" />
-                            <TextBlock Text="{Binding Data.Length}" Foreground="Green" />
-                            <TextBlock Text=" bytes)" Foreground="Green" />
-                        </StackPanel>
-                    </DataTemplate>
-                    <HierarchicalDataTemplate DataType="{x:Type sflEntryTypes:TransformationEntry}" ItemsSource="{Binding Subentries}">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock Text="Entry "/>
-                            <TextBlock Text="{Binding Id}" />
-                            <TextBlock Text=" {" Foreground="Red" />
-                            <TextBlock Text="{Binding Subentries.Count}" Foreground="Red" />
-                            <TextBlock Text=" subentries}" Foreground="Red" />
-                        </StackPanel>
-                    </HierarchicalDataTemplate>
-                </TreeView.Resources>
+                
             </TreeView>
         </ScrollViewer>
     </Grid>

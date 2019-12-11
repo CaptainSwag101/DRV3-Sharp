@@ -6,6 +6,6 @@ namespace V3Lib.Sfl.EntryTypes
 {
     public class DataEntry : Entry
     {
-        public byte[] Data { get; set; }
+        public byte[] Data;
     }
 }

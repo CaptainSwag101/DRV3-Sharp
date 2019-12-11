@@ -56,5 +56,11 @@ namespace V3Lib
             x |= x >> 16;
             return x + 1;
         }
+
+        public static byte[] SwapEndian(byte[] bytes)
+        {
+            Array.Reverse(bytes);
+            return bytes;
+        }
     }
 }

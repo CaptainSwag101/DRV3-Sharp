@@ -10,13 +10,8 @@ namespace V3Lib.Sfl
 {
     public class SflFile
     {
-        public decimal Version { get; set; }
-        public List<Table> Tables { get; set; }
-
-        public SflFile()
-        {
-            Tables = new List<Table>();
-        }
+        public decimal Version;
+        public List<Table> Tables = new List<Table>();
 
         public void Load(string sflPath)
         {

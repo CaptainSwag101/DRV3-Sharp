@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -66,34 +67,7 @@ namespace SflEditor
             loadedSfl.Load(openFileDialog.FileName);
             loadedSflLocation = openFileDialog.FileName;
 
-            // Populate tree view
-            /*
-            foreach (Table table in loadedSfl.Tables)
-            {
-                TreeViewItem treeViewTable = new TreeViewItem();
-
-                StackPanel tablePanel = new StackPanel();
-                tablePanel.Name = $"table{loadedSfl.Tables.IndexOf(table)}";
-                tablePanel.Orientation = Orientation.Horizontal;
-                tablePanel.Children.Add(new TextBlock() { Text = $"Table {table.Id}" });
-                treeViewTable.Header = tablePanel;
-
-                foreach (Entry entry in table.Entries)
-                {
-                    StackPanel entryPanel = new StackPanel();
-                    entryPanel.Name = $"table{loadedSfl.Tables.IndexOf(table)}_entry{table.Entries.IndexOf(entry)}";
-
-                    if (entry is V3Lib.Sfl.EntryTypes.DataEntry)
-                    entryPanel.Children.Add(new TextBlock() { Text = $"Entry {entry.Id}" });
-
-                    treeViewTable.Items.Add(new TreeViewItem() { Header = entryPanel });
-                }
-
-                sflTreeView.Items.Add(treeViewTable);
-            }
-            */
-
-            sflTreeView.ItemsSource = loadedSfl.Tables;
+            populateTreeView();
         }
 
         private void SaveFileMenuItem_Click(object sender, RoutedEventArgs e)
@@ -104,6 +78,73 @@ namespace SflEditor
         private void SaveFileAsMenuItem_Click(object sender, RoutedEventArgs e)
         {
 
+        }
+
+        private void populateTreeView()
+        {
+            sflTreeView.Items.Clear();
+
+            // Populate tree view
+            foreach (Table table in loadedSfl.Tables)
+            {
+                TreeViewItem tviTable = new TreeViewItem();
+
+                StackPanel spTable = new StackPanel();
+                //spTable.Name = $"table{loadedSfl.Tables.IndexOf(table)}";
+                spTable.Orientation = Orientation.Horizontal;
+                spTable.Children.Add(new TextBlock() { Text = $"Table {table.Id}" });
+                tviTable.Header = spTable;
+
+                foreach (Entry entry in table.Entries)
+                {
+                    TreeViewItem tviEntry = new TreeViewItem();
+
+                    StackPanel spEntry = new StackPanel();
+                    //spEntry.Name = $"table{loadedSfl.Tables.IndexOf(table)}_entry{table.Entries.IndexOf(entry)}";
+                    spEntry.Orientation = Orientation.Horizontal;
+
+                    if (entry is V3Lib.Sfl.EntryTypes.DataEntry)
+                    {
+                        spEntry.Children.Add(new TextBlock() { Text = $"DataEntry {entry.Id}" });
+                        spEntry.Children.Add(new TextBlock() { Text = $" ({((V3Lib.Sfl.EntryTypes.DataEntry)entry).Data.Length} bytes)" });
+                    }
+                    else if (entry is V3Lib.Sfl.EntryTypes.TransformationEntry)
+                    {
+                        spEntry.Children.Add(new TextBlock() { Text = $"TransformationEntry {entry.Id}" });
+                        spEntry.Children.Add(new TextBlock() { Text = $" ({((V3Lib.Sfl.EntryTypes.TransformationEntry)entry).Subentries.Count} subentries)" });
+
+                        foreach (var subentry in ((V3Lib.Sfl.EntryTypes.TransformationEntry)entry).Subentries)
+                        {
+                            TreeViewItem tviSubentry = new TreeViewItem();
+
+                            StackPanel spSubentry = new StackPanel();
+                            //spSubentry.Name = $"table{loadedSfl.Tables.IndexOf(table)}_entry{table.Entries.IndexOf(entry)}_subentry{((V3Lib.Sfl.EntryTypes.TransformationEntry)entry).Subentries.IndexOf(subentry)}";
+                            spSubentry.Orientation = Orientation.Vertical;
+                            spSubentry.Children.Add(new TextBlock() { Text = $"Subentry {((V3Lib.Sfl.EntryTypes.TransformationEntry)entry).Subentries.IndexOf(subentry)}" });
+                            spSubentry.Children.Add(new TextBlock() { Text = $"Name: {subentry.Name}" });
+                            tviSubentry.Header = spSubentry;
+                            tviSubentry.IsExpanded = true;
+
+                            foreach (var command in subentry.Commands)
+                            {
+                                StackPanel spCommand = new StackPanel();
+                                spCommand.Orientation = Orientation.Vertical;
+
+                                spCommand.Children.Add(new StackPanel() { Children = { new TextBlock() { Text = "Opcode: " }, new TextBox() { Text = $"{command.Opcode}" } }, Orientation = Orientation.Horizontal });
+                                spCommand.Children.Add(new TextBlock() { Text = $"Data: {command.Data.Length} bytes" });
+                                tviSubentry.Items.Add(spCommand);
+                            }
+
+                            tviEntry.Items.Add(tviSubentry);
+                        }
+                    }
+
+                    tviEntry.Header = spEntry;
+                    tviTable.Items.Add(tviEntry);
+                }
+
+                sflTreeView.Items.Add(tviTable);
+            }
         }
     }
 }
