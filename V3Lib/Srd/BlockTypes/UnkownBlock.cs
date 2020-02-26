@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 
 namespace V3Lib.Srd.BlockTypes
 {
+    /// <summary>
+    /// Catch-all class for any block type that we don't have a dedicated class for
+    /// </summary>
     public sealed class UnknownBlock : Block
     {
         public string BlockType;

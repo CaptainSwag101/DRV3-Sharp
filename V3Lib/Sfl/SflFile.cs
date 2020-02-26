@@ -13,7 +13,7 @@ namespace V3Lib.Sfl
         public decimal Version;
         public List<Table> Tables = new List<Table>();
 
-        public void Load(string sflPath)
+        public bool Load(string sflPath, out string errorMessage)
         {
             using BinaryReader reader = new BinaryReader(new FileStream(sflPath, FileMode.Open));
 
@@ -21,8 +21,8 @@ namespace V3Lib.Sfl
             string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
             if (magic != "LLFS")
             {
-                //MessageBox.Show($"ERROR: Invalid SFL file, expected magic value \"LLFS\" but got \"{magic}\".");
-                return;
+                errorMessage = $"Invalid SFL file, expected magic value \"LLFS\" but got \"{magic}\".";
+                return false;
             }
 
             // Read SFL format version (should be 7.03 for DR1/DR2, and 7.11 for DRV3)
@@ -51,8 +51,8 @@ namespace V3Lib.Sfl
                     // If we've reached the end of the table before leaving this loop, something has gone wrong
                     if (reader.BaseStream.Position >= endPos)
                     {
-                        //MessageBox.Show($"ERROR: Read past the end of table {table.Id} while parsing entry {eNum} at position {reader.BaseStream.Position}.");
-                        return;
+                        errorMessage = $"Read past the end of table {table.Id} while parsing entry {eNum} at position {reader.BaseStream.Position}.";
+                        return false;
                     }
 
                     // Read entry data to be stored in proper type later
@@ -66,16 +66,20 @@ namespace V3Lib.Sfl
                     Entry entry;
                     if (table.Id < tableCount - 1)
                     {
-                        entry = new DataEntry();
-                        entry.Id = entryId;
-                        entry.Unknown1 = entryUnk1;
+                        entry = new DataEntry
+                        {
+                            Id = entryId,
+                            Unknown1 = entryUnk1
+                        };
                         ((DataEntry)entry).Data = reader.ReadBytes(entryLength);
                     }
                     else // Final two tables contain transformation entries
                     {
-                        entry = new TransformationEntry();
-                        entry.Id = entryId;
-                        entry.Unknown1 = entryUnk1;
+                        entry = new TransformationEntry
+                        {
+                            Id = entryId,
+                            Unknown1 = entryUnk1
+                        };
 
                         // Read subentries
                         for (uint sub = 0; sub < entrySubCount; ++sub)
@@ -86,22 +90,25 @@ namespace V3Lib.Sfl
                             string subentryName = new ASCIIEncoding().GetString(reader.ReadBytes(subentryHeaderLength - 8));
 
                             // Read transformation commands
-                            var commands = new List<(ushort Opcode, byte[] Data)>();
+                            var commands = new List<TransformationCommand>();
                             for (ushort commandNum = 0; commandNum < subentrySectionCount; ++commandNum)
                             {
-                                ushort commandOpcode = reader.ReadUInt16();
+                                TransformationCommand command;
+                                command.Opcode = reader.ReadUInt16();
                                 ushort commandDataLength = reader.ReadUInt16();
-                                byte[] commandData = reader.ReadBytes((int)commandDataLength);
-
-                                commands.Add((commandOpcode, commandData));
+                                command.Data = reader.ReadBytes((int)commandDataLength);
+                                commands.Add(command);
                             }
-                            ((TransformationEntry)entry).Subentries.Add((subentryName, commands));
+                            ((TransformationEntry)entry).Subentries.Add(new TransformationSubentry(subentryName, commands));
                         }
                     }
                     table.Entries.Add(entry);
                 }
                 Tables.Add(table);
             }
+
+            errorMessage = "";
+            return true;
         }
     }
 }

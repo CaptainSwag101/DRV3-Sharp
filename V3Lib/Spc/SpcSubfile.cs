@@ -80,11 +80,6 @@ namespace V3Lib.Spc
                         break;
 
                     foundIndex = window.LastIndexOf(seq, searchbackLength - 1);
-                    if (foundIndex != -1)
-                    {
-                        Console.Write("");
-                    }
-
                     if (foundIndex == -1)
                     {
                         if (foundLength > 1)

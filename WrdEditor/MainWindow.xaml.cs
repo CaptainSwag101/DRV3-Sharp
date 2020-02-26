@@ -80,9 +80,9 @@ namespace WrdEditor
             StringBuilder sb = new StringBuilder();
             foreach (var tuple in loadedWrd.Commands)
             {
-                sb.Append(tuple.Item1);
+                sb.Append(tuple.Opcode);
                 sb.Append('|');
-                sb.AppendJoin(", ", tuple.Item2);
+                sb.AppendJoin(", ", tuple.Arguments);
                 sb.Append('\n');
             }
             wrdCommandTextBox.Text = sb.ToString();
@@ -113,7 +113,8 @@ namespace WrdEditor
                     return;
                 }
 
-                string[] args = lines[lineNum].Substring(opcode.Length + 1, lines[lineNum].Length - (opcode.Length + 1)).Split(", ", StringSplitOptions.RemoveEmptyEntries);
+                //string[] args = lines[lineNum].Substring(opcode.Length + 1, lines[lineNum].Length - (opcode.Length + 1)).Split(", ", StringSplitOptions.RemoveEmptyEntries);
+                string[] args = lines[lineNum][(opcode.Length + 1)..].Split(", ", StringSplitOptions.RemoveEmptyEntries);
 
                 // Verify that we are using the correct argument types for each command
                 int opcodeId = Array.IndexOf(WrdCommandHelper.OpcodeNames, opcode);

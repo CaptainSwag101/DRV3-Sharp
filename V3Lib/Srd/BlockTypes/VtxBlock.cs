@@ -5,6 +5,7 @@ using System.Text;
 
 namespace V3Lib.Srd.BlockTypes
 {
+    // Holds information about vertex data and index lists
     public sealed class VtxBlock : Block
     {
         public int Unknown10;
