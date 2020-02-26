@@ -9,16 +9,18 @@ namespace AcbTool
     {
         static void Main(string[] args)
         {
+            if (args.Length != 2)
+            {
+                Console.WriteLine("ERROR: Invalid number of parameters. Please provide only an ACB and AWB path, respectively.");
+                return;
+            }
+
             AcbFile loadedAcb = new AcbFile();
-            string loadedAcbPath = @"D:\Games\Persona Modding\AcbEditor\bgm.acb";
-            //string loadedAcbPath = @"D:\Games\SteamLibrary\steamapps\common\Danganronpa V3 Killing Harmony\data\win\game_resident\game_resident\JINGLE.acb";
-            //string loadedAcbPath = @"D:\Games\SteamLibrary\steamapps\common\Danganronpa V3 Killing Harmony\data\win\game_resident\voice_resident_ENG\VOICE_ENG.acb";
+            string loadedAcbPath = args[0];
             loadedAcb.Load(loadedAcbPath);
 
             AwbFile loadedAwb = new AwbFile();
-            string loadedAwbPath = @"D:\Games\Persona Modding\AcbEditor\bgm.awb";
-            //string loadedAwbPath = @"D:\Games\SteamLibrary\steamapps\common\Danganronpa V3 Killing Harmony\data\win\sound\JINGLE.awb";
-            //string loadedAwbPath = @"D:\Games\SteamLibrary\steamapps\common\Danganronpa V3 Killing Harmony\data\win\sound\VOICE_ENG.awb";
+            string loadedAwbPath = args[1];
             loadedAwb.Load(loadedAwbPath);
 
             FileInfo info = new FileInfo(loadedAcbPath);
