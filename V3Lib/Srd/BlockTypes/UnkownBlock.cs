@@ -12,83 +12,61 @@ namespace V3Lib.Srd.BlockTypes
     /// </summary>
     public sealed class UnknownBlock : Block
     {
-        public string BlockType;
         public byte[] Data;
 
-        public UnknownBlock(ref BinaryReader reader, string type)
+        public UnknownBlock(ref BinaryReader reader) : base(ref reader)
         {
-            BlockType = type;
-
-            // Switch from big-endian to little-endian
-            int dataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-            int subdataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-            Unknown0C = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-
-            if (dataLength > 0)
+            if (DataLength > 0)
             {
-                Data = reader.ReadBytes(dataLength);
+                Data = reader.ReadBytes(DataLength);
                 Utils.ReadPadding(ref reader);
             }
 
-            if (subdataLength > 0)
+            if (SubdataLength > 0)
             {
-                byte[] subdata = reader.ReadBytes(subdataLength);
+                byte[] subdata = reader.ReadBytes(SubdataLength);
                 Utils.ReadPadding(ref reader);
 
                 BinaryReader subReader = new BinaryReader(new MemoryStream(subdata));
                 Children = SrdFile.ReadBlocks(ref subReader);
                 subReader.Close();
+                subReader.Dispose();
             }
         }
 
         public override void WriteData(ref BinaryWriter writer)
         {
-            // Write block type string
-            writer.Write(new ASCIIEncoding().GetBytes(BlockType));
+            DataLength = (Data != null) ? Data.Length : 0;
 
-            // Write data size
-            if (Data == null)
+            // In order to calculate the subdata size, we write our child block data
+            // into a temporary byte array and use its length as our subdata size.
+            MemoryStream subdataStream = new MemoryStream();
+            BinaryWriter subdataWriter = new BinaryWriter(subdataStream);
+            foreach (Block child in Children)
             {
-                writer.Write((int)0);
+                child.WriteData(ref subdataWriter);
             }
-            else
-            {
-                writer.Write(Utils.SwapEndian(BitConverter.GetBytes(Data.Length)));
-            }
+            SubdataLength = (int)subdataStream.Length;
 
-            // Write dummy subdata size to be replaced later
-            writer.Write((int)0);
+            // Call the base WriteData function to write the main block header
+            base.WriteData(ref writer);
 
-            // Write unknown
-            writer.Write(Utils.SwapEndian(BitConverter.GetBytes(Unknown0C)));
-
-            // Write main block data
+            // Write data
             if (Data != null)
             {
                 writer.Write(Data);
                 Utils.WritePadding(ref writer);
             }
 
-            // Mark the current position so we can calculate the subdata size for the block header
-            long lastPos = writer.BaseStream.Position;
-            // Write child block data
-            if (Children.Count > 0)
+            // Write subdata
+            if (subdataStream.Length > 0)
             {
-                foreach (Block child in Children)
-                {
-                    child.WriteData(ref writer);
-                }
+                writer.Write(subdataStream.ToArray());
             }
-            long subdataLength = writer.BaseStream.Position - lastPos;
 
-            // Seek backwards to the dummy subdata length we wrote earlier
-            writer.BaseStream.Seek(-(subdataLength + Data.Length + 4), SeekOrigin.Current);
-
-            // Write the true subdata size
-            writer.Write(Utils.SwapEndian(BitConverter.GetBytes(subdataLength)));
-
-            // Seek forwards to the end of subdata
-            writer.BaseStream.Seek(Data.Length + subdataLength, SeekOrigin.Current);
+            // Close and dispose temporary streams
+            subdataWriter.Close();
+            subdataWriter.Dispose();
         }
     }
 }

@@ -18,7 +18,7 @@ namespace V3Lib.Srd
             FileInfo info = new FileInfo(srdPath);
             if (!info.Exists)
             {
-                Console.WriteLine("ERROR: {0} does not exist.", info.FullName);
+                Console.WriteLine($"ERROR: {info.FullName} does not exist.");
                 return;
             }
 
@@ -45,10 +45,11 @@ namespace V3Lib.Srd
                 Block block;
 
                 string blockType = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+                reader.BaseStream.Seek(-4, SeekOrigin.Current);
                 switch (blockType)
                 {
                     default:
-                        block = new UnknownBlock(ref reader, blockType);
+                        block = new UnknownBlock(ref reader);
                         break;
                 }
                 blockList.Add(block);

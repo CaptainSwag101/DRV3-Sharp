@@ -24,17 +24,12 @@ namespace V3Lib.Srd.BlockTypes
         public List<byte> Unknown80;
 
 
-        public VtxBlock(ref BinaryReader reader)
+        public VtxBlock(ref BinaryReader reader) : base(ref reader)
         {
-            // Switch from big-endian to little-endian
-            int dataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-            int subdataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-            Unknown0C = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-
             // Read and parse data
-            if (dataLength > 0)
+            if (DataLength > 0)
             {
-                byte[] data = reader.ReadBytes(dataLength);
+                byte[] data = reader.ReadBytes(DataLength);
                 Utils.ReadPadding(ref reader);
 
                 Unknown10 = reader.ReadInt32();
@@ -43,9 +38,9 @@ namespace V3Lib.Srd.BlockTypes
                 Unknown1C = reader.ReadInt32();
             }
 
-            if (subdataLength > 0)
+            if (SubdataLength > 0)
             {
-                byte[] subdata = reader.ReadBytes(subdataLength);
+                byte[] subdata = reader.ReadBytes(SubdataLength);
                 Utils.ReadPadding(ref reader);
 
                 BinaryReader subReader = new BinaryReader(new MemoryStream(subdata));

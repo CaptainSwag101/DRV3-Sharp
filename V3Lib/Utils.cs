@@ -33,19 +33,19 @@ namespace V3Lib
             return result;
         }
 
-        public static void ReadPadding(ref BinaryReader reader)
+        public static void ReadPadding(ref BinaryReader reader, int padTo = 16)
         {
-            int paddingLength = 16 - (int)(reader.BaseStream.Position % 16);
-            if (paddingLength != 16)
+            int paddingLength = padTo - (int)(reader.BaseStream.Position % padTo);
+            if (paddingLength != padTo)
             {
                 reader.BaseStream.Seek(paddingLength, SeekOrigin.Current);
             }
         }
 
-        public static void WritePadding(ref BinaryWriter writer)
+        public static void WritePadding(ref BinaryWriter writer, int padTo = 16)
         {
-            int paddingLength = 16 - (int)(writer.BaseStream.Position % 16);
-            if (paddingLength != 16)
+            int paddingLength = padTo - (int)(writer.BaseStream.Position % padTo);
+            if (paddingLength != padTo)
             {
                 byte[] padding = new byte[paddingLength];
                 writer.Write(padding);

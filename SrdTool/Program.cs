@@ -42,13 +42,13 @@ namespace SrdTool
 
         static void PrintBlocks(List<Block> blockList)
         {
-            foreach (UnknownBlock block in blockList)
+            foreach (Block block in blockList)
             {
                 Console.Write(new string('\t', tabLevel));
                 Console.WriteLine($"Block Type: {block.BlockType}");
 
                 Console.Write(new string('\t', tabLevel + 1));
-                Console.WriteLine($"Data Length: {(block.Data != null ? block.Data.Length.ToString("n0") : "0")} bytes");
+                Console.WriteLine($"Data Length: {block.DataLength.ToString("n0")} bytes");
 
                 if (block.Children.Count > 0)
                 {
