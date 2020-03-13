@@ -9,15 +9,16 @@ namespace SrdTool
     class Program
     {
         static int tabLevel = 0;
+
         static void Main(string[] args)
         {
             Console.WriteLine("SRD Tool by CaptainSwag101\n" +
-                "Version 0.0.2, built on 2019-08-15\n");
+                "Version 0.0.2, built on 2020-03-12\n");
 
             FileInfo info = new FileInfo(args[0]);
             if (!info.Exists)
             {
-                Console.WriteLine("ERROR: \"{0}\" does not exist.", args[0]);
+                Console.WriteLine($"ERROR: \"{args[0]}\" does not exist.");
                 return;
             }
 
@@ -30,7 +31,7 @@ namespace SrdTool
             SrdFile srd = new SrdFile();
             srd.Load(args[0]);
 
-            Console.WriteLine("\"{0}\" contains the following blocks:\n", info.FullName);
+            Console.WriteLine($"\"{info.FullName}\" contains the following blocks:\n");
             PrintBlocks(srd.Blocks);
 
             Console.WriteLine("Press Enter to close...");
@@ -43,21 +44,25 @@ namespace SrdTool
         {
             foreach (UnknownBlock block in blockList)
             {
-                Console.WriteLine("{0}Block Type: {1}", new string('\t', tabLevel), block.BlockType);
-                Console.WriteLine("{0}Data Length: {1} bytes", new string('\t', tabLevel + 1), (block.Data != null ? block.Data.Length.ToString("n0") : "0"));
+                Console.Write(new string('\t', tabLevel));
+                Console.WriteLine($"Block Type: {block.BlockType}");
+
+                Console.Write(new string('\t', tabLevel + 1));
+                Console.WriteLine($"Data Length: {(block.Data != null ? block.Data.Length.ToString("n0") : "0")} bytes");
 
                 if (block.Children.Count > 0)
                 {
-                    Console.WriteLine("{0}Child blocks: {1}", new string('\t', tabLevel + 1), block.Children.Count.ToString("n0"));
+                    Console.Write(new string('\t', tabLevel + 1));
+                    Console.WriteLine($"Child blocks: {block.Children.Count.ToString("n0")}");
                     Console.WriteLine();
 
                     ++tabLevel;
                     PrintBlocks(block.Children);
                     --tabLevel;
                 }
-            }
 
-            Console.WriteLine();
+                Console.WriteLine();
+            }
         }
     }
 }
