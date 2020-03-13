@@ -127,7 +127,7 @@ namespace V3Lib.CriWare
 
                     BinaryReader stringReader = new BinaryReader(new MemoryStream(stringTableData));
                     stringReader.BaseStream.Seek(schemaInfo[c].ColumnNameOffset, SeekOrigin.Begin);
-                    columnName = Utils.ReadNullTerminatedString(ref stringReader);
+                    columnName = Utils.ReadNullTerminatedString(ref stringReader, new ASCIIEncoding());
                     
 
                     if (schemaInfo[c].ConstOffset >= 0)
@@ -154,7 +154,7 @@ namespace V3Lib.CriWare
                             case COLUMN_TYPE_STRING:
                                 int stringOffset = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
                                 stringReader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
-                                columnValue = Utils.ReadNullTerminatedString(ref stringReader);
+                                columnValue = Utils.ReadNullTerminatedString(ref stringReader, new ASCIIEncoding());
                                 break;
 
                             case COLUMN_TYPE_DATA:

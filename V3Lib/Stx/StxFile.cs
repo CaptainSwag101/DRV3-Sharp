@@ -10,7 +10,7 @@ namespace V3Lib.Stx
         public List<(List<string> Strings, uint Unknown)> StringTables = new List<(List<string> Strings, uint Unknown)>();
         public void Load(string stxPath)
         {
-            using BinaryReader reader = new BinaryReader(new FileStream(stxPath, FileMode.Open));
+            BinaryReader reader = new BinaryReader(new FileStream(stxPath, FileMode.Open));
 
             // Verify the magic value, it should be "STXT"
             string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
@@ -63,28 +63,16 @@ namespace V3Lib.Stx
                     reader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
 
                     // C# does not include a way to read null-terminated strings, so we'll have to do it manually.
-                    List<byte> charData = new List<byte>();
-                    while (true)
-                    {
-                        byte b1 = reader.ReadByte();
-                        byte b2 = reader.ReadByte();
-
-                        if (b1 == 0 && b2 == 0)
-                        {
-                            break;
-                        }
-
-                        charData.Add(b1);
-                        charData.Add(b2);
-                    }
-                    string str = new UnicodeEncoding(false, false).GetString(charData.ToArray());
-                    strings.Add(str);
+                    strings.Add(Utils.ReadNullTerminatedString(ref reader, new UnicodeEncoding(false, false)));
 
                     reader.BaseStream.Seek(returnPos, SeekOrigin.Begin);
                 }
 
                 StringTables.Add((strings, table.Unknown));
             }
+
+            reader.Close();
+            reader.Dispose();
         }
 
         public void Save(string stxPath)
