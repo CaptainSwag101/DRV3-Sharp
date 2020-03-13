@@ -33,7 +33,7 @@ namespace V3Lib
             return result;
         }
 
-        public static void ReadPadding(ref BinaryReader reader, int padTo = 16)
+        public static void ReadPadding(ref BinaryReader reader, int padTo)
         {
             int paddingLength = padTo - (int)(reader.BaseStream.Position % padTo);
             if (paddingLength != padTo)

@@ -14,59 +14,24 @@ namespace V3Lib.Srd.BlockTypes
     {
         public byte[] Data;
 
-        public UnknownBlock(ref BinaryReader reader) : base(ref reader)
+        public override void DeserializeData(byte[] rawData)
         {
-            if (DataLength > 0)
-            {
-                Data = reader.ReadBytes(DataLength);
-                Utils.ReadPadding(ref reader);
-            }
-
-            if (SubdataLength > 0)
-            {
-                byte[] subdata = reader.ReadBytes(SubdataLength);
-                Utils.ReadPadding(ref reader);
-
-                BinaryReader subReader = new BinaryReader(new MemoryStream(subdata));
-                Children = SrdFile.ReadBlocks(ref subReader);
-                subReader.Close();
-                subReader.Dispose();
-            }
+            if (rawData != null)
+                Data = rawData;
+            else
+                Data = new byte[0];
         }
 
-        public override void WriteData(ref BinaryWriter writer)
+        public override byte[] SerializeData()
         {
-            DataLength = (Data != null) ? Data.Length : 0;
+            return Data;
+        }
 
-            // In order to calculate the subdata size, we write our child block data
-            // into a temporary byte array and use its length as our subdata size.
-            MemoryStream subdataStream = new MemoryStream();
-            BinaryWriter subdataWriter = new BinaryWriter(subdataStream);
-            foreach (Block child in Children)
-            {
-                child.WriteData(ref subdataWriter);
-            }
-            SubdataLength = (int)subdataStream.Length;
-
-            // Call the base WriteData function to write the main block header
-            base.WriteData(ref writer);
-
-            // Write data
-            if (Data != null)
-            {
-                writer.Write(Data);
-                Utils.WritePadding(ref writer);
-            }
-
-            // Write subdata
-            if (subdataStream.Length > 0)
-            {
-                writer.Write(subdataStream.ToArray());
-            }
-
-            // Close and dispose temporary streams
-            subdataWriter.Close();
-            subdataWriter.Dispose();
+        public override string GetInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append($"Data Length: {Data.Length.ToString("n0")} bytes");
+            return sb.ToString();
         }
     }
 }

@@ -24,34 +24,20 @@ namespace V3Lib.Srd.BlockTypes
         public List<byte> Unknown80;
 
 
-        public VtxBlock(ref BinaryReader reader) : base(ref reader)
+        public override void DeserializeData(byte[] rawData)
         {
-            // Read and parse data
-            if (DataLength > 0)
-            {
-                byte[] data = reader.ReadBytes(DataLength);
-                Utils.ReadPadding(ref reader);
-
-                Unknown10 = reader.ReadInt32();
-                Unknown14 = reader.ReadInt32();
-                VertexCount = reader.ReadInt32();
-                Unknown1C = reader.ReadInt32();
-            }
-
-            if (SubdataLength > 0)
-            {
-                byte[] subdata = reader.ReadBytes(SubdataLength);
-                Utils.ReadPadding(ref reader);
-
-                BinaryReader subReader = new BinaryReader(new MemoryStream(subdata));
-                Children = SrdFile.ReadBlocks(ref subReader);
-                subReader.Close();
-            }
+            throw new NotImplementedException();
         }
 
-        public override void WriteData(ref BinaryWriter writer)
+        public override byte[] SerializeData()
         {
+            byte[] temp = new byte[1];
+            return temp;
+        }
 
+        public override string GetInfo()
+        {
+            throw new NotImplementedException();
         }
     }
 }

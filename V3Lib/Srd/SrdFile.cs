@@ -34,6 +34,7 @@ namespace V3Lib.Srd
             Blocks = ReadBlocks(ref reader);
 
             reader.Close();
+            reader.Dispose();
         }
 
         public static List<Block> ReadBlocks(ref BinaryReader reader)
@@ -45,16 +46,33 @@ namespace V3Lib.Srd
                 Block block;
 
                 string blockType = new ASCIIEncoding().GetString(reader.ReadBytes(4));
-                reader.BaseStream.Seek(-4, SeekOrigin.Current);
                 switch (blockType)
                 {
                     default:
-                        block = new UnknownBlock(ref reader);
+                        block = new UnknownBlock();
                         break;
                 }
-                blockList.Add(block);
 
-                Utils.ReadPadding(ref reader);
+                block.BlockType = blockType;
+                int dataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+                int subdataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+                block.Unknown0C = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+
+                
+                byte[] rawData;
+                rawData = reader.ReadBytes(dataLength);
+                Utils.ReadPadding(ref reader, 16);
+                block.DeserializeData(rawData);
+
+
+                byte[] rawSubdata;
+                rawSubdata = reader.ReadBytes(subdataLength);
+                Utils.ReadPadding(ref reader, 16);
+                block.DeserializeSubdata(rawSubdata);
+
+
+                blockList.Add(block);
+                Utils.ReadPadding(ref reader, 16);
             }
 
             return blockList;

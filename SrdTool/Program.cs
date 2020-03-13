@@ -13,7 +13,7 @@ namespace SrdTool
         static void Main(string[] args)
         {
             Console.WriteLine("SRD Tool by CaptainSwag101\n" +
-                "Version 0.0.2, built on 2020-03-12\n");
+                "Version 0.0.3, built on 2020-03-13\n");
 
             FileInfo info = new FileInfo(args[0]);
             if (!info.Exists)
@@ -47,9 +47,15 @@ namespace SrdTool
                 Console.Write(new string('\t', tabLevel));
                 Console.WriteLine($"Block Type: {block.BlockType}");
 
-                Console.Write(new string('\t', tabLevel + 1));
-                Console.WriteLine($"Data Length: {block.DataLength.ToString("n0")} bytes");
-
+                // Print block-specific info
+                string[] blockInfoLines = block.GetInfo().Split('\n');
+                foreach (string line in blockInfoLines)
+                {
+                    Console.Write(new string('\t', tabLevel + 1));
+                    Console.WriteLine(line);
+                }
+                
+                // Print child block info
                 if (block.Children.Count > 0)
                 {
                     Console.Write(new string('\t', tabLevel + 1));

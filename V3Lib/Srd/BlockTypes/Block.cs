@@ -10,34 +10,33 @@ namespace V3Lib.Srd.BlockTypes
     public abstract class Block
     {
         public string BlockType;
-        public int DataLength;
-        public int SubdataLength;
         public int Unknown0C; // 1 for $CFH blocks, 0 for everything else
         public List<Block> Children = new List<Block>();
 
-        public Block(ref BinaryReader reader)
-        {
-            BlockType = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+        public abstract void DeserializeData(byte[] rawData);
 
-            // Switch from big-endian to little-endian
-            DataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-            SubdataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-            Unknown0C = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+        public void DeserializeSubdata(byte[] rawSubdata)
+        {
+            BinaryReader subReader = new BinaryReader(new MemoryStream(rawSubdata));
+            this.Children = SrdFile.ReadBlocks(ref subReader);
+            subReader.Close();
+            subReader.Dispose();
         }
 
-        public virtual void WriteData(ref BinaryWriter writer)
+        public abstract byte[] SerializeData();
+
+        public byte[] SerializeSubdata()
         {
-            // Write block type string
-            writer.Write(new ASCIIEncoding().GetBytes(BlockType));
+            List<byte> subdata = new List<byte>();
+            foreach (Block child in Children)
+            {
+                byte[] childData = child.SerializeData();
+                subdata.AddRange(childData);
+            }
 
-            // Write data length
-            writer.Write(Utils.SwapEndian(BitConverter.GetBytes(DataLength)));
-
-            // Write subdata length
-            writer.Write(Utils.SwapEndian(BitConverter.GetBytes(SubdataLength)));
-
-            // Write unknown int
-            writer.Write(Utils.SwapEndian(BitConverter.GetBytes(Unknown0C)));
+            return subdata.ToArray();
         }
+
+        public abstract string GetInfo();
     }
 }
