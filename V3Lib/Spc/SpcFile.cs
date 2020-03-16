@@ -151,7 +151,7 @@ namespace V3Lib.Spc
             {
                 if (info.Name == Subfiles[s].Name)
                 {
-                    Console.WriteLine("The specified file already exists within the SPC archive. Overwrite? (Y/N)");
+                    Console.WriteLine("The specified file already exists within the SPC archive. Overwrite? (y/N)");
                     string yesNo = Console.ReadLine().ToLowerInvariant();
                     if (yesNo.StartsWith("y"))
                     {
