@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace V3Lib.Srd.BlockTypes
+namespace V3Lib.Srd
 {
     public abstract class Block
     {
@@ -14,16 +14,16 @@ namespace V3Lib.Srd.BlockTypes
         public List<Block> Children = new List<Block>();
 
         public abstract void DeserializeData(byte[] rawData);
+        public abstract byte[] SerializeData();
+        public abstract string GetInfo();
 
         public void DeserializeSubdata(byte[] rawSubdata)
         {
             BinaryReader subReader = new BinaryReader(new MemoryStream(rawSubdata));
-            this.Children = SrdFile.ReadBlocks(ref subReader);
+            Children = SrdFile.ReadBlocks(ref subReader);
             subReader.Close();
             subReader.Dispose();
         }
-
-        public abstract byte[] SerializeData();
 
         public byte[] SerializeSubdata()
         {
@@ -36,7 +36,5 @@ namespace V3Lib.Srd.BlockTypes
 
             return subdata.ToArray();
         }
-
-        public abstract string GetInfo();
     }
 }

@@ -15,6 +15,12 @@ namespace SrdTool
             Console.WriteLine("SRD Tool by CaptainSwag101\n" +
                 "Version 0.0.3, built on 2020-03-13\n");
 
+            if (args.Length != 1)
+            {
+                Console.WriteLine("Usage: SrdTool.exe <SRD file to analyze>");
+                return;
+            }
+
             FileInfo info = new FileInfo(args[0]);
             if (!info.Exists)
             {
@@ -34,8 +40,8 @@ namespace SrdTool
             Console.WriteLine($"\"{info.FullName}\" contains the following blocks:\n");
             PrintBlocks(srd.Blocks);
 
-            Console.WriteLine("Press Enter to close...");
-            Console.Read();
+            //Console.WriteLine("Press Enter to close...");
+            //Console.Read();
 
             //srd.Save(args[0] + ".test");
         }
@@ -45,10 +51,10 @@ namespace SrdTool
             foreach (Block block in blockList)
             {
                 Console.Write(new string('\t', tabLevel));
-                Console.WriteLine($"Block Type: {block.BlockType}");
+                Console.WriteLine($"Block Type: {block.BlockType}" + ((block is UnknownBlock) ? " (unknown block type)" : ""));    // Print an extra message for debugging if the block type is considered "unknown"
 
                 // Print block-specific info
-                string[] blockInfoLines = block.GetInfo().Split('\n');
+                string[] blockInfoLines = block.GetInfo().Split('\n', StringSplitOptions.RemoveEmptyEntries);
                 foreach (string line in blockInfoLines)
                 {
                     Console.Write(new string('\t', tabLevel + 1));
@@ -59,7 +65,7 @@ namespace SrdTool
                 if (block.Children.Count > 0)
                 {
                     Console.Write(new string('\t', tabLevel + 1));
-                    Console.WriteLine($"Child blocks: {block.Children.Count.ToString("n0")}");
+                    Console.WriteLine($"Child Blocks: {block.Children.Count.ToString("n0")}");
                     Console.WriteLine();
 
                     ++tabLevel;

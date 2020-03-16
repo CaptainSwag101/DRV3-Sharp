@@ -48,6 +48,30 @@ namespace V3Lib.Srd
                 string blockType = new ASCIIEncoding().GetString(reader.ReadBytes(4));
                 switch (blockType)
                 {
+                    case "$CFH":
+                        block = new CfhBlock();
+                        break;
+
+                    case "$RSF":
+                        block = new RsfBlock();
+                        break;
+
+                    case "$RSI":
+                        block = new RsiBlock();
+                        break;
+
+                    case "$TXI":
+                        block = new TxiBlock();
+                        break;
+
+                    case "$TXR":
+                        block = new TxrBlock();
+                        break;
+
+                    case "$CT0":
+                        block = new Ct0Block();
+                        break;
+
                     default:
                         block = new UnknownBlock();
                         break;

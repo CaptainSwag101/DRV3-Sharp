@@ -23,7 +23,6 @@ namespace V3Lib.Srd.BlockTypes
         public int Unknown7C;
         public List<byte> Unknown80;
 
-
         public override void DeserializeData(byte[] rawData)
         {
             throw new NotImplementedException();
@@ -31,8 +30,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override byte[] SerializeData()
         {
-            byte[] temp = new byte[1];
-            return temp;
+            throw new NotImplementedException();
         }
 
         public override string GetInfo()

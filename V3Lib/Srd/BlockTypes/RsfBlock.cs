@@ -5,14 +5,13 @@ using System.Text;
 
 namespace V3Lib.Srd.BlockTypes
 {
-    public sealed class TxiBlock : Block
+    public sealed class RsfBlock : Block
     {
         public int Unknown10;
         public int Unknown14;
         public int Unknown18;
         public int Unknown1C;
-        public int Unknown20;
-        public string TextureFilename;
+        public string FolderName;
 
         public override void DeserializeData(byte[] rawData)
         {
@@ -22,8 +21,8 @@ namespace V3Lib.Srd.BlockTypes
             Unknown14 = reader.ReadInt32();
             Unknown18 = reader.ReadInt32();
             Unknown1C = reader.ReadInt32();
-            Unknown20 = reader.ReadInt32();
-            TextureFilename = Utils.ReadNullTerminatedString(ref reader, new ASCIIEncoding());
+            FolderName = Utils.ReadNullTerminatedString(ref reader, new ASCIIEncoding());
+
 
             reader.Close();
             reader.Dispose();
@@ -38,15 +37,14 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(Unknown14);
             writer.Write(Unknown18);
             writer.Write(Unknown1C);
-            writer.Write(Unknown20);
-            writer.Write(new ASCIIEncoding().GetBytes(TextureFilename));
+            writer.Write(new ASCIIEncoding().GetBytes(FolderName));
 
             byte[] result = ms.ToArray();
             writer.Close();
             writer.Dispose();
             return result;
         }
-
+        
         public override string GetInfo()
         {
             StringBuilder sb = new StringBuilder();
@@ -54,8 +52,7 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append($"Unknown14: {Unknown14}\n");
             sb.Append($"Unknown18: {Unknown18}\n");
             sb.Append($"Unknown1C: {Unknown1C}\n");
-            sb.Append($"Unknown20: {Unknown20}\n");
-            sb.Append($"Texture Filename: {TextureFilename}");
+            sb.Append($"FolderName: {FolderName}");
             return sb.ToString();
         }
     }
