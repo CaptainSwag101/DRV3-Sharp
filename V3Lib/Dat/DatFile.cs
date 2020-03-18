@@ -94,7 +94,7 @@ namespace V3Lib.Dat
                     if (b1 == 0 && b2 == 0)
                         break;
 
-                    stringData.AddRange(new byte[] { b2, b1 });
+                    stringData.AddRange(new byte[] { b1, b2 });
                 }
                 utf16Strings.Add(new UnicodeEncoding(false, false).GetString(stringData.ToArray()));
             }

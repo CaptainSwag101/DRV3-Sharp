@@ -56,7 +56,7 @@ namespace DatTool
                     }
                     output.AppendJoin('\n', structEntries);
 
-                    using StreamWriter writer = new StreamWriter(info.FullName.TrimEnd(info.Extension.ToCharArray()) + ".csv", false);
+                    using StreamWriter writer = new StreamWriter(info.FullName.TrimEnd(info.Extension.ToCharArray()) + ".csv", false, new UnicodeEncoding(false, false));
                     writer.Write(output.ToString());
                 }
                 else if (info.Extension.ToLowerInvariant() == ".csv")
