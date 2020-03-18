@@ -64,7 +64,7 @@ namespace DatTool
                     // Convert CSV to DAT
                     DatFile dat = new DatFile();
 
-                    using StreamReader reader = new StreamReader(info.FullName);
+                    using StreamReader reader = new StreamReader(info.FullName, new UnicodeEncoding(false, false));
 
                     // First line is header
                     string[] header = reader.ReadLine().Split(',');
