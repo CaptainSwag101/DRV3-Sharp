@@ -12,7 +12,7 @@ namespace DatTool
         static void Main(string[] args)
         {
             Console.WriteLine("DAT Tool by CaptainSwag101\n" +
-                "Version 0.0.1, built on 2019-10-22\n");
+                "Version 0.0.2, built on 2020-03-18\n");
 
             if (args.Length == 0)
             {
