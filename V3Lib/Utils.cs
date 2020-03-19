@@ -42,7 +42,7 @@ namespace V3Lib
             }
         }
 
-        public static void WritePadding(ref BinaryWriter writer, int padTo = 16)
+        public static void WritePadding(ref BinaryWriter writer, int padTo)
         {
             int paddingLength = padTo - (int)(writer.BaseStream.Position % padTo);
             if (paddingLength != padTo)

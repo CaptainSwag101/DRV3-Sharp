@@ -169,7 +169,7 @@ namespace V3Lib.Dat
 
         public void Save(string datPath)
         {
-            using BinaryWriter writer = new BinaryWriter(new FileStream(datPath, FileMode.Create));
+            BinaryWriter writer = new BinaryWriter(new FileStream(datPath, FileMode.Create));
 
             // Write header (some values may need to be filled in later)
             writer.Write(StructEntries.Count);     // structCount
@@ -221,7 +221,7 @@ namespace V3Lib.Dat
             }
 
             // Write padding to nearest 16-byte boundary
-            writer.Write(new byte[(0x10 - (writer.BaseStream.Position % 0x10)) % 0x10]);
+            Utils.WritePadding(ref writer, 16);
 
             // Process struct values according to their type
             List<byte> structData = new List<byte>();
@@ -257,6 +257,7 @@ namespace V3Lib.Dat
 
             writer.Flush(); // Just in case
             writer.Close();
+            writer.Dispose();
         }
 
         private byte[] valueStringToBytes(string value, string valueType, int valueRow, int valueColumn, ref List<string> utf8Strings, ref List<string> utf16Strings)
@@ -364,7 +365,7 @@ namespace V3Lib.Dat
                     return BitConverter.GetBytes((ushort)found16);
 
                 default:
-                    Console.WriteLine($"ERROR: The data type in column {valueRow} is invalid.");
+                    Console.WriteLine($"ERROR: The data type \"{valueType}\" in column {valueRow} is invalid.");
                     return null;
             }
         }
