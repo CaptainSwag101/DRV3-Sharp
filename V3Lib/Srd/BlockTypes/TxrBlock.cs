@@ -59,15 +59,17 @@ namespace V3Lib.Srd.BlockTypes
         public override string GetInfo()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append($"Unknown10: {Unknown10}\n");
+
+            sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
             sb.Append($"Swizzle: {Swizzle}\n");
             sb.Append($"Display Width: {DisplayWidth}\n");
             sb.Append($"Display Height: {DisplayHeight}\n");
             sb.Append($"Scanline: {Scanline}\n");
             sb.Append($"Format: {Format}\n");
-            sb.Append($"Unknown1D: {Unknown1D}\n");
+            sb.Append($"{nameof(Unknown1D)}: {Unknown1D}\n");
             sb.Append($"Palette: {Palette}\n");
             sb.Append($"Palette ID: {PaletteId}");
+
             return sb.ToString();
         }
     }

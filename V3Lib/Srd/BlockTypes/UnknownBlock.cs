@@ -30,7 +30,9 @@ namespace V3Lib.Srd.BlockTypes
         public override string GetInfo()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append($"Data Length: {Data.Length.ToString("n0")} bytes");
+
+            sb.Append($"Data Length: {Data.Length:n0} bytes");
+
             return sb.ToString();
         }
     }

@@ -69,15 +69,17 @@ namespace V3Lib.Srd.BlockTypes
         public override string GetInfo()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append($"Unknown10: {Unknown10}\n");
-            sb.Append($"Unknown11: {Unknown11}\n");
-            sb.Append($"Unknown12: {Unknown12}\n");
-            sb.Append($"Unknown13: {Unknown13}\n");
-            sb.Append($"Unknown14: {Unknown14}\n");
-            sb.Append($"Unknown18: {Unknown18}\n");
-            sb.Append($"Resource Data Length: {ResourceData.Length.ToString("n0")} bytes\n");
+
+            sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
+            sb.Append($"{nameof(Unknown11)}: {Unknown11}\n");
+            sb.Append($"{nameof(Unknown12)}: {Unknown12}\n");
+            sb.Append($"{nameof(Unknown13)}: {Unknown13}\n");
+            sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
+            sb.Append($"{nameof(Unknown18)}: {Unknown18}\n");
+            sb.Append($"Resource Data Length: {ResourceData.Length:n0} bytes\n");
             sb.Append($"Resource Strings: ");
             sb.AppendJoin(", ", ResourceStrings);
+
             return sb.ToString();
         }
     }

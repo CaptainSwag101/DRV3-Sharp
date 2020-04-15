@@ -68,6 +68,10 @@ namespace V3Lib.Srd
                         block = new TxrBlock();
                         break;
 
+                    case "$VTX":
+                        block = new VtxBlock();
+                        break;
+
                     case "$CT0":
                         block = new Ct0Block();
                         break;
@@ -83,14 +87,12 @@ namespace V3Lib.Srd
                 block.Unknown0C = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
 
                 
-                byte[] rawData;
-                rawData = reader.ReadBytes(dataLength);
+                byte[] rawData = reader.ReadBytes(dataLength);
                 Utils.ReadPadding(ref reader, 16);
                 block.DeserializeData(rawData);
 
 
-                byte[] rawSubdata;
-                rawSubdata = reader.ReadBytes(subdataLength);
+                byte[] rawSubdata = reader.ReadBytes(subdataLength);
                 Utils.ReadPadding(ref reader, 16);
                 block.DeserializeSubdata(rawSubdata);
 

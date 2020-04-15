@@ -10,7 +10,7 @@ namespace V3Lib.Srd
     public abstract class Block
     {
         public string BlockType;
-        public int Unknown0C; // 1 for $CFH blocks, 0 for everything else
+        public int Unknown0C;   // 1 for $CFH blocks, 0 for everything else
         public List<Block> Children = new List<Block>();
 
         public abstract void DeserializeData(byte[] rawData);
@@ -20,7 +20,9 @@ namespace V3Lib.Srd
         public void DeserializeSubdata(byte[] rawSubdata)
         {
             BinaryReader subReader = new BinaryReader(new MemoryStream(rawSubdata));
+
             Children = SrdFile.ReadBlocks(ref subReader);
+
             subReader.Close();
             subReader.Dispose();
         }

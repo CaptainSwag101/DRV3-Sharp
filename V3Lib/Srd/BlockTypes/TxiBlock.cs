@@ -50,12 +50,14 @@ namespace V3Lib.Srd.BlockTypes
         public override string GetInfo()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append($"Unknown10: {Unknown10}\n");
-            sb.Append($"Unknown14: {Unknown14}\n");
-            sb.Append($"Unknown18: {Unknown18}\n");
-            sb.Append($"Unknown1C: {Unknown1C}\n");
-            sb.Append($"Unknown20: {Unknown20}\n");
+
+            sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
+            sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
+            sb.Append($"{nameof(Unknown18)}: {Unknown18}\n");
+            sb.Append($"{nameof(Unknown1C)}: {Unknown1C}\n");
+            sb.Append($"{nameof(Unknown20)}: {Unknown20}\n");
             sb.Append($"Texture Filename: {TextureFilename}");
+
             return sb.ToString();
         }
     }
