@@ -60,7 +60,6 @@ namespace SrdTool
                         break;
 
                     case "extract_models":
-                        // TODO
                         // Export the vertices and faces as an ASCII OBJ
                         StringBuilder sb = new StringBuilder();
                         int totalVerticesProcessed = 0;
@@ -77,31 +76,78 @@ namespace SrdTool
                                 // Extract vertex data
                                 List<float[]> vertexList = new List<float[]>();
                                 List<float[]> normalList = new List<float[]>();
+                                List<float[]> texmapList = new List<float[]>();
                                 uint vertexBlockOffset = rsiReader.ReadUInt32() & 0x1FFFFFFF;    // NOTE: This might need to be 0x00FFFFFF
                                 uint vertexBlockLength = rsiReader.ReadUInt32();
 
-                                if ((vertexBlockLength / vtx.VertexSubBlockList[0].Size) != vtx.VertexCount)
+                                int combinedSize = 0;
+                                foreach (var subBlock in vtx.VertexSubBlockList)
                                 {
-                                    Console.WriteLine("WARNING: Vertex Block Length and expected vertex count are misaligned.");
+                                    combinedSize += subBlock.Size;
+                                }
+                                if ((vertexBlockLength / combinedSize) != vtx.VertexCount)
+                                {
+                                    Console.WriteLine("WARNING: Total vertex block length and expected vertex count are misaligned.");
                                 }
 
-                                srdiReader.BaseStream.Seek(vertexBlockOffset, SeekOrigin.Begin);
-                                while (srdiReader.BaseStream.Position < (vertexBlockOffset + vertexBlockLength))
+                                for (int sbNum = 0; sbNum < vtx.VertexSubBlockCount; ++sbNum)
                                 {
-                                    float[] vertex = new float[3];
-                                    vertex[0] = srdiReader.ReadSingle() * -1.0f;    // X
-                                    vertex[1] = srdiReader.ReadSingle();    // Y
-                                    vertex[2] = srdiReader.ReadSingle();    // Z
-                                    vertexList.Add(vertex);
+                                    srdiReader.BaseStream.Seek(vertexBlockOffset + vtx.VertexSubBlockList[sbNum].Offset, SeekOrigin.Begin);
+                                    for (int vNum = 0; vNum < vtx.VertexCount; ++vNum)
+                                    {
+                                        int bytesRead = 0;
+                                        switch (sbNum)
+                                        {
+                                            case 0: // Vertex/Normal data (and Texture UV for boneless models)
+                                                {
+                                                    float[] vertex = new float[3];
+                                                    vertex[0] = srdiReader.ReadSingle() * -1.0f;    // X
+                                                    vertex[1] = srdiReader.ReadSingle();            // Y
+                                                    vertex[2] = srdiReader.ReadSingle();            // Z
+                                                    vertexList.Add(vertex);
 
-                                    float[] normal = new float[3];
-                                    normal[0] = srdiReader.ReadSingle() * -1.0f;    // X
-                                    normal[1] = srdiReader.ReadSingle();    // Y
-                                    normal[2] = srdiReader.ReadSingle();    // Z
-                                    normalList.Add(normal);
+                                                    float[] normal = new float[3];
+                                                    normal[0] = srdiReader.ReadSingle() * -1.0f;    // X
+                                                    normal[1] = srdiReader.ReadSingle();            // Y
+                                                    normal[2] = srdiReader.ReadSingle();            // Z
+                                                    normalList.Add(normal);
 
-                                    // Skip data we don't currently use, though I may add support for this data later
-                                    srdiReader.BaseStream.Seek(vtx.VertexSubBlockList[0].Size - 24, SeekOrigin.Current);
+                                                    if (vtx.VertexSubBlockCount == 1)
+                                                    {
+                                                        float[] texmap = new float[3];
+                                                        texmap[0] = srdiReader.ReadSingle();        // U
+                                                        texmap[1] = srdiReader.ReadSingle() * -1.0f;// V
+                                                        texmapList.Add(texmap);
+                                                        bytesRead = 32;
+                                                    }
+                                                    else
+                                                    {
+                                                        bytesRead = 24;
+                                                    }
+
+                                                    break;
+                                                }
+
+                                            case 1: // Bone weights
+                                                {
+                                                    
+                                                }
+                                                break;
+
+                                            case 2: // Texture UVs (only for models with bones)
+                                                {
+                                                    float[] texmap = new float[3];
+                                                    texmap[0] = srdiReader.ReadSingle();            // U
+                                                    texmap[1] = srdiReader.ReadSingle() * -1.0f;    // V
+                                                    texmapList.Add(texmap);
+                                                    bytesRead = 8;
+                                                    break;
+                                                }
+                                        }
+
+                                        // Skip data we don't currently use, though I may add support for this data later
+                                        srdiReader.BaseStream.Seek(vtx.VertexSubBlockList[sbNum].Size - bytesRead, SeekOrigin.Current);
+                                    }
                                 }
 
                                 // Skip RSI reader to the next 16-byte aligned offset
@@ -143,15 +189,25 @@ namespace SrdTool
                                 }
                                 sb.Append("\n");
                                 
-                                foreach (float[] n in normalList)
+                                foreach (float[] vn in normalList)
                                 {
-                                    sb.Append($"vn {n[0]} {n[1]} {n[2]}\n");
+                                    sb.Append($"vn {vn[0]} {vn[1]} {vn[2]}\n");
                                 }
                                 sb.Append("\n");
+
                                 
+                                foreach (float[] vt in texmapList)
+                                {
+                                    sb.Append($"vt {vt[0]} {vt[1]}\n");
+                                }
+                                sb.Append("\n");
+
                                 foreach (ushort[] f in faceList)
                                 {
-                                    sb.Append($"f {f[0] + totalVerticesProcessed + 1}//{f[0] + totalVerticesProcessed + 1} {f[1] + totalVerticesProcessed + 1}//{f[1] + totalVerticesProcessed + 1} {f[2] + totalVerticesProcessed + 1}//{f[2] + totalVerticesProcessed + 1}\n");
+                                    int faceIndex1 = f[0] + totalVerticesProcessed + 1;
+                                    int faceIndex2 = f[1] + totalVerticesProcessed + 1;
+                                    int faceIndex3 = f[2] + totalVerticesProcessed + 1;
+                                    sb.Append($"f {faceIndex1}/{faceIndex1}/{faceIndex1} {faceIndex2}/{faceIndex2}/{faceIndex2} {faceIndex3}/{faceIndex3}/{faceIndex3}\n");
                                 }
 
                                 totalVerticesProcessed += verticesProcessed;

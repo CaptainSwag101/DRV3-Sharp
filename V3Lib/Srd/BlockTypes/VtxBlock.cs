@@ -2,43 +2,49 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using SystemHalf;
 
 namespace V3Lib.Srd.BlockTypes
 {
     // Holds information about vertex data and index lists
     public sealed class VtxBlock : Block
     {
-        public int HalfFloatTripletCount;   // Likely the number of half-float triplets in the "float list"
+        public int FloatTripletCount;   // Likely the number of half-float triplets in the "float list"
         public short Unknown14;
         public short Unknown16;
         public int VertexCount;
         public short Unknown1C;
         public byte Unknown1E;
         public byte VertexSubBlockCount;
-        public short BindBoneListOffset;
+        public short BindBoneRootOffset;
         public short VertexSubBlockListOffset;
-        public short HalfFloatListOffset;
+        public short FloatListOffset;
+        public short BindBoneListOffset;
+        public short Unknown28;
         public List<short> UnknownShortList;
         public List<(int Offset, int Size)> VertexSubBlockList;
         public short BindBoneRoot;
         public List<short> BindBoneList;
-        public List<float> UnknownHalfFloatList;
+        public List<(float f1, float f2, float f3)> UnknownFloatList;
         public List<string> UnknownStringList;
 
         public override void DeserializeData(byte[] rawData)
         {
             BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
-            HalfFloatTripletCount = reader.ReadInt32();
+            FloatTripletCount = reader.ReadInt32();
             Unknown14 = reader.ReadInt16();
             Unknown16 = reader.ReadInt16();
             VertexCount = reader.ReadInt32();
             Unknown1C = reader.ReadInt16();
             Unknown1E = reader.ReadByte();
             VertexSubBlockCount = reader.ReadByte();
-            BindBoneListOffset = reader.ReadInt16();
+            BindBoneRootOffset = reader.ReadInt16();
             VertexSubBlockListOffset = reader.ReadInt16();
-            HalfFloatListOffset = reader.ReadInt16();
+            FloatListOffset = reader.ReadInt16();
+            BindBoneListOffset = reader.ReadInt16();
+            Unknown28 = reader.ReadInt16();
+            Utils.ReadPadding(ref reader, 16);
 
             // Read unknown list of shorts
             UnknownShortList = new List<short>();
@@ -56,23 +62,30 @@ namespace V3Lib.Srd.BlockTypes
             }
 
             // Read bone list
-            reader.BaseStream.Seek(BindBoneListOffset, SeekOrigin.Begin);
-            BindBoneList = new List<short>();
+            reader.BaseStream.Seek(BindBoneRootOffset, SeekOrigin.Begin);
             BindBoneRoot = reader.ReadInt16();
-            while (reader.BaseStream.Position < HalfFloatListOffset)
+
+            if (BindBoneListOffset != 0)
+                reader.BaseStream.Seek(BindBoneListOffset, SeekOrigin.Begin);
+
+            BindBoneList = new List<short>();
+            while (reader.BaseStream.Position < FloatListOffset)
             {
                 BindBoneList.Add(reader.ReadInt16());
             }
 
             // Read unknown list of floats
-            reader.BaseStream.Seek(HalfFloatListOffset, SeekOrigin.Begin);
-            UnknownHalfFloatList = new List<float>();
-            for (int h = 0; h < HalfFloatTripletCount; ++h)
+            reader.BaseStream.Seek(FloatListOffset, SeekOrigin.Begin);
+            UnknownFloatList = new List<(float f1, float f2, float f3)>();
+            for (int h = 0; h < FloatTripletCount / 2; ++h)
             {
-                // TODO: THIS IS WRONG, READ AS HALF FLOATS AND NOT INT16
-                UnknownHalfFloatList.Add((float)reader.ReadInt16());
-                UnknownHalfFloatList.Add((float)reader.ReadInt16());
-                UnknownHalfFloatList.Add((float)reader.ReadInt16());
+                var floatTriplet = (
+                    reader.ReadSingle(),
+                    reader.ReadSingle(),
+                    reader.ReadSingle()
+                    );
+
+                UnknownFloatList.Add(floatTriplet);
             }
 
             // Read unknown string data
@@ -95,27 +108,33 @@ namespace V3Lib.Srd.BlockTypes
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.Append($"{nameof(HalfFloatTripletCount)}: {HalfFloatTripletCount}\n");
+            sb.Append($"{nameof(FloatTripletCount)}: {FloatTripletCount}\n");
             sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
             sb.Append($"{nameof(Unknown16)}: {Unknown16}\n");
             sb.Append($"{nameof(VertexCount)}: {VertexCount}\n");
             sb.Append($"{nameof(Unknown1C)}: {Unknown1C}\n");
             sb.Append($"{nameof(Unknown1E)}: {Unknown1E}\n");
-            sb.Append($"{nameof(BindBoneListOffset)}: {BindBoneListOffset}\n");
+            sb.Append($"{nameof(BindBoneRootOffset)}: {BindBoneRootOffset}\n");
             sb.Append($"{nameof(VertexSubBlockListOffset)}: {VertexSubBlockListOffset}\n");
-            sb.Append($"{nameof(HalfFloatListOffset)}: {HalfFloatListOffset}\n");
+            sb.Append($"{nameof(FloatListOffset)}: {FloatListOffset}\n");
+            sb.Append($"{nameof(BindBoneListOffset)}: {BindBoneListOffset}\n");
+            sb.Append($"{nameof(Unknown28)}: {Unknown28}\n");
 
             sb.Append($"{nameof(UnknownShortList)}: ");
             sb.AppendJoin(", ", UnknownShortList);
             sb.Append('\n');
 
-            //sb.Append($"{nameof(UnknownDataSize)}: {UnknownDataSize}\n");
-            //sb.Append($"{nameof(VertexDataSize)}: {VertexDataSize}\n");
+            sb.Append($"{nameof(VertexSubBlockList)}: ");
+            sb.AppendJoin(", ", VertexSubBlockList);
+            sb.Append('\n');
+            
             sb.Append($"{nameof(BindBoneRoot)}: {BindBoneRoot}\n");
-            sb.Append($"{nameof(BindBoneListOffset)}: {BindBoneListOffset}\n");
+            sb.Append($"{nameof(BindBoneList)}: ");
+            sb.AppendJoin(", ", BindBoneList);
+            sb.Append('\n');
 
-            sb.Append($"{nameof(UnknownHalfFloatList)}: ");
-            sb.AppendJoin(", ", UnknownHalfFloatList);
+            sb.Append($"{nameof(UnknownFloatList)}: ");
+            sb.AppendJoin(", ", UnknownFloatList);
             sb.Append('\n');
 
             sb.Append($"{nameof(UnknownStringList)}: ");
