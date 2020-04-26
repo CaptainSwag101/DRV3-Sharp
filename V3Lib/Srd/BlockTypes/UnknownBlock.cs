@@ -19,7 +19,7 @@ namespace V3Lib.Srd.BlockTypes
             if (rawData != null)
                 Data = rawData;
             else
-                Data = new byte[0];
+                Data = Array.Empty<byte>();
         }
 
         public override byte[] SerializeData()

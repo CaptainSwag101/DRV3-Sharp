@@ -5,6 +5,19 @@ using System.Text;
 
 namespace V3Lib.Srd.BlockTypes
 {
+    public enum TextureFormat
+    {
+        Unknown     = 0x00,
+        ARGB8888    = 0x01,
+        BGR565      = 0x02,
+        BGRA4444    = 0x05,
+        DXT1RGB     = 0x0F,
+        DXT5        = 0x11,
+        BC5         = 0x14,
+        BC4         = 0x16,
+        BPTC        = 0x1C
+    }
+
     public sealed class TxrBlock : Block
     {
         public int Unknown10;
@@ -12,7 +25,7 @@ namespace V3Lib.Srd.BlockTypes
         public ushort DisplayWidth;
         public ushort DisplayHeight;
         public ushort Scanline;
-        public byte Format;
+        public TextureFormat Format;
         public byte Unknown1D;
         public byte Palette;
         public byte PaletteId;
@@ -26,7 +39,7 @@ namespace V3Lib.Srd.BlockTypes
             DisplayWidth = reader.ReadUInt16();
             DisplayHeight = reader.ReadUInt16();
             Scanline = reader.ReadUInt16();
-            Format = reader.ReadByte();
+            Format = (TextureFormat)reader.ReadByte();
             Unknown1D = reader.ReadByte();
             Palette = reader.ReadByte();
             PaletteId = reader.ReadByte();
@@ -45,7 +58,7 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(DisplayWidth);
             writer.Write(DisplayHeight);
             writer.Write(Scanline);
-            writer.Write(Format);
+            writer.Write((int)Format);
             writer.Write(Unknown1D);
             writer.Write(Palette);
             writer.Write(PaletteId);

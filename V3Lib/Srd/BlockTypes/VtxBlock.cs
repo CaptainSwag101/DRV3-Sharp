@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using SystemHalf;
 
 namespace V3Lib.Srd.BlockTypes
 {
@@ -129,6 +128,7 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append('\n');
             
             sb.Append($"{nameof(BindBoneRoot)}: {BindBoneRoot}\n");
+
             sb.Append($"{nameof(BindBoneList)}: ");
             sb.AppendJoin(", ", BindBoneList);
             sb.Append('\n');

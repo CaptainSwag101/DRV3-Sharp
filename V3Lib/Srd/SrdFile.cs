@@ -15,19 +15,6 @@ namespace V3Lib.Srd
 
         public void Load(string srdPath)
         {
-            FileInfo info = new FileInfo(srdPath);
-            if (!info.Exists)
-            {
-                Console.WriteLine($"ERROR: {info.FullName} does not exist.");
-                return;
-            }
-
-            if (info.Extension.ToLower() != ".srd")
-            {
-                Console.WriteLine("ERROR: Input file does not have the \".srd\" extension.");
-                return;
-            }
-
             Filepath = srdPath;
 
             BinaryReader reader = new BinaryReader(new FileStream(srdPath, FileMode.Open));
@@ -43,43 +30,18 @@ namespace V3Lib.Srd
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                Block block;
-
                 string blockType = new ASCIIEncoding().GetString(reader.ReadBytes(4));
-                switch (blockType)
+                Block block = blockType switch
                 {
-                    case "$CFH":
-                        block = new CfhBlock();
-                        break;
-
-                    case "$RSF":
-                        block = new RsfBlock();
-                        break;
-
-                    case "$RSI":
-                        block = new RsiBlock();
-                        break;
-
-                    case "$TXI":
-                        block = new TxiBlock();
-                        break;
-
-                    case "$TXR":
-                        block = new TxrBlock();
-                        break;
-
-                    case "$VTX":
-                        block = new VtxBlock();
-                        break;
-
-                    case "$CT0":
-                        block = new Ct0Block();
-                        break;
-
-                    default:
-                        block = new UnknownBlock();
-                        break;
-                }
+                    "$CFH" => new CfhBlock(),
+                    "$RSF" => new RsfBlock(),
+                    "$RSI" => new RsiBlock(),
+                    "$TXI" => new TxiBlock(),
+                    "$TXR" => new TxrBlock(),
+                    "$VTX" => new VtxBlock(),
+                    "$CT0" => new Ct0Block(),
+                    _ => new UnknownBlock(),
+                };
 
                 block.BlockType = blockType;
                 int dataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
@@ -88,13 +50,13 @@ namespace V3Lib.Srd
 
                 
                 byte[] rawData = reader.ReadBytes(dataLength);
-                Utils.ReadPadding(ref reader, 16);
                 block.DeserializeData(rawData);
+                Utils.ReadPadding(ref reader, 16);
 
 
                 byte[] rawSubdata = reader.ReadBytes(subdataLength);
-                Utils.ReadPadding(ref reader, 16);
                 block.DeserializeSubdata(rawSubdata);
+                Utils.ReadPadding(ref reader, 16);
 
 
                 blockList.Add(block);
