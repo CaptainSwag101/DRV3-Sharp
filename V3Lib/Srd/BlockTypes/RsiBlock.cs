@@ -5,12 +5,40 @@ using System.Text;
 
 namespace V3Lib.Srd.BlockTypes
 {
-    public struct ResourceInfo
+    public struct ResourceInfo : IEquatable<ResourceInfo>
     {
         public int Offset;
         public int Length;
         public int Unknown08;
         public int Unknown0C;
+
+        public override bool Equals(object obj)
+        {
+            return obj is ResourceInfo info && Equals(info);
+        }
+
+        public bool Equals(ResourceInfo other)
+        {
+            return Offset == other.Offset &&
+                   Length == other.Length &&
+                   Unknown08 == other.Unknown08 &&
+                   Unknown0C == other.Unknown0C;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Offset, Length, Unknown08, Unknown0C);
+        }
+
+        public static bool operator ==(ResourceInfo left, ResourceInfo right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(ResourceInfo left, ResourceInfo right)
+        {
+            return !(left == right);
+        }
     }
 
     public sealed class RsiBlock : Block

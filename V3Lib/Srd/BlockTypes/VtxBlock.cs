@@ -107,16 +107,11 @@ namespace V3Lib.Srd.BlockTypes
         {
             StringBuilder sb = new StringBuilder();
 
-            sb.Append($"{nameof(FloatTripletCount)}: {FloatTripletCount}\n");
             sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
             sb.Append($"{nameof(Unknown16)}: {Unknown16}\n");
             sb.Append($"{nameof(VertexCount)}: {VertexCount}\n");
             sb.Append($"{nameof(Unknown1C)}: {Unknown1C}\n");
             sb.Append($"{nameof(Unknown1E)}: {Unknown1E}\n");
-            sb.Append($"{nameof(BindBoneRootOffset)}: {BindBoneRootOffset}\n");
-            sb.Append($"{nameof(VertexSubBlockListOffset)}: {VertexSubBlockListOffset}\n");
-            sb.Append($"{nameof(FloatListOffset)}: {FloatListOffset}\n");
-            sb.Append($"{nameof(BindBoneListOffset)}: {BindBoneListOffset}\n");
             sb.Append($"{nameof(Unknown28)}: {Unknown28}\n");
 
             sb.Append($"{nameof(UnknownShortList)}: ");
