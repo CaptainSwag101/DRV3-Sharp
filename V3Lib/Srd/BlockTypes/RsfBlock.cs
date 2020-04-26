@@ -21,7 +21,7 @@ namespace V3Lib.Srd.BlockTypes
             Unknown14 = reader.ReadInt32();
             Unknown18 = reader.ReadInt32();
             Unknown1C = reader.ReadInt32();
-            FolderName = Utils.ReadNullTerminatedString(ref reader, new ASCIIEncoding());
+            FolderName = Utils.ReadNullTerminatedString(ref reader, Encoding.ASCII);
 
 
             reader.Close();
@@ -37,7 +37,7 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(Unknown14);
             writer.Write(Unknown18);
             writer.Write(Unknown1C);
-            writer.Write(new ASCIIEncoding().GetBytes(FolderName));
+            writer.Write(Encoding.ASCII.GetBytes(FolderName));
 
             byte[] result = ms.ToArray();
             writer.Close();

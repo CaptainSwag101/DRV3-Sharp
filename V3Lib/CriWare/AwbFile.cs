@@ -13,7 +13,7 @@ namespace V3Lib.CriWare
         {
             using BinaryReader reader = new BinaryReader(new FileStream(awbPath, FileMode.Open));
 
-            string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+            string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (magic != "AFS2")
             {
                 //Invalid AWB file

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Linq;
+using System.Text;
 using V3Lib.CriWare;
 
 namespace AcbTool
@@ -27,12 +28,16 @@ namespace AcbTool
             string outputDir = info.DirectoryName + Path.DirectorySeparatorChar + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
             Directory.CreateDirectory(outputDir);
 
+            //FileStream fs = new FileStream(info.FullName + "_cuenames.txt", FileMode.Create);
             foreach (var cue in loadedAcb.Cues)
             {
-                if (loadedAwb.AudioData.ContainsKey((short)loadedAcb.Cues.Keys.ToList().IndexOf(cue.Key)))
+                //fs.Write(Encoding.ASCII.GetBytes(cue.Value + '\n'));
+
+                short audioKey = (short)loadedAcb.Cues.Keys.ToList().IndexOf(cue.Key);
+                if (loadedAwb.AudioData.ContainsKey(audioKey))
                 {
                     string outFilePath = outputDir + Path.DirectorySeparatorChar + cue.Value;
-                    byte[] audioData = loadedAwb.AudioData[(short)loadedAcb.Cues.Keys.ToList().IndexOf(cue.Key)];
+                    byte[] audioData = loadedAwb.AudioData[audioKey];
 
                     // Guess output file extension
                     if (audioData[0] == 0x80 && audioData[1] == 0x00)
@@ -44,6 +49,9 @@ namespace AcbTool
                     audioFile.Write(audioData);
                 }
             }
+            //fs.Flush();
+            //fs.Close();
+            //fs.Dispose();
         }
     }
 }

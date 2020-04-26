@@ -18,7 +18,7 @@ namespace V3Lib.Sfl
             using BinaryReader reader = new BinaryReader(new FileStream(sflPath, FileMode.Open));
 
             // Read magic value
-            string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+            string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (magic != "LLFS")
             {
                 errorMessage = $"Invalid SFL file, expected magic value \"LLFS\" but got \"{magic}\".";
@@ -87,7 +87,7 @@ namespace V3Lib.Sfl
                             int subentryDataLength = reader.ReadInt32();
                             ushort subentryHeaderLength = reader.ReadUInt16();
                             ushort subentrySectionCount = reader.ReadUInt16();
-                            string subentryName = new ASCIIEncoding().GetString(reader.ReadBytes(subentryHeaderLength - 8));
+                            string subentryName = Encoding.ASCII.GetString(reader.ReadBytes(subentryHeaderLength - 8));
 
                             // Read transformation commands
                             var commands = new List<TransformationCommand>();

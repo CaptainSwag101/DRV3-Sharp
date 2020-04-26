@@ -36,7 +36,7 @@ namespace V3Lib.CriWare
         {
             using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
-            string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+            string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (magic != "@UTF")
             {
                 // Not a valid UTF table
@@ -127,7 +127,7 @@ namespace V3Lib.CriWare
 
                     BinaryReader stringReader = new BinaryReader(new MemoryStream(stringTableData));
                     stringReader.BaseStream.Seek(schemaInfo[c].ColumnNameOffset, SeekOrigin.Begin);
-                    columnName = Utils.ReadNullTerminatedString(ref stringReader, new ASCIIEncoding());
+                    columnName = Utils.ReadNullTerminatedString(ref stringReader, Encoding.ASCII);
                     
 
                     if (schemaInfo[c].ConstOffset >= 0)
@@ -154,7 +154,7 @@ namespace V3Lib.CriWare
                             case COLUMN_TYPE_STRING:
                                 int stringOffset = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
                                 stringReader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
-                                columnValue = Utils.ReadNullTerminatedString(ref stringReader, new ASCIIEncoding());
+                                columnValue = Utils.ReadNullTerminatedString(ref stringReader, Encoding.ASCII);
                                 break;
 
                             case COLUMN_TYPE_DATA:

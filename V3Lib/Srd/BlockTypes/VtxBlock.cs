@@ -91,7 +91,7 @@ namespace V3Lib.Srd.BlockTypes
             UnknownStringList = new List<string>();
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                UnknownStringList.Add(Utils.ReadNullTerminatedString(ref reader, new ASCIIEncoding()));
+                UnknownStringList.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.ASCII));
             }
 
             reader.Close();

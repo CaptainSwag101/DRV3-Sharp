@@ -16,7 +16,7 @@ namespace V3Lib.Spc
             using BinaryReader reader = new BinaryReader(new FileStream(spcPath, FileMode.Open));
 
             // Verify the magic value, it could either be "CPS." (the one we want) or "$CFH" (most files in the console version, unusable for now)
-            string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+            string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (magic == "$CFH")
             {
                 // decompress using SRD method first, then resume
@@ -36,7 +36,7 @@ namespace V3Lib.Spc
             reader.BaseStream.Seek(0x10, SeekOrigin.Current);
 
             // Verify file table header, should be "Root"
-            if (!new ASCIIEncoding().GetString(reader.ReadBytes(4)).Equals("Root"))
+            if (!Encoding.ASCII.GetString(reader.ReadBytes(4)).Equals("Root"))
             {
                 Console.WriteLine("ERROR: Not a valid SPC file, table header invalid.");
                 return;
@@ -57,7 +57,7 @@ namespace V3Lib.Spc
                 int nameLength = reader.ReadInt32();
                 reader.BaseStream.Seek(0x10, SeekOrigin.Current);
                 int namePadding = (0x10 - (nameLength + 1) % 0x10) % 0x10;
-                subfile.Name = new ASCIIEncoding().GetString(reader.ReadBytes(nameLength));
+                subfile.Name = Encoding.ASCII.GetString(reader.ReadBytes(nameLength));
                 reader.BaseStream.Seek(namePadding + 1, SeekOrigin.Current);    // Discard the null terminator
 
                 int dataPadding = (0x10 - subfile.CurrentSize % 0x10) % 0x10;
@@ -72,12 +72,12 @@ namespace V3Lib.Spc
         {
             using BinaryWriter writer = new BinaryWriter(new FileStream(spcPath, FileMode.Create));
 
-            writer.Write(new ASCIIEncoding().GetBytes("CPS."));
+            writer.Write(Encoding.ASCII.GetBytes("CPS."));
             writer.Write(Unknown1);
             writer.Write(Subfiles.Count);
             writer.Write(Unknown2);
             writer.Write(new byte[0x10]);
-            writer.Write(new ASCIIEncoding().GetBytes("Root"));
+            writer.Write(Encoding.ASCII.GetBytes("Root"));
             writer.Write(new byte[0x0C]);
 
             foreach (SpcSubfile subfile in Subfiles)
@@ -90,7 +90,7 @@ namespace V3Lib.Spc
                 writer.Write(new byte[0x10]);
 
                 int namePadding = (0x10 - (subfile.Name.Length + 1) % 0x10) % 0x10;
-                writer.Write(new ASCIIEncoding().GetBytes(subfile.Name));
+                writer.Write(Encoding.ASCII.GetBytes(subfile.Name));
                 writer.Write(new byte[namePadding + 1]);
 
                 int dataPadding = (0x10 - subfile.CurrentSize % 0x10) % 0x10;

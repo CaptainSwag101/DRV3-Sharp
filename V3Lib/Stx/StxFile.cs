@@ -8,12 +8,13 @@ namespace V3Lib.Stx
     public class StxFile
     {
         public List<(List<string> Strings, uint Unknown)> StringTables = new List<(List<string> Strings, uint Unknown)>();
+        
         public void Load(string stxPath)
         {
             BinaryReader reader = new BinaryReader(new FileStream(stxPath, FileMode.Open));
 
             // Verify the magic value, it should be "STXT"
-            string magic = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+            string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (magic != "STXT")
             {
                 Console.WriteLine($"ERROR: Invalid magic value, expected \"STXT\" but got \"{magic}\".");
@@ -21,7 +22,7 @@ namespace V3Lib.Stx
             }
 
             // Verify the language value, it should be "JPLL"
-            string lang = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+            string lang = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (lang != "JPLL")
             {
                 Console.WriteLine($"ERROR: Invalid language string, expected \"JPLL\" but got \"{lang}\".");
@@ -63,7 +64,7 @@ namespace V3Lib.Stx
                     reader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
 
                     // C# does not include a way to read null-terminated strings, so we'll have to do it manually.
-                    strings.Add(Utils.ReadNullTerminatedString(ref reader, new UnicodeEncoding(false, false)));
+                    strings.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.Unicode));
 
                     reader.BaseStream.Seek(returnPos, SeekOrigin.Begin);
                 }
@@ -79,7 +80,7 @@ namespace V3Lib.Stx
         {
             using BinaryWriter writer = new BinaryWriter(new FileStream(stxPath, FileMode.Create));
 
-            writer.Write(new ASCIIEncoding().GetBytes("STXTJPLL"));
+            writer.Write(Encoding.ASCII.GetBytes("STXTJPLL"));
 
             writer.Write(StringTables.Count);
             writer.Write((int)0);   // tableOffset, to be written later
@@ -122,7 +123,7 @@ namespace V3Lib.Stx
                     infoPairPos += 8;
 
                     // Write string data
-                    byte[] strData = new UnicodeEncoding(false, false).GetBytes(str);
+                    byte[] strData = Encoding.Unicode.GetBytes(str);
                     writer.Write(strData);
                     writer.Write((ushort)0);
                 }
@@ -130,6 +131,7 @@ namespace V3Lib.Stx
 
             writer.Flush(); // Just in case
             writer.Close();
+            writer.Dispose();
         }
     }
 }

@@ -23,7 +23,7 @@ namespace V3Lib.Srd.BlockTypes
             Unknown18 = reader.ReadInt32();
             Unknown1C = reader.ReadInt32();
             Unknown20 = reader.ReadInt32();
-            TextureFilename = Utils.ReadNullTerminatedString(ref reader, new ASCIIEncoding());
+            TextureFilename = Utils.ReadNullTerminatedString(ref reader, Encoding.ASCII);
 
             reader.Close();
             reader.Dispose();
@@ -39,7 +39,7 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(Unknown18);
             writer.Write(Unknown1C);
             writer.Write(Unknown20);
-            writer.Write(new ASCIIEncoding().GetBytes(TextureFilename));
+            writer.Write(Encoding.ASCII.GetBytes(TextureFilename));
 
             byte[] result = ms.ToArray();
             writer.Close();

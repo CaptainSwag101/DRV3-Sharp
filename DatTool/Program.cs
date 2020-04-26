@@ -9,6 +9,8 @@ namespace DatTool
 {
     class Program
     {
+        const string UsageString = "Usage: DatTool.exe <one or more DAT or CSV files to convert>";
+
         static void Main(string[] args)
         {
             Console.WriteLine("DAT Tool by CaptainSwag101\n" +
@@ -17,6 +19,7 @@ namespace DatTool
             if (args.Length == 0)
             {
                 Console.WriteLine("ERROR: No targets specified.");
+                Console.WriteLine(UsageString);
                 return;
             }
 
@@ -56,7 +59,7 @@ namespace DatTool
                     }
                     output.AppendJoin('\n', structEntries);
 
-                    using StreamWriter writer = new StreamWriter(info.FullName.TrimEnd(info.Extension.ToCharArray()) + ".csv", false, new UnicodeEncoding(false, false));
+                    using StreamWriter writer = new StreamWriter(info.FullName.TrimEnd(info.Extension.ToCharArray()) + ".csv", false, Encoding.Unicode);
                     writer.Write(output.ToString());
                 }
                 else if (info.Extension.ToLowerInvariant() == ".csv")
@@ -64,7 +67,7 @@ namespace DatTool
                     // Convert CSV to DAT
                     DatFile dat = new DatFile();
 
-                    using StreamReader reader = new StreamReader(info.FullName, new UnicodeEncoding(false, false));
+                    using StreamReader reader = new StreamReader(info.FullName, Encoding.Unicode);
 
                     // First line is header
                     string[] header = reader.ReadLine().Split(',');

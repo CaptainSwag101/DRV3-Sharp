@@ -30,7 +30,7 @@ namespace V3Lib.Srd
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                string blockType = new ASCIIEncoding().GetString(reader.ReadBytes(4));
+                string blockType = Encoding.ASCII.GetString(reader.ReadBytes(4));
                 Block block = blockType switch
                 {
                     "$CFH" => new CfhBlock(),

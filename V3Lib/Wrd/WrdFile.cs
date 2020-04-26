@@ -247,7 +247,7 @@ namespace V3Lib.Wrd
             foreach (string labelName in labelNames)
             {
                 writer.Write((byte)labelName.Length);                   // string length
-                writer.Write(new ASCIIEncoding().GetBytes(labelName));  // string
+                writer.Write(Encoding.ASCII.GetBytes(labelName));  // string
                 writer.Write((byte)0);                                  // null terminator
             }
 
@@ -259,7 +259,7 @@ namespace V3Lib.Wrd
             foreach (string parameter in parameters)
             {
                 writer.Write((byte)parameter.Length);                   // string length
-                writer.Write(new ASCIIEncoding().GetBytes(parameter));  // string
+                writer.Write(Encoding.ASCII.GetBytes(parameter));  // string
                 writer.Write((byte)0);                                  // null terminator
             }
 

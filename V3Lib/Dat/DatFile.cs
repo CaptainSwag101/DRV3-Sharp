@@ -40,11 +40,11 @@ namespace V3Lib.Dat
 
                     if (s == 0)
                     {
-                        valueName = new UTF8Encoding().GetString(stringData.ToArray());
+                        valueName = Encoding.UTF8.GetString(stringData.ToArray());
                     }
                     else
                     {
-                        valueType = new UTF8Encoding().GetString(stringData.ToArray());
+                        valueType = Encoding.UTF8.GetString(stringData.ToArray());
                     }
                 }
                 ValueInfo.Add((valueName, valueType));
@@ -79,7 +79,7 @@ namespace V3Lib.Dat
 
                     stringData.Add(b);
                 }
-                utf8Strings.Add(new UTF8Encoding().GetString(stringData.ToArray()));
+                utf8Strings.Add(Encoding.UTF8.GetString(stringData.ToArray()));
             }
 
             List<string> utf16Strings = new List<string>();
@@ -96,7 +96,7 @@ namespace V3Lib.Dat
 
                     stringData.AddRange(new byte[] { b1, b2 });
                 }
-                utf16Strings.Add(new UnicodeEncoding(false, false).GetString(stringData.ToArray()));
+                utf16Strings.Add(Encoding.Unicode.GetString(stringData.ToArray()));
             }
 
             // Return to the position we saved earlier
@@ -213,9 +213,9 @@ namespace V3Lib.Dat
             // Write value info
             foreach (var value in ValueInfo)
             {
-                writer.Write(new UTF8Encoding().GetBytes(value.Name.Trim()));
+                writer.Write(Encoding.UTF8.GetBytes(value.Name.Trim()));
                 writer.Write((byte)0);
-                writer.Write(new UTF8Encoding().GetBytes(value.Type.Trim()));
+                writer.Write(Encoding.UTF8.GetBytes(value.Type.Trim()));
                 writer.Write((byte)0);
                 writer.Write((ushort)1);    // value terminator?
             }
@@ -245,13 +245,13 @@ namespace V3Lib.Dat
             // Write utf8 and utf16 strings, if present
             foreach (string str in utf8Strings)
             {
-                writer.Write(new UTF8Encoding().GetBytes(str));
+                writer.Write(Encoding.UTF8.GetBytes(str));
                 writer.Write((byte)0);
             }
 
             foreach (string str in utf16Strings)
             {
-                writer.Write(new UnicodeEncoding(false, false).GetBytes(str));
+                writer.Write(Encoding.Unicode.GetBytes(str));
                 writer.Write((byte)0);
             }
 
