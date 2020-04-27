@@ -90,7 +90,7 @@ namespace V3Lib.Srd.BlockTypes
             ResourceStringList = new List<string>();
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                ResourceStringList.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.ASCII));
+                ResourceStringList.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.GetEncoding("shift-jis")));
             }
 
             reader.Close();
@@ -124,7 +124,7 @@ namespace V3Lib.Srd.BlockTypes
 
             foreach (string resourceString in ResourceStringList)
             {
-                writer.Write(Encoding.ASCII.GetBytes(resourceString));
+                writer.Write(Encoding.GetEncoding("shift-jis").GetBytes(resourceString));
             }
 
             byte[] result = ms.ToArray();

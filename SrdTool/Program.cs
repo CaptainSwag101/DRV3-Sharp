@@ -6,6 +6,8 @@ using System.Text;
 using V3Lib;
 using V3Lib.Srd;
 using V3Lib.Srd.BlockTypes;
+using SixLabors.ImageSharp;
+using Scarlet.Drawing;
 
 namespace SrdTool
 {
@@ -22,6 +24,9 @@ namespace SrdTool
         {
             Console.WriteLine("SRD Tool by CaptainSwag101\n" +
                 "Version 0.0.4, built on 2020-04-26\n");
+
+            // Setup text encoding so we can use Shift-JIS text later on
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             if (args.Length != 1)
             {
@@ -48,17 +53,17 @@ namespace SrdTool
 
             // Search for linked files like SRDI and SRDV and load them
             Srdi = Array.Empty<byte>();
-            if (File.Exists(SrdName + 'i'))
+            SrdiName = SrdName.Remove(SrdName.LastIndexOf(new FileInfo(SrdName).Extension)) + ".srdi";
+            if (File.Exists(SrdiName))
             {
-                Srdi = File.ReadAllBytes(SrdName + 'i');
-                SrdiName = SrdName + 'i';
+                Srdi = File.ReadAllBytes(SrdiName);
             }
 
             Srdv = Array.Empty<byte>();
-            if (File.Exists(SrdName + 'v'))
+            SrdvName = SrdName.Remove(SrdName.LastIndexOf(new FileInfo(SrdName).Extension)) + ".srdv";
+            if (File.Exists(SrdvName))
             { 
-                Srdv = File.ReadAllBytes(args[0] + 'v');
-                SrdvName = SrdName + 'v';
+                Srdv = File.ReadAllBytes(SrdvName);
             }
 
             // Process commands
@@ -265,7 +270,9 @@ namespace SrdTool
                         int faceIndex1 = f[0] + totalVerticesProcessed + 1;
                         int faceIndex2 = f[1] + totalVerticesProcessed + 1;
                         int faceIndex3 = f[2] + totalVerticesProcessed + 1;
-                        sb.Append($"f {faceIndex1}/{faceIndex1}/{faceIndex1} {faceIndex2}/{faceIndex2}/{faceIndex2} {faceIndex3}/{faceIndex3}/{faceIndex3}\n");
+                        sb.Append($"f {faceIndex1}/{faceIndex1}/{faceIndex1} "
+                            + $"{faceIndex2}/{faceIndex2}/{faceIndex2} "
+                            + $"{faceIndex3}/{faceIndex3}/{faceIndex3}\n");
                     }
 
                     totalVerticesProcessed += verticesProcessed;
@@ -295,7 +302,7 @@ namespace SrdTool
             }
             else
             {
-                textureSrdName = SrdName.Remove(SrdName.LastIndexOf(".srd")) + "_texture.srd";
+                textureSrdName = SrdName.Remove(SrdName.LastIndexOf(new FileInfo(SrdName).Extension)) + "_texture.srd";
                 Console.WriteLine($"There is no accompanying SRDV file for this SRD file, searching for a dedicated \"{new FileInfo(textureSrdName).Name}\"...");
 
                 if (!File.Exists(textureSrdName))
@@ -328,7 +335,7 @@ namespace SrdTool
 
                         using (BinaryReader srdvReader = new BinaryReader(new FileStream(textureSrdvName, FileMode.Open)))
                         {
-                            srdvReader.BaseStream.Seek(rsi.ResourceInfoList[m].Offset, SeekOrigin.Begin);
+                            srdvReader.BaseStream.Seek(rsi.ResourceInfoList[m].Offset & 0x1FFFFFFF, SeekOrigin.Begin);
                             imageData = srdvReader.ReadBytes(rsi.ResourceInfoList[m].Length);
 
                             // TODO: Read palette data
@@ -343,82 +350,104 @@ namespace SrdTool
                             dispHeight = (ushort)Utils.PowerOfTwo(dispHeight);
                         }
 
-                        /*
+                        
                         // Determine pixel format
                         PixelDataFormat pixelFormat = PixelDataFormat.Undefined;
-                        switch (Format)
+                        switch (txr.Format)
                         {
-                            case 0x01:
+                            case TextureFormat.ARGB8888:
                                 pixelFormat = PixelDataFormat.FormatArgb8888;
                                 break;
 
-                            case 0x02:
+                            case TextureFormat.BGR565:
                                 pixelFormat = PixelDataFormat.FormatBgr565;
                                 break;
 
-                            case 0x05:
+                            case TextureFormat.BGRA4444:
                                 pixelFormat = PixelDataFormat.FormatBgra4444;
                                 break;
 
-                            case 0x0F:
+                            case TextureFormat.DXT1RGB:
                                 pixelFormat = PixelDataFormat.FormatDXT1Rgb;
                                 break;
 
-                            case 0x11:
+                            case TextureFormat.DXT5:
                                 pixelFormat = PixelDataFormat.FormatDXT5;
                                 break;
 
-                            case 0x14:  // RGTC2 / BC5
+                            case TextureFormat.BC5:  // RGTC2 / BC5
                                 pixelFormat = PixelDataFormat.FormatRGTC2;
                                 break;
 
-                            case 0x16:  // RCTC1 / BC4
+                            case TextureFormat.BC4:  // RCTC1 / BC4
                                 pixelFormat = PixelDataFormat.FormatRGTC1;
                                 break;
 
-                            case 0x1C:
+                            case TextureFormat.BPTC:
                                 pixelFormat = PixelDataFormat.FormatBPTC;
                                 break;
                         }
 
                         bool swizzled = ((txr.Swizzle & 1) == 0);
 
+                        // TODO: Unswizzle the image
+
+
                         // Calculate mipmap dimensions
                         int mipWidth = (int)Math.Max(1, dispWidth / Math.Pow(2, m));
                         int mipHeight = (int)Math.Max(1, dispHeight / Math.Pow(2, m));
 
+                        // Convert the raw pixel data into something we can actually write to an image file
                         ImageBinary imageBinary = new ImageBinary(mipWidth, mipHeight, pixelFormat, imageData);
-                        Bitmap tex = imageBinary.GetBitmap();
+                        byte[] pixelData = imageBinary.GetOutputPixelData(0);
+                        var image = new Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(mipWidth, mipHeight);
+                        for (int y = 0; y < mipHeight; ++y)
+                        {
+                            for (int x = 0; x < mipWidth; ++x)
+                            {
+                                byte[] pixel = new byte[4];
+                                Array.Copy(pixelData, ((y * mipWidth) + x) * 4, pixel, 0, 4);
+                                SixLabors.ImageSharp.PixelFormats.Rgba32 pixelColor;
+                                pixelColor.B = pixel[0];
+                                pixelColor.G = pixel[1];
+                                pixelColor.R = pixel[2];
+                                pixelColor.A = pixel[3];
 
+                                // Perform fixups depending on the output data format
+                                if (pixelFormat == PixelDataFormat.FormatRGTC2)
+                                {
+                                    pixelColor.B = 255;
+                                    pixelColor.A = 255;
+                                }
+                                else if (pixelFormat == PixelDataFormat.FormatRGTC1)
+                                {
+                                    pixelColor.G = pixelColor.R;
+                                    pixelColor.B = pixelColor.R;
+                                }
+
+                                image[x, y] = pixelColor;
+                            }
+                        }
+                        
 
                         string mipmapName = rsi.ResourceStringList.First();
-                        int extensionLength = mipmapName.Split('.').Last().Length + 1;
+                        string mipmapNameNoExtension = Path.GetFileNameWithoutExtension(mipmapName);
+                        string mipmapExtension = Path.GetExtension(mipmapName);
 
+                        // If exporting mipmaps, append the dimensions to the filename
                         if (m > 0)
-                            mipmapName = mipmapName.Insert(mipmapName.Length - extensionLength, $" ({mipWidth}x{mipHeight})");
+                            mipmapName = mipmapName.Insert(mipmapNameNoExtension.Length, $" ({mipWidth}x{mipHeight})");
 
+                        // Change file extension to Png if it isn't already
+                        if (mipmapExtension != "png")
+                            mipmapName += ".png";
 
-                        ImageFormat imageFormat;
-                        switch (mipmapName.Split('.').Last().ToLower())
-                        {
-                            case "bmp":
-                                imageFormat = ImageFormat.Bmp;
-                                break;
-
-                            case "png":
-                                imageFormat = ImageFormat.Png;
-                                break;
-
-                            default:
-                                imageFormat = ImageFormat.Png;
-                                mipmapName += ".png";
-                                break;
-                        }
-
-                        FileStream imageOut = File.Create(outputFolder + '/' + mipmapName);
-                        tex.Save(imageOut, imageFormat);
-                        imageOut.Close();
-                        */
+                        FileStream fs = new FileStream(mipmapName, FileMode.Create);
+                        image.SaveAsPng(fs);
+                        fs.Flush();
+                        fs.Close();
+                        fs.Dispose();
+                        image.Dispose();
                     }
                 }
             }

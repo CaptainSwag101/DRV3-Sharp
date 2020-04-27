@@ -42,19 +42,20 @@ namespace V3Lib
             }
         }
 
-        public static void WritePadding(ref BinaryWriter writer, int padTo)
+        public static void WritePadding(ref BinaryWriter writer, int padTo, byte padValue = 0)
         {
             int paddingLength = padTo - (int)(writer.BaseStream.Position % padTo);
             if (paddingLength != padTo)
             {
                 byte[] padding = new byte[paddingLength];
+                Array.Fill(padding, padValue);
                 writer.Write(padding);
             }
         }
 
         public static int PowerOfTwo(int x)
         {
-            if (x < 0) { return 0; }
+            if (x < 0) return 0;
             --x;
             x |= x >> 1;
             x |= x >> 2;
