@@ -40,20 +40,21 @@ namespace V3Lib.CriWare
             if (magic != "@UTF")
             {
                 // Not a valid UTF table
+                Console.WriteLine("ERROR: Not a valid CriWare UTF table!");
                 return;
             }
 
             // Read header
-            uint tableSize = BitConverter.ToUInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+            uint tableSize = reader.ReadUInt32BE();
             uint schemaOffset = 0x20;
-            ushort unk = BitConverter.ToUInt16(Utils.SwapEndian(reader.ReadBytes(2)));
-            ushort rowsOffset = BitConverter.ToUInt16(Utils.SwapEndian(reader.ReadBytes(2)));
-            uint stringTableOffset = BitConverter.ToUInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-            uint dataOffset = BitConverter.ToUInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-            uint tableNameOffset = BitConverter.ToUInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-            ushort columnCount = BitConverter.ToUInt16(Utils.SwapEndian(reader.ReadBytes(2)));
-            ushort rowWidth = BitConverter.ToUInt16(Utils.SwapEndian(reader.ReadBytes(2)));
-            uint rowCount = BitConverter.ToUInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+            ushort unk = reader.ReadUInt16BE();
+            ushort rowsOffset = reader.ReadUInt16BE();
+            uint stringTableOffset = reader.ReadUInt32BE();
+            uint dataOffset = reader.ReadUInt32BE();
+            uint tableNameOffset = reader.ReadUInt32BE();
+            ushort columnCount = reader.ReadUInt16BE();
+            ushort rowWidth = reader.ReadUInt16BE();
+            uint rowCount = reader.ReadUInt32BE();
 
             // Read initial table schema info
             reader.BaseStream.Seek(schemaOffset, SeekOrigin.Begin);
@@ -61,7 +62,7 @@ namespace V3Lib.CriWare
             for (uint c = 0; c < columnCount; ++c)
             {
                 byte schemaType = reader.ReadByte();
-                int colNameOffset = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+                int colNameOffset = reader.ReadInt32BE();
                 int constOffset = -1;
 
                 if ((schemaType & COLUMN_MASK_STORAGE) == COLUMN_STORAGE_CONSTANT)
@@ -152,14 +153,14 @@ namespace V3Lib.CriWare
                         switch (typeMask)
                         {
                             case COLUMN_TYPE_STRING:
-                                int stringOffset = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+                                int stringOffset = reader.ReadInt32BE();
                                 stringReader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
                                 columnValue = Utils.ReadNullTerminatedString(ref stringReader, Encoding.ASCII);
                                 break;
 
                             case COLUMN_TYPE_DATA:
-                                int varDataOffset = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-                                int varDataSize = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+                                int varDataOffset = reader.ReadInt32BE();
+                                int varDataSize = reader.ReadInt32BE();
 
                                 if (varDataSize > 0)
                                 {
@@ -175,22 +176,22 @@ namespace V3Lib.CriWare
                                 break;
 
                             case COLUMN_TYPE_FLOAT:
-                                columnValue = reader.ReadSingle();
+                                columnValue = reader.ReadSingleBE();
                                 break;
 
                             case COLUMN_TYPE_8BYTE:
                             case COLUMN_TYPE_8BYTE2:
-                                columnValue = BitConverter.ToInt64(Utils.SwapEndian(reader.ReadBytes(8)));
+                                columnValue = reader.ReadUInt64BE();
                                 break;
 
                             case COLUMN_TYPE_4BYTE:
                             case COLUMN_TYPE_4BYTE2:
-                                columnValue = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+                                columnValue = reader.ReadInt32BE();
                                 break;
 
                             case COLUMN_TYPE_2BYTE:
                             case COLUMN_TYPE_2BYTE2:
-                                columnValue = BitConverter.ToInt16(Utils.SwapEndian(reader.ReadBytes(2)));
+                                columnValue = reader.ReadInt16BE();
                                 break;
 
                             case COLUMN_TYPE_1BYTE:

@@ -44,11 +44,11 @@ namespace V3Lib.Srd
                 };
 
                 block.BlockType = blockType;
-                int dataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-                int subdataLength = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
-                block.Unknown0C = BitConverter.ToInt32(Utils.SwapEndian(reader.ReadBytes(4)));
+                int dataLength = reader.ReadInt32BE();
+                int subdataLength = reader.ReadInt32BE();
+                block.Unknown0C = reader.ReadInt32BE();
 
-                
+
                 byte[] rawData = reader.ReadBytes(dataLength);
                 block.DeserializeData(rawData);
                 Utils.ReadPadding(ref reader, 16);
