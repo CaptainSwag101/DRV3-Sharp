@@ -29,7 +29,7 @@ namespace V3Lib.Srd.BlockTypes
             uint maxTreeDepth = reader.ReadUInt32();
             uint unknown14 = reader.ReadUInt16();
             uint totalEntryCount = reader.ReadUInt16();
-            uint Unknown18 = reader.ReadUInt16();
+            uint unknown18 = reader.ReadUInt16();
             uint totalEndpointCount = reader.ReadUInt16();
             uint unknownFloatListOffset = reader.ReadUInt32();
 
@@ -109,7 +109,32 @@ namespace V3Lib.Srd.BlockTypes
 
         public override string GetInfo()
         {
-            throw new NotImplementedException();
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("Tree contents:\n");
+            sb.Append(PrintTreeNodeInfo(RootNode));
+            sb.Append('\n');
+
+            sb.Append($"{nameof(UnknownFloatList)}: ");
+            sb.AppendJoin(", ", UnknownFloatList);
+
+            return sb.ToString();
+        }
+
+        private string PrintTreeNodeInfo(StringTreeNode node)
+        {
+            StringBuilder nodeSb = new StringBuilder();
+
+            nodeSb.Append(node.Value);
+            nodeSb.Append('\n');
+
+            foreach (var child in node.Children)
+            {
+                nodeSb.Append(PrintTreeNodeInfo(child));
+                nodeSb.Append('\n');
+            }
+
+            return nodeSb.ToString();
         }
     }
 }
