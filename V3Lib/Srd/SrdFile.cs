@@ -36,6 +36,7 @@ namespace V3Lib.Srd
                     "$CFH" => new CfhBlock(),
                     "$RSF" => new RsfBlock(),
                     "$RSI" => new RsiBlock(),
+                    "$TRE" => new TreBlock(),
                     "$TXI" => new TxiBlock(),
                     "$TXR" => new TxrBlock(),
                     "$VTX" => new VtxBlock(),

@@ -303,12 +303,16 @@ namespace SrdTool
             else
             {
                 textureSrdName = SrdName.Remove(SrdName.LastIndexOf(new FileInfo(SrdName).Extension)) + "_texture.srd";
-                Console.WriteLine($"There is no accompanying SRDV file for this SRD file, searching for a dedicated \"{new FileInfo(textureSrdName).Name}\"...");
+                Console.Write($"There is no accompanying SRDV file for this SRD file, searching for a dedicated \"{new FileInfo(textureSrdName).Name}\"... ");
 
                 if (!File.Exists(textureSrdName))
                 {
                     Console.WriteLine("Unable to find any accompanying texture data.");
                     return;
+                }
+                else
+                {
+                    Console.WriteLine("Found!");
                 }
 
                 textureSrd = new SrdFile();
@@ -327,20 +331,25 @@ namespace SrdTool
                     TxrBlock txr = (TxrBlock)b;
                     RsiBlock rsi = (RsiBlock)b.Children[0];
 
+                    // Separate the palette ResourceInfo from the list beforehand if it exists
+                    byte[] paletteData = Array.Empty<byte>();
+                    if (txr.Palette == 1)
+                    {
+                        ResourceInfo paletteInfo = rsi.ResourceInfoList[txr.PaletteId];
+                        rsi.ResourceInfoList.RemoveAt(txr.PaletteId);
+
+                        textureReader.BaseStream.Seek(paletteInfo.Offset & 0x1FFFFFFF, SeekOrigin.Begin);
+                        paletteData = textureReader.ReadBytes(paletteInfo.Length);
+                    }
+
                     // Read image data based on resource info
                     bool extractMipmaps = false;    // FIXME: TEMPORARY!!!
                     for (int m = 0; m < (extractMipmaps ? rsi.ResourceInfoList.Count : 1); m++)
                     {
-                        byte[] imageData;
+                        byte[] inputImageData;
 
-                        using (BinaryReader srdvReader = new BinaryReader(new FileStream(textureSrdvName, FileMode.Open)))
-                        {
-                            srdvReader.BaseStream.Seek(rsi.ResourceInfoList[m].Offset & 0x1FFFFFFF, SeekOrigin.Begin);
-                            imageData = srdvReader.ReadBytes(rsi.ResourceInfoList[m].Length);
-
-                            // TODO: Read palette data
-                        }
-
+                        textureReader.BaseStream.Seek(rsi.ResourceInfoList[m].Offset & 0x1FFFFFFF, SeekOrigin.Begin);
+                        inputImageData = textureReader.ReadBytes(rsi.ResourceInfoList[m].Length);
 
                         int dispWidth = txr.DisplayWidth;
                         int dispHeight = txr.DisplayHeight;
@@ -383,6 +392,10 @@ namespace SrdTool
                                 pixelFormat = PixelDataFormat.FormatRGTC1;
                                 break;
 
+                            case TextureFormat.Indexed8:
+                                pixelFormat = PixelDataFormat.FormatIndexed8;
+                                break;
+
                             case TextureFormat.BPTC:
                                 pixelFormat = PixelDataFormat.FormatBPTC;
                                 break;
@@ -398,31 +411,48 @@ namespace SrdTool
                         int mipHeight = (int)Math.Max(1, dispHeight / Math.Pow(2, m));
 
                         // Convert the raw pixel data into something we can actually write to an image file
-                        ImageBinary imageBinary = new ImageBinary(mipWidth, mipHeight, pixelFormat, imageData);
-                        byte[] pixelData = imageBinary.GetOutputPixelData(0);
+                        ImageBinary imageBinary = new ImageBinary(mipWidth, mipHeight, pixelFormat, inputImageData);
+                        byte[] outputImageData = imageBinary.GetOutputPixelData(0);
                         var image = new Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(mipWidth, mipHeight);
                         for (int y = 0; y < mipHeight; ++y)
                         {
                             for (int x = 0; x < mipWidth; ++x)
                             {
-                                byte[] pixel = new byte[4];
-                                Array.Copy(pixelData, ((y * mipWidth) + x) * 4, pixel, 0, 4);
                                 SixLabors.ImageSharp.PixelFormats.Rgba32 pixelColor;
-                                pixelColor.B = pixel[0];
-                                pixelColor.G = pixel[1];
-                                pixelColor.R = pixel[2];
-                                pixelColor.A = pixel[3];
 
-                                // Perform fixups depending on the output data format
-                                if (pixelFormat == PixelDataFormat.FormatRGTC2)
+                                if (pixelFormat == PixelDataFormat.FormatIndexed8)
                                 {
-                                    pixelColor.B = 255;
-                                    pixelColor.A = 255;
+                                    int pixelDataOffset = (y * mipWidth) + x;
+
+                                    // Apply the previously-loaded palette
+                                    int paletteDataOffset = outputImageData[pixelDataOffset];
+                                    pixelColor.B = paletteData[paletteDataOffset + 0];
+                                    pixelColor.G = paletteData[paletteDataOffset + 1];
+                                    pixelColor.R = paletteData[paletteDataOffset + 2];
+                                    pixelColor.A = paletteData[paletteDataOffset + 3];
                                 }
-                                else if (pixelFormat == PixelDataFormat.FormatRGTC1)
+                                else
                                 {
-                                    pixelColor.G = pixelColor.R;
-                                    pixelColor.B = pixelColor.R;
+                                    int pixelDataOffset = ((y * mipWidth) + x) * 4;
+
+                                    byte[] pixelData = new byte[4];
+                                    Array.Copy(outputImageData, pixelDataOffset, pixelData, 0, 4);
+                                    pixelColor.B = pixelData[0];
+                                    pixelColor.G = pixelData[1];
+                                    pixelColor.R = pixelData[2];
+                                    pixelColor.A = pixelData[3];
+
+                                    // Perform fixups depending on the output data format
+                                    if (pixelFormat == PixelDataFormat.FormatRGTC2)
+                                    {
+                                        pixelColor.B = 255;
+                                        pixelColor.A = 255;
+                                    }
+                                    else if (pixelFormat == PixelDataFormat.FormatRGTC1)
+                                    {
+                                        pixelColor.G = pixelColor.R;
+                                        pixelColor.B = pixelColor.R;
+                                    }
                                 }
 
                                 image[x, y] = pixelColor;

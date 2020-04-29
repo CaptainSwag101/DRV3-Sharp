@@ -15,6 +15,7 @@ namespace V3Lib.Srd.BlockTypes
         DXT5        = 0x11,
         BC5         = 0x14,
         BC4         = 0x16,
+        Indexed8    = 0x1A,
         BPTC        = 0x1C
     }
 
