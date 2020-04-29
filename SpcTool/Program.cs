@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using V3Lib.Spc;
@@ -23,12 +24,19 @@ namespace SpcTool
         static void Main(string[] args)
         {
             Console.WriteLine("SPC Tool by CaptainSwag101\n" +
-                "Version 0.0.2, built on 2019-09-25\n");
+                "Version 0.0.2, built on 2020-04-29\n");
+
+            // Setup text encoding so we can use Shift-JIS text later on
+            Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
+            // Ensure we actually have some arguments, if not, print usage string
+            if (args.Length == 0)
+            {
+                Console.WriteLine($"Usage: SpcTool.exe <SPC file> <command to perform ({new StringBuilder().AppendJoin(", ", validOperations.Keys)})>");
+                return;
+            }
 
             // Parse input argument
-            if (args.Length == 0)
-                return;
-
             FileInfo info = new FileInfo(args[0]);
             if (!info.Exists)
             {
@@ -46,19 +54,16 @@ namespace SpcTool
             input = args[0];
 
             // Parse operation argument
-            // If command starts with "--", it is our operation to perform
-            if (args.Length > 1 && args[1].StartsWith("--"))
+            string op = args[1].ToLowerInvariant();
+            if (validOperations.Keys.Any(op.Contains))
             {
-                string op = args[1].TrimStart('-').ToLowerInvariant();
-                if (validOperations.Keys.Any(op.Contains))
-                {
-                    operation = op;
-                }
-                else
-                {
-                    Console.WriteLine("ERROR: Invalid operation specified.");
-                    return;
-                }
+                operation = op;
+            }
+            else
+            {
+                Console.WriteLine("ERROR: Invalid operation specified.");
+                Console.WriteLine($"Valid operations are: {new StringBuilder().AppendJoin(", ", validOperations.Keys)}");
+                return;
             }
 
             // Parse target arguments
@@ -104,13 +109,13 @@ namespace SpcTool
                                 stopwatch.Start();
                                 subfile.Decompress();
                                 stopwatch.Stop();
-                                Console.WriteLine($" Done! Took {stopwatch.Elapsed.ToString()}");
+                                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
 
                                 Console.Write("Compressing...");
                                 stopwatch.Restart();
                                 subfile.Compress();
                                 stopwatch.Stop();
-                                Console.WriteLine($" Done! Took {stopwatch.Elapsed.ToString()}");
+                                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
                             }
 
                             Console.WriteLine();

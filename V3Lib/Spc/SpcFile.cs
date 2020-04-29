@@ -57,7 +57,7 @@ namespace V3Lib.Spc
                 int nameLength = reader.ReadInt32();
                 reader.BaseStream.Seek(0x10, SeekOrigin.Current);
                 int namePadding = (0x10 - (nameLength + 1) % 0x10) % 0x10;
-                subfile.Name = Encoding.ASCII.GetString(reader.ReadBytes(nameLength));
+                subfile.Name = Encoding.GetEncoding("shift-jis").GetString(reader.ReadBytes(nameLength));
                 reader.BaseStream.Seek(namePadding + 1, SeekOrigin.Current);    // Discard the null terminator
 
                 int dataPadding = (0x10 - subfile.CurrentSize % 0x10) % 0x10;
@@ -90,7 +90,7 @@ namespace V3Lib.Spc
                 writer.Write(new byte[0x10]);
 
                 int namePadding = (0x10 - (subfile.Name.Length + 1) % 0x10) % 0x10;
-                writer.Write(Encoding.ASCII.GetBytes(subfile.Name));
+                writer.Write(Encoding.GetEncoding("shift-jis").GetBytes(subfile.Name));
                 writer.Write(new byte[namePadding + 1]);
 
                 int dataPadding = (0x10 - subfile.CurrentSize % 0x10) % 0x10;
