@@ -20,6 +20,7 @@ namespace V3Lib.Srd.BlockTypes
     public sealed class TreBlock : Block
     {
         public StringTreeNode RootNode;
+        public List<float> UnknownFloatList;
 
         public override void DeserializeData(byte[] rawData)
         {
@@ -30,7 +31,7 @@ namespace V3Lib.Srd.BlockTypes
             uint totalEntryCount = reader.ReadUInt16();
             uint Unknown18 = reader.ReadUInt16();
             uint totalEndpointCount = reader.ReadUInt16();
-            uint treeStringsOffset = reader.ReadUInt32();
+            uint unknownFloatListOffset = reader.ReadUInt32();
 
             // Read and parse tree data
             for (int i = 0; i < totalEntryCount; ++i)
@@ -86,6 +87,15 @@ namespace V3Lib.Srd.BlockTypes
                     // Assign this node as a child to the parent
                     parentNode.Children.Add(node);
                 }
+            }
+
+            // Read the unknown float list (what the heck is this?)
+            UnknownFloatList = new List<float>();
+            
+            reader.BaseStream.Seek(unknownFloatListOffset, SeekOrigin.Begin);
+            while (reader.BaseStream.Position < unknownFloatListOffset + (unknown14 * sizeof(float)))
+            {
+                UnknownFloatList.Add(reader.ReadSingle());
             }
 
             reader.Close();
