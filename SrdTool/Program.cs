@@ -23,7 +23,7 @@ namespace SrdTool
         static void Main(string[] args)
         {
             Console.WriteLine("SRD Tool by CaptainSwag101\n" +
-                "Version 0.0.4, built on 2020-04-26\n");
+                "Version 0.0.5, built on 2020-04-29\n");
 
             // Setup text encoding so we can use Shift-JIS text later on
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -69,7 +69,7 @@ namespace SrdTool
             // Process commands
             while (true)
             {
-                Console.Write("Type a command to perform on this SRD (print_blocks, extract_models, extract_textures, exit): ");
+                Console.WriteLine("Type a command to perform on this SRD (print_blocks, extract_models, extract_textures, save, exit):");
                 string command = Console.ReadLine().ToLowerInvariant();
 
                 switch (command)
@@ -85,6 +85,11 @@ namespace SrdTool
 
                     case "extract_textures":
                         ExtractTextures();
+                        break;
+
+                    case "save":
+                        Srd.Save(SrdName + "_tempSaveTest.srd");
+                        Console.WriteLine("Save complete.");
                         break;
 
                     case "exit":
@@ -145,8 +150,8 @@ namespace SrdTool
                     List<float[]> vertexList = new List<float[]>();
                     List<float[]> normalList = new List<float[]>();
                     List<float[]> texmapList = new List<float[]>();
-                    int vertexBlockOffset = rsi.ResourceInfoList[0].Offset & 0x1FFFFFFF;    // NOTE: This might need to be 0x00FFFFFF
-                    int vertexBlockLength = rsi.ResourceInfoList[0].Length;
+                    int vertexBlockOffset = rsi.ResourceInfoList[0].Values[0] & 0x1FFFFFFF;    // NOTE: This might need to be 0x00FFFFFF
+                    int vertexBlockLength = rsi.ResourceInfoList[0].Values[1];
 
                     int combinedSize = 0;
                     foreach (var subBlock in vtx.VertexSubBlockList)
@@ -220,8 +225,8 @@ namespace SrdTool
 
                     // Extract face data
                     List<ushort[]> faceList = new List<ushort[]>();
-                    int faceBlockOffset = rsi.ResourceInfoList[1].Offset & 0x1FFFFFFF;  // NOTE: This might need to be 0x00FFFFFF
-                    int faceBlockLength = rsi.ResourceInfoList[1].Length;
+                    int faceBlockOffset = rsi.ResourceInfoList[1].Values[0] & 0x1FFFFFFF;  // NOTE: This might need to be 0x00FFFFFF
+                    int faceBlockLength = rsi.ResourceInfoList[1].Values[1];
 
                     srdiReader.BaseStream.Seek(faceBlockOffset, SeekOrigin.Begin);
                     while (srdiReader.BaseStream.Position < (faceBlockOffset + faceBlockLength))
@@ -338,8 +343,8 @@ namespace SrdTool
                         ResourceInfo paletteInfo = rsi.ResourceInfoList[txr.PaletteId];
                         rsi.ResourceInfoList.RemoveAt(txr.PaletteId);
 
-                        textureReader.BaseStream.Seek(paletteInfo.Offset & 0x1FFFFFFF, SeekOrigin.Begin);
-                        paletteData = textureReader.ReadBytes(paletteInfo.Length);
+                        textureReader.BaseStream.Seek(paletteInfo.Values[0] & 0x1FFFFFFF, SeekOrigin.Begin);
+                        paletteData = textureReader.ReadBytes(paletteInfo.Values[1]);
                     }
 
                     // Read image data based on resource info
@@ -348,8 +353,8 @@ namespace SrdTool
                     {
                         byte[] inputImageData;
 
-                        textureReader.BaseStream.Seek(rsi.ResourceInfoList[m].Offset & 0x1FFFFFFF, SeekOrigin.Begin);
-                        inputImageData = textureReader.ReadBytes(rsi.ResourceInfoList[m].Length);
+                        textureReader.BaseStream.Seek(rsi.ResourceInfoList[m].Values[0] & 0x1FFFFFFF, SeekOrigin.Begin);
+                        inputImageData = textureReader.ReadBytes(rsi.ResourceInfoList[m].Values[1]);
 
                         int dispWidth = txr.DisplayWidth;
                         int dispHeight = txr.DisplayHeight;
@@ -472,7 +477,8 @@ namespace SrdTool
                         if (mipmapExtension != "png")
                             mipmapName += ".png";
 
-                        FileStream fs = new FileStream(mipmapName, FileMode.Create);
+                        string outputFolder = new FileInfo(textureSrdName).DirectoryName;
+                        FileStream fs = new FileStream(outputFolder + Path.DirectorySeparatorChar + mipmapName, FileMode.Create);
                         image.SaveAsPng(fs);
                         fs.Flush();
                         fs.Close();

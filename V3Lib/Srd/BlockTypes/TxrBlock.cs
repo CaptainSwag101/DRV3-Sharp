@@ -59,7 +59,7 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(DisplayWidth);
             writer.Write(DisplayHeight);
             writer.Write(Scanline);
-            writer.Write((int)Format);
+            writer.Write((byte)Format);
             writer.Write(Unknown1D);
             writer.Write(Palette);
             writer.Write(PaletteId);

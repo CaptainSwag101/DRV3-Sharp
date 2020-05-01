@@ -105,6 +105,17 @@ namespace V3Lib.Srd.BlockTypes
         public override byte[] SerializeData()
         {
             throw new NotImplementedException();
+
+            MemoryStream ms = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(ms);
+
+            // Write temporary placeholder for max tree depth
+            writer.Write((int)0);
+
+            byte[] result =  ms.ToArray();
+            writer.Close();
+            writer.Dispose();
+            return result;
         }
 
         public override string GetInfo()

@@ -16,27 +16,5 @@ namespace V3Lib.Srd
         public abstract void DeserializeData(byte[] rawData);
         public abstract byte[] SerializeData();
         public abstract string GetInfo();
-
-        public void DeserializeSubdata(byte[] rawSubdata)
-        {
-            BinaryReader subReader = new BinaryReader(new MemoryStream(rawSubdata));
-
-            Children = SrdFile.ReadBlocks(ref subReader);
-
-            subReader.Close();
-            subReader.Dispose();
-        }
-
-        public byte[] SerializeSubdata()
-        {
-            List<byte> subdata = new List<byte>();
-            foreach (Block child in Children)
-            {
-                byte[] childData = child.SerializeData();
-                subdata.AddRange(childData);
-            }
-
-            return subdata.ToArray();
-        }
     }
 }

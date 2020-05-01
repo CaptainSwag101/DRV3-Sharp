@@ -40,6 +40,7 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(Unknown1C);
             writer.Write(Unknown20);
             writer.Write(Encoding.ASCII.GetBytes(TextureFilename));
+            writer.Write((byte)0);  // Null terminator
 
             byte[] result = ms.ToArray();
             writer.Close();

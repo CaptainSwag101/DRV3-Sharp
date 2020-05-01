@@ -7,10 +7,7 @@ namespace V3Lib.Srd.BlockTypes
 {
     public struct ResourceInfo : IEquatable<ResourceInfo>
     {
-        public int Offset;
-        public int Length;
-        public int Unknown08;
-        public int Unknown0C;
+        public int[] Values;
 
         public override bool Equals(object obj)
         {
@@ -19,15 +16,18 @@ namespace V3Lib.Srd.BlockTypes
 
         public bool Equals(ResourceInfo other)
         {
-            return Offset == other.Offset &&
-                   Length == other.Length &&
-                   Unknown08 == other.Unknown08 &&
-                   Unknown0C == other.Unknown0C;
+            if (Values.Length != other.Values.Length)
+                return false;
+            else
+                for (int i = 0; i < Values.Length; ++i)
+                    if (Values[i] != other.Values[i])
+                        return false;
+                return true;
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(Offset, Length, Unknown08, Unknown0C);
+            return HashCode.Combine(Values);
         }
 
         public static bool operator ==(ResourceInfo left, ResourceInfo right)
@@ -46,10 +46,10 @@ namespace V3Lib.Srd.BlockTypes
         public byte Unknown10;
         public byte Unknown11;
         public byte Unknown12;
-        public byte Unknown13;
-        public short Unknown14;
-        public short Unknown16;
-        public short Unknown18;
+        public byte FallbackResourceInfoCount;
+        public short ResourceInfoCount;
+        public short FallbackResourceInfoSize;
+        public short ResourceInfoSize;
         public short Unknown1A;
         public List<ResourceInfo> ResourceInfoList;
         public byte[] ResourceData;
@@ -59,26 +59,34 @@ namespace V3Lib.Srd.BlockTypes
         {
             BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
+            // TODO: If Unknown10 == 0x04, maybe we read the remaining numbers as shorts, otherwise as ints?
             Unknown10 = reader.ReadByte();
             Unknown11 = reader.ReadByte();
             Unknown12 = reader.ReadByte();
-            Unknown13 = reader.ReadByte();
-            Unknown14 = reader.ReadInt16();
-            Unknown16 = reader.ReadInt16();
-            Unknown18 = reader.ReadInt16();
+            FallbackResourceInfoCount = reader.ReadByte();
+            ResourceInfoCount = reader.ReadInt16();
+            FallbackResourceInfoSize = reader.ReadInt16();
+            ResourceInfoSize = reader.ReadInt16();
             Unknown1A = reader.ReadInt16();
             int resourceStringListOffset = reader.ReadInt32();
 
             // Read resource info
-            int resourceInfoCount = (Unknown12 == 0xFF ? Unknown14 : Unknown13);
+            int resourceInfoCount = (ResourceInfoCount != 0 ? ResourceInfoCount : FallbackResourceInfoCount);
             ResourceInfoList = new List<ResourceInfo>();
             for (int r = 0; r < resourceInfoCount; ++r)
             {
+                int size = 4;
+                if (ResourceInfoSize > 0)
+                    size = ResourceInfoSize / 4;
+                else if (FallbackResourceInfoSize > 0)
+                    size = FallbackResourceInfoSize / 4;
+
                 ResourceInfo info;
-                info.Offset = reader.ReadInt32();
-                info.Length = reader.ReadInt32();
-                info.Unknown08 = reader.ReadInt32();
-                info.Unknown0C = reader.ReadInt32();
+                info.Values = new int[size];
+                for (int i = 0; i < size; ++i)
+                {
+                    info.Values[i] = reader.ReadInt32();
+                }
                 ResourceInfoList.Add(info);
             }
 
@@ -105,19 +113,19 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(Unknown10);
             writer.Write(Unknown11);
             writer.Write(Unknown12);
-            writer.Write(Unknown13);
-            writer.Write(Unknown14);
-            writer.Write(Unknown16);
-            writer.Write(Unknown18);
+            writer.Write(FallbackResourceInfoCount);
+            writer.Write(ResourceInfoCount);
+            writer.Write(FallbackResourceInfoSize);
+            writer.Write(ResourceInfoSize);
             writer.Write(Unknown1A);
             writer.Write((ResourceInfoList.Count * 0x10) + ResourceData.Length + 0x10);
             
             foreach (ResourceInfo info in ResourceInfoList)
             {
-                writer.Write(info.Offset);
-                writer.Write(info.Length);
-                writer.Write(info.Unknown08);
-                writer.Write(info.Unknown0C);
+                foreach (int value in info.Values)
+                {
+                    writer.Write(value);
+                }
             }
 
             writer.Write(ResourceData);
@@ -125,6 +133,7 @@ namespace V3Lib.Srd.BlockTypes
             foreach (string resourceString in ResourceStringList)
             {
                 writer.Write(Encoding.GetEncoding("shift-jis").GetBytes(resourceString));
+                writer.Write((byte)0);  // Null terminator
             }
 
             byte[] result = ms.ToArray();
@@ -140,10 +149,10 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
             sb.Append($"{nameof(Unknown11)}: {Unknown11}\n");
             sb.Append($"{nameof(Unknown12)}: {Unknown12}\n");
-            sb.Append($"{nameof(Unknown13)}: {Unknown13}\n");
-            sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
-            sb.Append($"{nameof(Unknown16)}: {Unknown16}\n");
-            sb.Append($"{nameof(Unknown18)}: {Unknown18}\n");
+            sb.Append($"{nameof(FallbackResourceInfoCount)}: {FallbackResourceInfoCount}\n");
+            sb.Append($"{nameof(ResourceInfoCount)}: {ResourceInfoCount}\n");
+            sb.Append($"{nameof(FallbackResourceInfoSize)}: {FallbackResourceInfoSize}\n");
+            sb.Append($"{nameof(ResourceInfoSize)}: {ResourceInfoSize}\n");
             sb.Append($"{nameof(Unknown1A)}: {Unknown1A}\n");
 
             sb.Append($"Resource Info: ");
@@ -152,20 +161,10 @@ namespace V3Lib.Srd.BlockTypes
             {
                 StringBuilder sb2 = new StringBuilder();
                 sb2.Append("{ ");
+                foreach (int val in info.Values)
+                {
 
-                sb2.Append($"{nameof(info.Offset)}: {info.Offset & 0x1FFFFFFF}");
-                if ((info.Offset & 0xE0000000) == 0x20000000)
-                    sb2.Append(" (located in SRDI)");
-                else if ((info.Offset & 0xE0000000) == 0x40000000)
-                    sb2.Append(" (located in SRDV)");
-                else
-                    sb2.Append(" (unknown location)");
-                sb2.Append(", ");
-
-                sb2.Append($"{nameof(info.Length)}: {info.Length}, ");
-                sb2.Append($"{nameof(info.Unknown08)}: {info.Unknown08}, ");
-                sb2.Append($"{nameof(info.Unknown0C)}: {info.Unknown0C}");
-
+                }
                 sb2.Append(" }");
                 infoOutputList.Add(sb2.ToString());
             }

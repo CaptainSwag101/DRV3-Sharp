@@ -17,14 +17,14 @@ namespace V3Lib.Srd.BlockTypes
         public byte VertexSubBlockCount;
         public short BindBoneRootOffset;
         public short VertexSubBlockListOffset;
-        public short FloatListOffset;
+        public short UnknownFloatListOffset;
         public short BindBoneListOffset;
         public short Unknown28;
         public List<short> UnknownShortList;
         public List<(int Offset, int Size)> VertexSubBlockList;
         public short BindBoneRoot;
         public List<short> BindBoneList;
-        public List<(float f1, float f2, float f3)> UnknownFloatList;
+        public List<(float F1, float F2, float F3)> UnknownFloatList;
         public List<string> UnknownStringList;
 
         public override void DeserializeData(byte[] rawData)
@@ -40,7 +40,7 @@ namespace V3Lib.Srd.BlockTypes
             VertexSubBlockCount = reader.ReadByte();
             BindBoneRootOffset = reader.ReadInt16();
             VertexSubBlockListOffset = reader.ReadInt16();
-            FloatListOffset = reader.ReadInt16();
+            UnknownFloatListOffset = reader.ReadInt16();
             BindBoneListOffset = reader.ReadInt16();
             Unknown28 = reader.ReadInt16();
             Utils.ReadPadding(ref reader, 16);
@@ -68,14 +68,14 @@ namespace V3Lib.Srd.BlockTypes
                 reader.BaseStream.Seek(BindBoneListOffset, SeekOrigin.Begin);
 
             BindBoneList = new List<short>();
-            while (reader.BaseStream.Position < FloatListOffset)
+            while (reader.BaseStream.Position < UnknownFloatListOffset)
             {
                 BindBoneList.Add(reader.ReadInt16());
             }
 
             // Read unknown list of floats
-            reader.BaseStream.Seek(FloatListOffset, SeekOrigin.Begin);
-            UnknownFloatList = new List<(float f1, float f2, float f3)>();
+            reader.BaseStream.Seek(UnknownFloatListOffset, SeekOrigin.Begin);
+            UnknownFloatList = new List<(float F1, float F2, float F3)>();
             for (int h = 0; h < FloatTripletCount / 2; ++h)
             {
                 var floatTriplet = (
@@ -100,7 +100,83 @@ namespace V3Lib.Srd.BlockTypes
 
         public override byte[] SerializeData()
         {
-            throw new NotImplementedException();
+            MemoryStream ms = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(ms);
+
+            writer.Write((int)(UnknownFloatList.Count * 2));
+            writer.Write(Unknown14);
+            writer.Write(Unknown16);
+            writer.Write(VertexCount);
+            writer.Write(Unknown1C);
+            writer.Write(Unknown1E);
+            writer.Write((byte)VertexSubBlockList.Count);
+            writer.Write((short)0);     // Placeholder for BindBoneRootOffset
+            writer.Write((short)0);     // Placeholder for VertexSubBlockListOffset
+            writer.Write((short)0);     // Placeholder for FloatListOffset
+            writer.Write((short)0);     // Placeholder for BindBoneListOffset
+            writer.Write(Unknown28);
+            Utils.WritePadding(ref writer, 16);
+
+            // Write unknown list of shorts
+            foreach (short s in UnknownShortList)
+            {
+                writer.Write(s);
+            }
+
+            // Write vertex sub-blocks
+            long lastPos = writer.BaseStream.Position;
+            writer.BaseStream.Seek(0x12, SeekOrigin.Begin);
+            writer.Write((short)lastPos);   // VertexSubBlockListOffset
+            writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
+            foreach (var subBlock in VertexSubBlockList)
+            {
+                writer.Write(subBlock.Offset);
+                writer.Write(subBlock.Size);
+            }
+
+            // Write bone list
+            lastPos = writer.BaseStream.Position;
+            writer.BaseStream.Seek(0x10, SeekOrigin.Begin);
+            writer.Write((short)lastPos);   // BindBoneRootOffset
+            writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
+            writer.Write(BindBoneRoot);
+
+            if (BindBoneList.Count > 0)
+            {
+                //lastPos = writer.BaseStream.Position;
+                //writer.BaseStream.Seek(0x16, SeekOrigin.Begin);
+                //writer.Write((short)lastPos);   // BindBoneListOffset
+                //writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
+
+                foreach (short bone in BindBoneList)
+                {
+                    writer.Write(bone);
+                }
+            }
+
+            // Write unknown list of floats
+            lastPos = writer.BaseStream.Position;
+            writer.BaseStream.Seek(0x14, SeekOrigin.Begin);
+            writer.Write((short)lastPos);   // UnknownFloatListOffset
+            writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
+            foreach (var triplet in UnknownFloatList)
+            {
+                writer.Write(triplet.F1);
+                writer.Write(triplet.F2);
+                writer.Write(triplet.F3);
+            }
+
+            // Write unknown string data
+            foreach (string str in UnknownStringList)
+            {
+                writer.Write(Encoding.ASCII.GetBytes(str));
+                writer.Write((byte)0);  // Null terminator
+            }
+
+            byte[] result = ms.ToArray();
+            writer.Close();
+            writer.Dispose();
+            return result;
         }
 
         public override string GetInfo()

@@ -38,6 +38,7 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(Unknown18);
             writer.Write(Unknown1C);
             writer.Write(Encoding.ASCII.GetBytes(FolderName));
+            writer.Write((byte)0);  // Null terminator
 
             byte[] result = ms.ToArray();
             writer.Close();
