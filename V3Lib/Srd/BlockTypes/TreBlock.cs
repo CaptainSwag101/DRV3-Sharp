@@ -64,10 +64,15 @@ namespace V3Lib.Srd.BlockTypes
             uint unknownFloatListOffset = reader.ReadUInt32();
 
             // Read and parse tree data
+            int stringDataStart = -1;
             for (int i = 0; i < totalEntryCount; ++i)
             {
                 // Read raw tree entry data
                 uint stringOffset = reader.ReadUInt32();
+
+                if (stringDataStart == -1)
+                    stringDataStart = (int)stringOffset;
+
                 uint endpointOffset = reader.ReadUInt32();
                 byte currentEndpointCount = reader.ReadByte();
                 byte nodeDepth = reader.ReadByte();
@@ -121,9 +126,8 @@ namespace V3Lib.Srd.BlockTypes
 
             // Read the unknown float list (what the heck is this?)
             UnknownFloatList = new List<float>();
-            
             reader.BaseStream.Seek(unknownFloatListOffset, SeekOrigin.Begin);
-            while (reader.BaseStream.Position < unknownFloatListOffset + (Unknown14 * sizeof(float)))
+            while (reader.BaseStream.Position < stringDataStart)
             {
                 UnknownFloatList.Add(reader.ReadSingle());
             }
@@ -225,6 +229,7 @@ namespace V3Lib.Srd.BlockTypes
             if (node.Count() == 0)  // Endpoint
             {
                 endpointWriter.Write((int)(stringOffset + stringWriter.BaseStream.Position));
+                // TODO: This is also wrong, sometimes the data is 2 and possibly others
                 endpointWriter.Write((int)1);
                 stringWriter.Write(Encoding.ASCII.GetBytes(node.StringValue));
                 stringWriter.Write((byte)0);    // Null terminator
