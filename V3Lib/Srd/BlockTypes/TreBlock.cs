@@ -167,11 +167,16 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write((int)(0x10 + entryData.Length + endpointData.Length));
 
             writer.Write(entryData);
+            Utils.WritePadding(ref writer, 16);
             writer.Write(endpointData);
+            Utils.WritePadding(ref writer, 16);
             foreach (float f in UnknownFloatList)
             {
                 writer.Write(f);
             }
+            // TODO: In official $TRE blocks, the strings seem to be sorted alphabetically
+            // within each tree depth layer, but not globally. The nodes are nevertheless
+            // saved in the normal (arbitrary?) order.
             writer.Write(stringData);
 
             byte[] result =  ms.ToArray();
