@@ -140,7 +140,7 @@ namespace V3Lib.Srd.BlockTypes
             // Iterate through the list to write the item data, while keeping track of
             // the number of entries so we know where each endpoint reference goes
             int totalEntryCount = RootNode.Flatten().Where(node => node.Count() > 0).Count();
-            int endpointOffset = totalEntryCount * 16;
+            int endpointOffset = 0x10 + (totalEntryCount * 16);
             int totalEndpointCount = RootNode.Flatten().Where(node => node.Count() == 0).Count();
             int stringOffset = endpointOffset + (totalEndpointCount * 8) + (UnknownFloatList.Count * sizeof(float));
 
@@ -219,7 +219,7 @@ namespace V3Lib.Srd.BlockTypes
             // Determine current node type (entry/endpoint) and save its data
             if (node.Count() == 0)  // Endpoint
             {
-                endpointWriter.Write((int)(0x10 + stringOffset + stringWriter.BaseStream.Position));
+                endpointWriter.Write((int)(stringOffset + stringWriter.BaseStream.Position));
                 endpointWriter.Write((int)1);
                 stringWriter.Write(Encoding.ASCII.GetBytes(node.StringValue));
                 stringWriter.Write((byte)0);    // Null terminator
@@ -230,7 +230,7 @@ namespace V3Lib.Srd.BlockTypes
                 // since it's possible that we'll have written other node data due to recursion
                 // by the time we find our first endpoint.
                 long thisNodeOffset = entryWriter.BaseStream.Position;
-                entryWriter.Write((int)(0x10 + stringOffset + stringWriter.BaseStream.Position));
+                entryWriter.Write((int)(stringOffset + stringWriter.BaseStream.Position));
                 entryWriter.Write((int)0);  // Placeholder for currentEndpointOffset
                 entryWriter.Write((byte)0); // Placeholder for currentEndpointCount
                 entryWriter.Write((byte)curDepth);
@@ -252,7 +252,7 @@ namespace V3Lib.Srd.BlockTypes
                         // Save the offset of the first endpoint
                         if (currentEndpointOffset == 0)
                         {
-                            currentEndpointOffset = 0x10 + endpointOffset + (int)endpointWriter.BaseStream.Position;
+                            currentEndpointOffset = endpointOffset + (int)endpointWriter.BaseStream.Position;
                         }
                     }
 
