@@ -143,10 +143,13 @@ namespace V3Lib.Srd.BlockTypes
 
             if (BindBoneList.Count > 0)
             {
-                //lastPos = writer.BaseStream.Position;
-                //writer.BaseStream.Seek(0x16, SeekOrigin.Begin);
-                //writer.Write((short)lastPos);   // BindBoneListOffset
-                //writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
+                if (BindBoneList.Count > 1 || (BindBoneList.Count == 1 && BindBoneList[0] != 0))
+                {
+                    lastPos = writer.BaseStream.Position;
+                    writer.BaseStream.Seek(0x16, SeekOrigin.Begin);
+                    writer.Write((short)lastPos);   // BindBoneListOffset
+                    writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
+                }
 
                 foreach (short bone in BindBoneList)
                 {
