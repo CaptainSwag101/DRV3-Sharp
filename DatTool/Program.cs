@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,7 @@ namespace DatTool
         static void Main(string[] args)
         {
             Console.WriteLine("DAT Tool by CaptainSwag101\n" +
-                "Version 0.0.2, built on 2020-03-18\n");
+                "Version 0.0.3, built on 2020-05-28\n");
 
             if (args.Length == 0)
             {
@@ -40,26 +41,28 @@ namespace DatTool
 
                     StringBuilder output = new StringBuilder();
 
-                    // Write header
+                    // Write first row (header)
                     List<string> headerEntries = new List<string>();
-                    foreach (var value in dat.ValueInfo)
+                    foreach (var def in dat.ColumnDefinitions)
                     {
-                        headerEntries.Add($"{value.Name} ({value.Type})");
+                        headerEntries.Add($"{def.Name} ({def.Type})");
                     }
                     output.AppendJoin(',', headerEntries);
                     output.Append('\n');
 
-                    // Write struct entries
-                    List<string> structEntries = new List<string>();
-                    foreach (var entry in dat.StructEntries)
+                    // Write row data
+                    List<string> rowData = new List<string>();
+                    for (int row = 0; row < dat.Data.Count; ++row)
                     {
-                        StringBuilder combinedEntry = new StringBuilder();
-                        combinedEntry.AppendJoin(',', entry);
-                        structEntries.Add(combinedEntry.ToString());
-                    }
-                    output.AppendJoin('\n', structEntries);
+                        StringBuilder rowStr = new StringBuilder();
 
-                    using StreamWriter writer = new StreamWriter(info.FullName.TrimEnd(info.Extension.ToCharArray()) + ".csv", false, Encoding.Unicode);
+                        rowStr.AppendJoin(",", dat.Data[row]);
+
+                        rowData.Add(rowStr.ToString());
+                    }
+                    output.AppendJoin('\n', rowData);
+
+                    using StreamWriter writer = new StreamWriter(info.FullName.Substring(0, info.FullName.Length - info.Extension.Length) + ".csv", false, Encoding.Unicode);
                     writer.Write(output.ToString());
                 }
                 else if (info.Extension.ToLowerInvariant() == ".csv")
@@ -69,28 +72,33 @@ namespace DatTool
 
                     using StreamReader reader = new StreamReader(info.FullName, Encoding.Unicode);
 
-                    // First line is header
+                    // First line is column definitions
                     string[] header = reader.ReadLine().Split(',');
-                    List<(string Name, string Type)> valInfo = new List<(string Name, string Type)>();
+                    var colDefinitions = new List<(string Name, string Type, ushort Count)>();
                     foreach (string headerPiece in header)
                     {
                         string name = headerPiece.Split('(').First();
                         string type = headerPiece.Split('(').Last().TrimEnd(')');
-                        valInfo.Add((name, type));
+                        colDefinitions.Add((name, type, 0));
                     }
-                    dat.ValueInfo = valInfo;
 
-                    // Read struct entries
-                    List<List<string>> entries = new List<List<string>>();
+                    // Read row data
                     while (!reader.EndOfStream)
                     {
-                        List<string> entry = new List<string>();
-                        entry.AddRange(reader.ReadLine().Split(','));
-                        entries.Add(entry);
-                    }
-                    dat.StructEntries = entries;
+                        string[] rowCells = reader.ReadLine().Split(',');
+                        List<string> rowStrings = new List<string>();
+                        for (int col = 0; col < rowCells.Length; ++col)
+                        {
+                            // Update the column definitions with the proper value count
+                            colDefinitions[col] = (colDefinitions[col].Name, colDefinitions[col].Type, (ushort)(rowCells[col].Count(c => c == '|') + 1));
 
-                    dat.Save(info.FullName.TrimEnd(info.Extension.ToCharArray()) + ".dat");
+                            rowStrings.Add(rowCells[col]);
+                        }
+                        dat.Data.Add(rowStrings);
+                    }
+                    dat.ColumnDefinitions = colDefinitions;
+
+                    dat.Save(info.FullName.Substring(0, info.FullName.Length - info.Extension.Length) + ".dat");
                 }
                 else
                 {
