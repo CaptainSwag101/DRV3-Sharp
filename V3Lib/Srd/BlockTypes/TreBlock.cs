@@ -24,9 +24,9 @@ namespace V3Lib.Srd.BlockTypes
         public IEnumerable<TreeNode> Flatten()
         {
             var stack = new Stack<IEnumerator<TreeNode>>();
-            stack.Push(GetEnumerator()); // start with the root node
+            stack.Push(GetEnumerator());    // start with the root node
 
-            yield return this; // return the root node
+            yield return this;  // return the root node
 
             while (stack.Any())
             {
@@ -36,9 +36,9 @@ namespace V3Lib.Srd.BlockTypes
                     yield return node.Current;
                     if (node.Current.Any())
                     {
-                        stack.Push(node); // re-add the node to continue later
+                        stack.Push(node);   // re-add the node to continue later
                         stack.Push(node.Current.GetEnumerator()); // continue from here now
-                        break; // we'll continue from "node" later, when node.Current is enumerated
+                        break;  // we'll continue from "node" later, when node.Current is enumerated
                     }
                 }
             }
@@ -229,7 +229,7 @@ namespace V3Lib.Srd.BlockTypes
             if (node.Count() == 0)  // Endpoint
             {
                 endpointWriter.Write((int)(stringOffset + stringWriter.BaseStream.Position));
-                // TODO: This is also wrong, sometimes the data is 2 and possibly others
+                // TODO: This is wrong, sometimes the data is 2 and possibly others
                 endpointWriter.Write((int)1);
                 stringWriter.Write(Encoding.ASCII.GetBytes(node.StringValue));
                 stringWriter.Write((byte)0);    // Null terminator
@@ -245,7 +245,9 @@ namespace V3Lib.Srd.BlockTypes
                 entryWriter.Write((byte)0); // Placeholder for currentEndpointCount
                 entryWriter.Write((byte)curDepth);
                 entryWriter.Write((byte)0xFF);  // Unknown0A
+                // TODO: This is wrong, sometimes this contains 01 or maybe others
                 entryWriter.Write((byte)0x05);  // Unknown0B
+                // TODO: This is wrong, this is usually 0 but sometimes contains small numbers
                 Utils.WritePadding(ref entryWriter, 16);    // Unknown0C
                 stringWriter.Write(Encoding.ASCII.GetBytes(node.StringValue));
                 stringWriter.Write((byte)0);    // Null terminator
