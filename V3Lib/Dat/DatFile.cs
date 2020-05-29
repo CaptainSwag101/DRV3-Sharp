@@ -119,6 +119,9 @@ namespace V3Lib.Dat
                 utf8Strings.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.UTF8));
             }
 
+            // Align to nearest 2-byte boundary
+            Utils.ReadPadding(ref reader, 2);
+
             for (int s = 0; s < utf16Count; ++s)
             {
                 utf16Strings.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.Unicode));
@@ -242,6 +245,9 @@ namespace V3Lib.Dat
                 writer.Write(Encoding.UTF8.GetBytes(utf8));
                 writer.Write((byte)0);  // Null terminator
             }
+
+            // Align to next 2-byte boundary
+            Utils.WritePadding(ref writer, 2);
 
             foreach (string utf16 in utf16Strings)
             {
