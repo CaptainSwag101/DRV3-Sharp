@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml;
 
 namespace V3Lib.Dat
 {
@@ -259,82 +258,6 @@ namespace V3Lib.Dat
             writer.Flush();
             writer.Close();
             writer.Dispose();
-        }
-
-        /// <summary>
-        /// THIS IS PROBABLY REALLY BAD CODE, I SUCK AT XML AND ODS!!!
-        /// </summary>
-        /// <param name="odsPath">Path for the ODS file to be saved at.</param>
-        public void SaveAsODS(string odsPath)
-        {
-            XmlWriterSettings settings = new XmlWriterSettings
-            {
-                Encoding = Encoding.Unicode,
-                Indent = true,
-                ConformanceLevel = ConformanceLevel.Document,
-                NamespaceHandling = NamespaceHandling.OmitDuplicates,
-                OmitXmlDeclaration = false,
-            };
-
-            using (XmlWriter writer = XmlWriter.Create(odsPath, settings))
-            {
-                writer.WriteStartDocument();
-
-                string officeNs = "urn:oasis:names:tc:opendocument:xmlns:office:1.0";
-                string tableNs = "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
-                string textNs = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
-
-                writer.WriteStartElement("office", "document", officeNs);
-                writer.WriteAttributeString("mimetype", officeNs, "application/vnd.oasis.opendocument.spreadsheet");
-
-                writer.WriteStartElement("body", officeNs);
-                writer.WriteStartElement("spreadsheet", officeNs);
-                writer.WriteStartElement("table", "table", tableNs);
-
-                // Write table header cells
-                writer.WriteStartElement("table-row", tableNs);
-                foreach (var def in ColumnDefinitions)
-                {
-                    writer.WriteStartElement("table-cell", tableNs);
-
-                    writer.WriteStartElement("text", "p", textNs);
-                    writer.WriteString($"{def.Name} ({def.Type})");
-                    writer.WriteEndElement();
-
-                    writer.WriteEndElement();
-                }
-                writer.WriteEndElement();
-
-                // Write table data cells
-                foreach (var rowValues in Data)
-                {
-                    writer.WriteStartElement("table-row", tableNs);
-
-                    foreach (string val in rowValues)
-                    {
-                        writer.WriteStartElement("table-cell", tableNs);
-
-                        writer.WriteStartElement("text", "p", textNs);
-                        writer.WriteString(val);
-                        writer.WriteEndElement();
-
-                        writer.WriteEndElement();
-                    }
-
-                    writer.WriteEndElement();
-                }
-
-                writer.WriteEndElement();
-                writer.WriteEndElement();
-                writer.WriteEndElement();
-
-                writer.WriteEndElement();
-
-                writer.WriteEndDocument();
-
-                writer.Flush();
-                writer.Close();
-            }
         }
     }
 }
