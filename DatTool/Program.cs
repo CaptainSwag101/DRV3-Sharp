@@ -4,6 +4,8 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml;
+using System.Xml.Linq;
 using V3Lib.Dat;
 
 namespace DatTool
@@ -35,35 +37,11 @@ namespace DatTool
 
                 if (info.Extension.ToLowerInvariant() == ".dat")
                 {
-                    // Convert DAT to CSV
+                    // Convert DAT to ODS
                     DatFile dat = new DatFile();
                     dat.Load(info.FullName);
 
-                    StringBuilder output = new StringBuilder();
-
-                    // Write first row (header)
-                    List<string> headerEntries = new List<string>();
-                    foreach (var def in dat.ColumnDefinitions)
-                    {
-                        headerEntries.Add($"{def.Name} ({def.Type})");
-                    }
-                    output.AppendJoin(',', headerEntries);
-                    output.Append('\n');
-
-                    // Write row data
-                    List<string> rowData = new List<string>();
-                    for (int row = 0; row < dat.Data.Count; ++row)
-                    {
-                        StringBuilder rowStr = new StringBuilder();
-
-                        rowStr.AppendJoin(",", dat.Data[row]);
-
-                        rowData.Add(rowStr.ToString());
-                    }
-                    output.AppendJoin('\n', rowData);
-
-                    using StreamWriter writer = new StreamWriter(info.FullName.Substring(0, info.FullName.Length - info.Extension.Length) + ".csv", false, Encoding.Unicode);
-                    writer.Write(output.ToString());
+                    dat.SaveAsODS(info.FullName.Substring(0, info.FullName.Length - info.Extension.Length) + ".ods");
                 }
                 else if (info.Extension.ToLowerInvariant() == ".csv")
                 {
