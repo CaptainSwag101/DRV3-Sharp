@@ -15,7 +15,7 @@ namespace DatTool
         static void Main(string[] args)
         {
             Console.WriteLine("DAT Tool by CaptainSwag101\n" +
-                "Version 0.0.3, built on 2020-05-28\n");
+                "Version 0.0.3, built on 2020-06-05\n");
 
             if (args.Length == 0)
             {
@@ -56,7 +56,14 @@ namespace DatTool
                     {
                         StringBuilder rowStr = new StringBuilder();
 
-                        rowStr.AppendJoin(",", dat.Data[row]);
+                        List<string> escapedRowStrs = dat.Data[row];
+                        for (int s = 0; s < escapedRowStrs.Count; ++s)
+                        {
+                            escapedRowStrs[s] = escapedRowStrs[s].Insert(0, "\"").Insert(escapedRowStrs[s].Length + 1, "\"");
+                            escapedRowStrs[s] = escapedRowStrs[s].Replace("\n", "\\n").Replace("\r", "\\r");
+                        }
+
+                        rowStr.AppendJoin(",", escapedRowStrs);
 
                         rowData.Add(rowStr.ToString());
                     }
@@ -92,7 +99,13 @@ namespace DatTool
                             // Update the column definitions with the proper value count
                             colDefinitions[col] = (colDefinitions[col].Name, colDefinitions[col].Type, (ushort)(rowCells[col].Count(c => c == '|') + 1));
 
-                            rowStrings.Add(rowCells[col]);
+                            if (rowCells[col].StartsWith('\"'))
+                                rowCells[col] = rowCells[col].Remove(0, 1);
+
+                            if (rowCells[col].EndsWith('\"'))
+                                rowCells[col] = rowCells[col].Remove(rowCells[col].Length, 1);
+
+                            rowStrings.Add(rowCells[col].Replace("\\n", "\n").Replace("\\r", "\r"));
                         }
                         dat.Data.Add(rowStrings);
                     }
