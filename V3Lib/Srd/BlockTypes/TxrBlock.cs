@@ -33,7 +33,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override void DeserializeData(byte[] rawData)
         {
-            BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadInt32();
             Swizzle = reader.ReadUInt16();
@@ -44,15 +44,12 @@ namespace V3Lib.Srd.BlockTypes
             Unknown1D = reader.ReadByte();
             Palette = reader.ReadByte();
             PaletteId = reader.ReadByte();
-
-            reader.Close();
-            reader.Dispose();
         }
 
         public override byte[] SerializeData()
         {
-            MemoryStream ms = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter writer = new BinaryWriter(ms);
 
             writer.Write(Unknown10);
             writer.Write(Swizzle);
@@ -65,8 +62,6 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(PaletteId);
 
             byte[] result = ms.ToArray();
-            writer.Close();
-            writer.Dispose();
             return result;
         }
 

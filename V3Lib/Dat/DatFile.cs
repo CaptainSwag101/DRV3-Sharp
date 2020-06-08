@@ -85,7 +85,7 @@ namespace V3Lib.Dat
 
         public void Load(string datPath)
         {
-            BinaryReader reader = new BinaryReader(new FileStream(datPath, FileMode.Open, FileAccess.Read, FileShare.Read));
+            using BinaryReader reader = new BinaryReader(new FileStream(datPath, FileMode.Open, FileAccess.Read, FileShare.Read));
 
             // Read header
             uint rowCount = reader.ReadUInt32();
@@ -95,15 +95,15 @@ namespace V3Lib.Dat
             // Read column descriptors
             for (int col = 0; col < columnCount; ++col)
             {
-                string colName = Utils.ReadNullTerminatedString(ref reader, Encoding.UTF8);
-                string colType = Utils.ReadNullTerminatedString(ref reader, Encoding.ASCII);
+                string colName = Utils.ReadNullTerminatedString(reader, Encoding.UTF8);
+                string colType = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
                 ushort colCount = reader.ReadUInt16();
 
                 ColumnDefinitions.Add((colName, colType, colCount));
             }
 
             // Align to next 16-byte boundary
-            Utils.ReadPadding(ref reader, 16);
+            Utils.ReadPadding(reader, 16);
 
             // Skip ahead to read the UTF-8 strings and UTF-16 strings so we can reference them while reading row data
             long rowDataPos = reader.BaseStream.Position;
@@ -116,15 +116,15 @@ namespace V3Lib.Dat
 
             for (int s = 0; s < utf8Count; ++s)
             {
-                utf8Strings.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.UTF8));
+                utf8Strings.Add(Utils.ReadNullTerminatedString(reader, Encoding.UTF8));
             }
 
             // Align to nearest 2-byte boundary
-            Utils.ReadPadding(ref reader, 2);
+            Utils.ReadPadding(reader, 2);
 
             for (int s = 0; s < utf16Count; ++s)
             {
-                utf16Strings.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.Unicode));
+                utf16Strings.Add(Utils.ReadNullTerminatedString(reader, Encoding.Unicode));
             }
 
             reader.BaseStream.Seek(rowDataPos, SeekOrigin.Begin);
@@ -166,14 +166,11 @@ namespace V3Lib.Dat
 
                 Data.Add(rowData);
             }
-
-            reader.Close();
-            reader.Dispose();
         }
 
         public void Save(string datPath)
         {
-            BinaryWriter writer = new BinaryWriter(new FileStream(datPath, FileMode.Create, FileAccess.Write, FileShare.None));
+            using BinaryWriter writer = new BinaryWriter(new FileStream(datPath, FileMode.Create, FileAccess.Write, FileShare.None));
 
             // Write header
             writer.Write((uint)Data.Count); // rowCount
@@ -196,7 +193,7 @@ namespace V3Lib.Dat
             }
 
             // Write padding to next 16-byte boundary
-            Utils.WritePadding(ref writer, 16);
+            Utils.WritePadding(writer, 16);
 
             // Write row data according to its type
             List<string> utf8Strings = new List<string>();
@@ -212,25 +209,29 @@ namespace V3Lib.Dat
                     string[] splitVal = rowData[col].Split('|');
                     for (int i = 0; i < splitVal.Length; ++i)
                     {
+                        object value;
+
                         if (type == "ascii" || type == "label" || type == "refer")
                         {
                             if (!utf8Strings.Contains(splitVal[i]))
                                 utf8Strings.Add(splitVal[i]);
 
-                            WriteFunctions[type].Invoke(writer, (ushort)utf8Strings.IndexOf(splitVal[i]));
+                            value = (ushort)utf8Strings.IndexOf(splitVal[i]);
                         }
                         else if (type == "utf16")
                         {
                             if (!utf16Strings.Contains(splitVal[i]))
                                 utf16Strings.Add(splitVal[i]);
 
-                            WriteFunctions[type].Invoke(writer, (ushort)utf16Strings.IndexOf(splitVal[i]));
+                            value = (ushort)utf16Strings.IndexOf(splitVal[i]);
                         }
                         else
                         {
-                            object temp = Convert.ChangeType(int.Parse(splitVal[i]), DataTypes[type]);   // This is only needed to convert the data to a numeric type
-                            WriteFunctions[type].Invoke(writer, temp);
+                            // This is only needed to convert the data to a numeric type
+                            value = Convert.ChangeType(int.Parse(splitVal[i]), DataTypes[type]);
                         }
+
+                        WriteFunctions[type].Invoke(writer, value);
                     }
                 }
             }
@@ -247,7 +248,7 @@ namespace V3Lib.Dat
             }
 
             // Align to next 2-byte boundary
-            Utils.WritePadding(ref writer, 2);
+            Utils.WritePadding(writer, 2);
 
             foreach (string utf16 in utf16Strings)
             {
@@ -256,8 +257,6 @@ namespace V3Lib.Dat
             }
 
             writer.Flush();
-            writer.Close();
-            writer.Dispose();
         }
     }
 }

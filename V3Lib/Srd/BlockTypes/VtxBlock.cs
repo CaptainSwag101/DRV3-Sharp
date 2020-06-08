@@ -29,7 +29,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override void DeserializeData(byte[] rawData)
         {
-            BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
             FloatTripletCount = reader.ReadInt32();
             Unknown14 = reader.ReadInt16();
@@ -43,7 +43,7 @@ namespace V3Lib.Srd.BlockTypes
             UnknownFloatListOffset = reader.ReadInt16();
             BindBoneListOffset = reader.ReadInt16();
             Unknown28 = reader.ReadInt16();
-            Utils.ReadPadding(ref reader, 16);
+            Utils.ReadPadding(reader, 16);
 
             // Read unknown list of shorts
             UnknownShortList = new List<short>();
@@ -91,17 +91,14 @@ namespace V3Lib.Srd.BlockTypes
             UnknownStringList = new List<string>();
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                UnknownStringList.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.ASCII));
+                UnknownStringList.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
             }
-
-            reader.Close();
-            reader.Dispose();
         }
 
         public override byte[] SerializeData()
         {
-            MemoryStream ms = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter writer = new BinaryWriter(ms);
 
             writer.Write((int)(UnknownFloatList.Count * 2));
             writer.Write(Unknown14);
@@ -115,7 +112,7 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write((short)0);     // Placeholder for FloatListOffset
             writer.Write((short)0);     // Placeholder for BindBoneListOffset
             writer.Write(Unknown28);
-            Utils.WritePadding(ref writer, 16);
+            Utils.WritePadding(writer, 16);
 
             // Write unknown list of shorts
             foreach (short s in UnknownShortList)
@@ -128,10 +125,10 @@ namespace V3Lib.Srd.BlockTypes
             writer.BaseStream.Seek(0x12, SeekOrigin.Begin);
             writer.Write((short)lastPos);   // VertexSubBlockListOffset
             writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
-            foreach (var subBlock in VertexSubBlockList)
+            foreach (var (Offset, Size) in VertexSubBlockList)
             {
-                writer.Write(subBlock.Offset);
-                writer.Write(subBlock.Size);
+                writer.Write(Offset);
+                writer.Write(Size);
             }
 
             // Write bone list
@@ -162,11 +159,11 @@ namespace V3Lib.Srd.BlockTypes
             writer.BaseStream.Seek(0x14, SeekOrigin.Begin);
             writer.Write((short)lastPos);   // UnknownFloatListOffset
             writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
-            foreach (var triplet in UnknownFloatList)
+            foreach (var (F1, F2, F3) in UnknownFloatList)
             {
-                writer.Write(triplet.F1);
-                writer.Write(triplet.F2);
-                writer.Write(triplet.F3);
+                writer.Write(F1);
+                writer.Write(F2);
+                writer.Write(F3);
             }
 
             // Write unknown string data
@@ -177,8 +174,6 @@ namespace V3Lib.Srd.BlockTypes
             }
 
             byte[] result = ms.ToArray();
-            writer.Close();
-            writer.Dispose();
             return result;
         }
 

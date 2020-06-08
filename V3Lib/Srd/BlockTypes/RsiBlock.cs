@@ -57,7 +57,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override void DeserializeData(byte[] rawData)
         {
-            BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
             // TODO: If Unknown10 == 0x04, maybe we read the remaining numbers as shorts, otherwise as ints?
             Unknown10 = reader.ReadByte();
@@ -98,17 +98,14 @@ namespace V3Lib.Srd.BlockTypes
             ResourceStringList = new List<string>();
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
-                ResourceStringList.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.GetEncoding("shift-jis")));
+                ResourceStringList.Add(Utils.ReadNullTerminatedString(reader, Encoding.GetEncoding("shift-jis")));
             }
-
-            reader.Close();
-            reader.Dispose();
         }
 
         public override byte[] SerializeData()
         {
-            MemoryStream ms = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter writer = new BinaryWriter(ms);
 
             writer.Write(Unknown10);
             writer.Write(Unknown11);
@@ -137,8 +134,6 @@ namespace V3Lib.Srd.BlockTypes
             }
 
             byte[] result = ms.ToArray();
-            writer.Close();
-            writer.Dispose();
             return result;
         }
 

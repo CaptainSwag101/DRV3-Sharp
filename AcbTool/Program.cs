@@ -28,7 +28,7 @@ namespace AcbTool
             string outputDir = info.DirectoryName + Path.DirectorySeparatorChar + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
             Directory.CreateDirectory(outputDir);
 
-            //FileStream fs = new FileStream(info.FullName + "_cuenames.txt", FileMode.Create);
+            //using FileStream fs = new FileStream(info.FullName + "_cuenames.txt", FileMode.Create);
             foreach (var cue in loadedAcb.Cues)
             {
                 //fs.Write(Encoding.ASCII.GetBytes(cue.Value + '\n'));
@@ -50,8 +50,6 @@ namespace AcbTool
                 }
             }
             //fs.Flush();
-            //fs.Close();
-            //fs.Dispose();
         }
     }
 }

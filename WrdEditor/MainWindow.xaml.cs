@@ -78,11 +78,11 @@ namespace WrdEditor
 
             // Generate a string for every command in the WRD
             StringBuilder sb = new StringBuilder();
-            foreach (var tuple in loadedWrd.Commands)
+            foreach (var (Opcode, Arguments) in loadedWrd.Commands)
             {
-                sb.Append(tuple.Opcode);
+                sb.Append(Opcode);
                 sb.Append('|');
-                sb.AppendJoin(", ", tuple.Arguments);
+                sb.AppendJoin(", ", Arguments);
                 sb.Append('\n');
             }
             wrdCommandTextBox.Text = sb.ToString();

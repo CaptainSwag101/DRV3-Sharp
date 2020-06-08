@@ -16,23 +16,20 @@ namespace V3Lib.Srd.BlockTypes
 
         public override void DeserializeData(byte[] rawData)
         {
-            BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadInt32();
             Unknown14 = reader.ReadInt32();
             Unknown18 = reader.ReadInt32();
             Unknown1C = reader.ReadInt32();
             Unknown20 = reader.ReadInt32();
-            TextureFilename = Utils.ReadNullTerminatedString(ref reader, Encoding.GetEncoding("shift-jis"));
-
-            reader.Close();
-            reader.Dispose();
+            TextureFilename = Utils.ReadNullTerminatedString(reader, Encoding.GetEncoding("shift-jis"));
         }
 
         public override byte[] SerializeData()
         {
-            MemoryStream ms = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter writer = new BinaryWriter(ms);
 
             writer.Write(Unknown10);
             writer.Write(Unknown14);
@@ -43,8 +40,6 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write((byte)0);  // Null terminator
 
             byte[] result = ms.ToArray();
-            writer.Close();
-            writer.Dispose();
             return result;
         }
 

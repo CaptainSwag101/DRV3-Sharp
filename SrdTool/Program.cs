@@ -154,9 +154,9 @@ namespace SrdTool
                     int vertexBlockLength = rsi.ResourceInfoList[0].Values[1];
 
                     int combinedSize = 0;
-                    foreach (var subBlock in vtx.VertexSubBlockList)
+                    foreach (var (Offset, Size) in vtx.VertexSubBlockList)
                     {
-                        combinedSize += subBlock.Size;
+                        combinedSize += Size;
                     }
                     if ((vertexBlockLength / combinedSize) != vtx.VertexCount)
                     {

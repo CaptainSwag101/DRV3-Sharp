@@ -11,7 +11,7 @@ namespace V3Lib
     {
         // Annoyingly, there's no easy way to read a null-terminated ASCII string in .NET
         // (or maybe I'm just a moron), so we have to do it manually.
-        public static string ReadNullTerminatedString(ref BinaryReader reader, Encoding encoding)
+        public static string ReadNullTerminatedString(BinaryReader reader, Encoding encoding)
         {
             int bytesPerChar = encoding.GetByteCount("\0");
 
@@ -33,7 +33,7 @@ namespace V3Lib
             return result;
         }
 
-        public static void ReadPadding(ref BinaryReader reader, int padTo)
+        public static void ReadPadding(BinaryReader reader, int padTo)
         {
             int paddingLength = padTo - (int)(reader.BaseStream.Position % padTo);
             if (paddingLength != padTo)
@@ -42,7 +42,7 @@ namespace V3Lib
             }
         }
 
-        public static void WritePadding(ref BinaryWriter writer, int padTo, byte padValue = 0)
+        public static void WritePadding(BinaryWriter writer, int padTo, byte padValue = 0)
         {
             int paddingLength = padTo - (int)(writer.BaseStream.Position % padTo);
             if (paddingLength != padTo)

@@ -126,9 +126,9 @@ namespace V3Lib.CriWare
                     byte schemaType = schemaInfo[c].SchemaType;
                     int columnOffset = -1;
 
-                    BinaryReader stringReader = new BinaryReader(new MemoryStream(stringTableData));
+                    using BinaryReader stringReader = new BinaryReader(new MemoryStream(stringTableData));
                     stringReader.BaseStream.Seek(schemaInfo[c].ColumnNameOffset, SeekOrigin.Begin);
-                    columnName = Utils.ReadNullTerminatedString(ref stringReader, Encoding.ASCII);
+                    columnName = Utils.ReadNullTerminatedString(stringReader, Encoding.ASCII);
                     
 
                     if (schemaInfo[c].ConstOffset >= 0)
@@ -155,7 +155,7 @@ namespace V3Lib.CriWare
                             case COLUMN_TYPE_STRING:
                                 int stringOffset = reader.ReadInt32BE();
                                 stringReader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
-                                columnValue = Utils.ReadNullTerminatedString(ref stringReader, Encoding.ASCII);
+                                columnValue = Utils.ReadNullTerminatedString(stringReader, Encoding.ASCII);
                                 break;
 
                             case COLUMN_TYPE_DATA:
@@ -214,7 +214,6 @@ namespace V3Lib.CriWare
                     columnContents.Add(columnName, columnValue);
                     
                     stringReader.Close();
-                    stringReader.Dispose();
                 }
 
                 Contents.Add(columnContents);

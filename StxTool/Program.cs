@@ -34,11 +34,11 @@ namespace StxTool
                     stx.Load(info.FullName);
 
                     using StreamWriter writer = new StreamWriter(info.FullName.Replace(info.Extension, "") + ".txt", false);
-                    foreach (var tuple in stx.StringTables)
+                    foreach (var (Strings, Unknown) in stx.StringTables)
                     {
                         writer.WriteLine("{");
 
-                        foreach (string str in tuple.Item1)
+                        foreach (string str in Strings)
                         {
                             writer.WriteLine(str.Replace("\r", @"\r").Replace("\n", @"\n"));
                         }

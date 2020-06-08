@@ -11,7 +11,7 @@ namespace V3Lib.Stx
         
         public void Load(string stxPath)
         {
-            BinaryReader reader = new BinaryReader(new FileStream(stxPath, FileMode.Open));
+            using BinaryReader reader = new BinaryReader(new FileStream(stxPath, FileMode.Open));
 
             // Verify the magic value, it should be "STXT"
             string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
@@ -50,11 +50,11 @@ namespace V3Lib.Stx
             }
 
             reader.BaseStream.Seek(tableOffset, SeekOrigin.Begin);
-            foreach (var table in tableInfo)
+            foreach (var (Unknown, StringCount) in tableInfo)
             {
                 List<string> strings = new List<string>();
 
-                for (int s = 0; s < table.StringCount; ++s)
+                for (int s = 0; s < StringCount; ++s)
                 {
                     uint stringId = reader.ReadUInt32();
                     uint stringOffset = reader.ReadUInt32();
@@ -64,16 +64,15 @@ namespace V3Lib.Stx
                     reader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
 
                     // C# does not include a way to read null-terminated strings, so we'll have to do it manually.
-                    strings.Add(Utils.ReadNullTerminatedString(ref reader, Encoding.Unicode));
+                    strings.Add(Utils.ReadNullTerminatedString(reader, Encoding.Unicode));
 
                     reader.BaseStream.Seek(returnPos, SeekOrigin.Begin);
                 }
 
-                StringTables.Add((strings, table.Unknown));
+                StringTables.Add((strings, Unknown));
             }
 
             reader.Close();
-            reader.Dispose();
         }
 
         public void Save(string stxPath)
@@ -86,10 +85,10 @@ namespace V3Lib.Stx
             writer.Write((int)0);   // tableOffset, to be written later
 
             // Write table info
-            foreach (var table in StringTables)
+            foreach (var (Strings, Unknown) in StringTables)
             {
-                writer.Write(table.Unknown);
-                writer.Write(table.Strings.Count);
+                writer.Write(Unknown);
+                writer.Write(Strings.Count);
                 writer.Write((ulong)0); // Pad to nearest 16-byte boundary
             }
 
@@ -100,17 +99,17 @@ namespace V3Lib.Stx
             writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
 
             // Write temporary padding for string IDs/offset
-            foreach (var table in StringTables)
+            foreach (var (Strings, Unknown) in StringTables)
             {
-                writer.Write(new byte[(8 * table.Strings.Count)]);
+                writer.Write(new byte[(8 * Strings.Count)]);
             }
 
             // Write string data & corresponding ID/offset pair
             long infoPairPos = lastPos;
-            foreach (var table in StringTables)
+            foreach (var (Strings, Unknown) in StringTables)
             {
                 uint strId = 0;
-                foreach (string str in table.Strings)
+                foreach (string str in Strings)
                 {
                     // Write ID/offset pair
                     long strPos = writer.BaseStream.Position;

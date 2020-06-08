@@ -14,24 +14,22 @@ namespace V3Lib.Srd
 
         public void Load(string srdPath)
         {
-            BinaryReader reader = new BinaryReader(new FileStream(srdPath, FileMode.Open));
-            Blocks = ReadBlocks(ref reader);
+            using BinaryReader reader = new BinaryReader(new FileStream(srdPath, FileMode.Open));
+            Blocks = ReadBlocks(reader);
 
             reader.Close();
-            reader.Dispose();
         }
 
         public void Save(string srdPath)
         {
-            BinaryWriter writer = new BinaryWriter(new FileStream(srdPath, FileMode.Create));
-            WriteBlocks(ref writer, Blocks);
+            using BinaryWriter writer = new BinaryWriter(new FileStream(srdPath, FileMode.Create));
+            WriteBlocks(writer, Blocks);
 
             writer.Flush();
             writer.Close();
-            writer.Dispose();
         }
 
-        public static List<Block> ReadBlocks(ref BinaryReader reader)
+        public static List<Block> ReadBlocks(BinaryReader reader)
         {
             List<Block> blockList = new List<Block>();
 
@@ -59,26 +57,26 @@ namespace V3Lib.Srd
 
                 byte[] rawData = reader.ReadBytes(dataLength);
                 block.DeserializeData(rawData);
-                Utils.ReadPadding(ref reader, 16);
+                Utils.ReadPadding(reader, 16);
 
 
                 byte[] rawSubdata = reader.ReadBytes(subdataLength);
                 BinaryReader subdataReader = new BinaryReader(new MemoryStream(rawSubdata));
-                List<Block> childBlocks = ReadBlocks(ref subdataReader);
+                List<Block> childBlocks = ReadBlocks(subdataReader);
                 block.Children = childBlocks;
                 subdataReader.Close();
                 subdataReader.Dispose();
-                Utils.ReadPadding(ref reader, 16);
+                Utils.ReadPadding(reader, 16);
 
 
                 blockList.Add(block);
-                Utils.ReadPadding(ref reader, 16);
+                Utils.ReadPadding(reader, 16);
             }
 
             return blockList;
         }
 
-        public static void WriteBlocks(ref BinaryWriter writer, List<Block> blockList)
+        public static void WriteBlocks(BinaryWriter writer, List<Block> blockList)
         {
             foreach (Block block in blockList)
             {
@@ -87,11 +85,11 @@ namespace V3Lib.Srd
                 byte[] rawData = block.SerializeData();
                 writer.WriteBE(rawData.Length);
 
-                BinaryWriter subdataWriter = new BinaryWriter(new MemoryStream());
-                WriteBlocks(ref subdataWriter, block.Children);
+                using BinaryWriter subdataWriter = new BinaryWriter(new MemoryStream());
+                WriteBlocks(subdataWriter, block.Children);
                 byte[] rawSubdata = ((MemoryStream)subdataWriter.BaseStream).ToArray();
                 subdataWriter.Close();
-                subdataWriter.Dispose();
+
                 writer.WriteBE(rawSubdata.Length);
 
                 if (block is CfhBlock)
@@ -100,9 +98,9 @@ namespace V3Lib.Srd
                     writer.WriteBE((int)0);
 
                 writer.Write(rawData);
-                Utils.WritePadding(ref writer, 16);
+                Utils.WritePadding(writer, 16);
                 writer.Write(rawSubdata);
-                Utils.WritePadding(ref writer, 16);
+                Utils.WritePadding(writer, 16);
             }
         }
 

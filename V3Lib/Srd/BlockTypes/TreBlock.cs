@@ -54,7 +54,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override void DeserializeData(byte[] rawData)
         {
-            BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
             uint maxTreeDepth = reader.ReadUInt32();
             Unknown14 = reader.ReadUInt16();
@@ -83,7 +83,7 @@ namespace V3Lib.Srd.BlockTypes
                 // Seek to the string data and read it, then seek back
                 long lastPos = reader.BaseStream.Position;
                 reader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
-                TreeNode node = new TreeNode(Utils.ReadNullTerminatedString(ref reader, Encoding.ASCII));
+                TreeNode node = new TreeNode(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
                 reader.BaseStream.Seek(lastPos, SeekOrigin.Begin);
 
                 // Read and append any endpoints
@@ -98,7 +98,7 @@ namespace V3Lib.Srd.BlockTypes
                         uint unknown04 = reader.ReadUInt32();
                         long lastPos3 = reader.BaseStream.Position;
                         reader.BaseStream.Seek(endpointStringOffset, SeekOrigin.Begin);
-                        TreeNode endpoint = new TreeNode(Utils.ReadNullTerminatedString(ref reader, Encoding.ASCII));
+                        TreeNode endpoint = new TreeNode(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
                         node.Add(endpoint);
                         reader.BaseStream.Seek(lastPos3, SeekOrigin.Begin);
                     }
@@ -131,15 +131,12 @@ namespace V3Lib.Srd.BlockTypes
             {
                 UnknownFloatList.Add(reader.ReadSingle());
             }
-
-            reader.Close();
-            reader.Dispose();
         }
 
         public override byte[] SerializeData()
         {
-            MemoryStream ms = new MemoryStream();
-            BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new MemoryStream();
+            using BinaryWriter writer = new BinaryWriter(ms);
 
             // Iterate through the list to write the item data, while keeping track of
             // the number of entries so we know where each endpoint reference goes
@@ -149,19 +146,13 @@ namespace V3Lib.Srd.BlockTypes
             int stringOffset = endpointOffset + (totalEndpointCount * 8) + (UnknownFloatList.Count * sizeof(float));
 
             int maxDepth = 0;
-            BinaryWriter entryWriter = new BinaryWriter(new MemoryStream());
-            BinaryWriter endpointWriter = new BinaryWriter(new MemoryStream());
-            BinaryWriter stringWriter = new BinaryWriter(new MemoryStream());
-            SaveTree(RootNode, ref entryWriter, ref endpointWriter, ref stringWriter, ref maxDepth, 0, endpointOffset, stringOffset);
+            using BinaryWriter entryWriter = new BinaryWriter(new MemoryStream());
+            using BinaryWriter endpointWriter = new BinaryWriter(new MemoryStream());
+            using BinaryWriter stringWriter = new BinaryWriter(new MemoryStream());
+            SaveTree(RootNode, entryWriter, endpointWriter, stringWriter, ref maxDepth, 0, endpointOffset, stringOffset);
             byte[] entryData = ((MemoryStream)entryWriter.BaseStream).ToArray();
             byte[] endpointData = ((MemoryStream)endpointWriter.BaseStream).ToArray();
             byte[] stringData = ((MemoryStream)stringWriter.BaseStream).ToArray();
-            stringWriter.Close();
-            stringWriter.Dispose();
-            endpointWriter.Close();
-            endpointWriter.Dispose();
-            entryWriter.Close();
-            entryWriter.Dispose();
 
             writer.Write((int)maxDepth);
             writer.Write(Unknown14);
@@ -171,9 +162,9 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write((int)(0x10 + entryData.Length + endpointData.Length));
 
             writer.Write(entryData);
-            Utils.WritePadding(ref writer, 16);
+            Utils.WritePadding(writer, 16);
             writer.Write(endpointData);
-            Utils.WritePadding(ref writer, 16);
+            Utils.WritePadding(writer, 16);
             foreach (float f in UnknownFloatList)
             {
                 writer.Write(f);
@@ -184,8 +175,6 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(stringData);
 
             byte[] result =  ms.ToArray();
-            writer.Close();
-            writer.Dispose();
             return result;
         }
 
@@ -219,7 +208,7 @@ namespace V3Lib.Srd.BlockTypes
             return nodeSb.ToString();
         }
 
-        private void SaveTree(TreeNode node, ref BinaryWriter entryWriter, ref BinaryWriter endpointWriter, ref BinaryWriter stringWriter, ref int maxDepth, int curDepth, int endpointOffset, int stringOffset)
+        private void SaveTree(TreeNode node, BinaryWriter entryWriter, BinaryWriter endpointWriter, BinaryWriter stringWriter, ref int maxDepth, int curDepth, int endpointOffset, int stringOffset)
         {
             // Update maxDepth if needed
             if (curDepth > maxDepth)
@@ -248,7 +237,7 @@ namespace V3Lib.Srd.BlockTypes
                 // TODO: This is wrong, sometimes this contains 01 or maybe others
                 entryWriter.Write((byte)0x05);  // Unknown0B
                 // TODO: This is wrong, this is usually 0 but sometimes contains small numbers
-                Utils.WritePadding(ref entryWriter, 16);    // Unknown0C
+                Utils.WritePadding(entryWriter, 16);    // Unknown0C
                 stringWriter.Write(Encoding.ASCII.GetBytes(node.StringValue));
                 stringWriter.Write((byte)0);    // Null terminator
 
@@ -268,7 +257,7 @@ namespace V3Lib.Srd.BlockTypes
                         }
                     }
 
-                    SaveTree(child, ref entryWriter, ref endpointWriter, ref stringWriter, ref maxDepth, curDepth + 1, endpointOffset, stringOffset);
+                    SaveTree(child, entryWriter, endpointWriter, stringWriter, ref maxDepth, curDepth + 1, endpointOffset, stringOffset);
                 }
 
                 long returnPos = entryWriter.BaseStream.Position;

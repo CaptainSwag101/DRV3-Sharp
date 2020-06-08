@@ -129,14 +129,14 @@ namespace V3Lib.Wrd
             List<string> parameters = new List<string>();
             ushort stringCount = 0;
             
-            foreach (var tuple in Commands)
+            foreach (var (Opcode, Arguments) in Commands)
             {
                 // First, check the opcode to see if there's any additional processing we need to do
-                switch (tuple.Opcode)
+                switch (Opcode)
                 {
                     case "LAB":
                         labelOffsets.Add((ushort)commandData.Count);
-                        labelNames.Add(tuple.Arguments[0]);
+                        labelNames.Add(Arguments[0]);
                         break;
 
                     case "LOC":
@@ -145,51 +145,45 @@ namespace V3Lib.Wrd
 
                     case "LBN":
                         // Save the branch number AND the offset
-                        localBranchData.Add((ushort.Parse(tuple.Arguments[0]), (ushort)commandData.Count));
+                        localBranchData.Add((ushort.Parse(Arguments[0]), (ushort)commandData.Count));
                         break;
                 }
 
                 // Next, encode the opcode into commandData
                 commandData.Add(0x70);
-                byte opcodeId = (byte)Array.IndexOf(WrdCommandHelper.OpcodeNames, tuple.Opcode);
+                byte opcodeId = (byte)Array.IndexOf(WrdCommandHelper.OpcodeNames, Opcode);
                 commandData.Add(opcodeId);
 
                 // Then, iterate through each argument and process/save it according to its type
-                for (int argNum = 0; argNum < tuple.Arguments.Count; ++argNum)
+                for (int argNum = 0; argNum < Arguments.Count; ++argNum)
                 {
                     switch (WrdCommandHelper.ArgTypeLists[opcodeId][argNum])
                     {
                         case 0: // Plaintext parameter
                             {
-                                int found = parameters.IndexOf(tuple.Arguments[argNum]);
+                                int found = parameters.IndexOf(Arguments[argNum]);
                                 if (found == -1)
                                 {
                                     found = parameters.Count;
-                                    parameters.Add(tuple.Arguments[argNum]);
+                                    parameters.Add(Arguments[argNum]);
                                 }
 
-                                byte[] encodedArg = BitConverter.GetBytes((ushort)found);
-                                Array.Reverse(encodedArg);  // Switch to big-endian
-                                commandData.AddRange(encodedArg);
+                                commandData.AddRange(Utils.SwapEndian(BitConverter.GetBytes((ushort)found)));
                                 break;
                             }
 
                         case 1: // Raw number
                         case 2: // Dialogue string
                             {
-                                byte[] encodedArg = BitConverter.GetBytes(ushort.Parse(tuple.Arguments[argNum]));
-                                Array.Reverse(encodedArg);  // Switch to big-endian
-                                commandData.AddRange(encodedArg);
+                                commandData.AddRange(Utils.SwapEndian(BitConverter.GetBytes(ushort.Parse(Arguments[argNum]))));
                                 break;
                             }
 
                         case 3: // Label
                             {
                                 // Note: we can probably simplify this since we already added the label name just above
-                                int found = labelNames.IndexOf(tuple.Arguments[argNum]);
-                                byte[] encodedArg = BitConverter.GetBytes((ushort)found);
-                                Array.Reverse(encodedArg);  // Switch to big-endian
-                                commandData.AddRange(encodedArg);
+                                int found = labelNames.IndexOf(Arguments[argNum]);
+                                commandData.AddRange(Utils.SwapEndian(BitConverter.GetBytes((ushort)found)));
                                 break;
                             }
                     }
@@ -223,10 +217,10 @@ namespace V3Lib.Wrd
             writer.BaseStream.Seek(0x0C, SeekOrigin.Begin);
             writer.Write(localBranchOffsetsPtr);
             writer.BaseStream.Seek(0, SeekOrigin.End);
-            foreach (var localBranch in localBranchData)
+            foreach (var (ID, Offset) in localBranchData)
             {
-                writer.Write(BitConverter.GetBytes(localBranch.ID));        // branch number
-                writer.Write(BitConverter.GetBytes(localBranch.Offset));    // branch offset
+                writer.Write(BitConverter.GetBytes(ID));        // branch number
+                writer.Write(BitConverter.GetBytes(Offset));    // branch offset
             }
 
             // Write label offsets pointer & data
@@ -246,9 +240,9 @@ namespace V3Lib.Wrd
             writer.BaseStream.Seek(0, SeekOrigin.End);
             foreach (string labelName in labelNames)
             {
-                writer.Write((byte)labelName.Length);                   // string length
-                writer.Write(Encoding.ASCII.GetBytes(labelName));  // string
-                writer.Write((byte)0);                                  // null terminator
+                writer.Write((byte)labelName.Length);               // string length
+                writer.Write(Encoding.ASCII.GetBytes(labelName));   // string
+                writer.Write((byte)0);                              // null terminator
             }
 
             // Write plaintext parameters pointer & data
@@ -258,13 +252,12 @@ namespace V3Lib.Wrd
             writer.BaseStream.Seek(0, SeekOrigin.End);
             foreach (string parameter in parameters)
             {
-                writer.Write((byte)parameter.Length);                   // string length
-                writer.Write(Encoding.ASCII.GetBytes(parameter));  // string
-                writer.Write((byte)0);                                  // null terminator
+                writer.Write((byte)parameter.Length);               // string length
+                writer.Write(Encoding.ASCII.GetBytes(parameter));   // string
+                writer.Write((byte)0);                              // null terminator
             }
 
             writer.Flush(); // Just in case
-            writer.Close();
         }
     }
 }
