@@ -60,7 +60,7 @@ namespace V3Lib.Wrd
             // Read internal dialogue strings, if any
             if (stringsPtr != 0)
             {
-                using BinaryReader stringReader = new BinaryReader(reader.BaseStream, Encoding.Unicode);
+                using BinaryReader stringReader = new BinaryReader(reader.BaseStream, Encoding.Unicode, true);
                 stringReader.BaseStream.Seek(stringsPtr, SeekOrigin.Begin);
                 for (ushort i = 0; i < stringCount; ++i)
                 {

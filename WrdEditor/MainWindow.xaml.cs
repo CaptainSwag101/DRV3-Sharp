@@ -194,6 +194,49 @@ namespace WrdEditor
                 loadedWrd.Commands.Add(new WrdCommand { Opcode = opcode, Arguments = args.ToList() });
             }
 
+            if (!loadedWrd.UsesExternalStrings)
+            {
+                loadedWrd.InternalStrings.Clear();
+
+                string[] strings = wrdStringsTextBox.Text.Split('\n');
+                foreach (string str in strings)
+                {
+                    loadedWrd.InternalStrings.Add(str.Replace("\\n", "\n").Replace("\\r", "\r"));
+                }
+            }
+            else
+            {
+                string[] strings = wrdStringsTextBox.Text.Split('\n');
+                List<string> stringTable = new List<string>();
+                foreach (string str in strings)
+                {
+                    stringTable.Add(str.Replace("\\n", "\n").Replace("\\r", "\r"));
+                }
+
+                StxFile stx = new StxFile();
+                stx.StringTables.Add((stringTable, 0));
+
+                if (string.IsNullOrEmpty(loadedStxLocation))
+                {
+                    MessageBox.Show("There are external strings defined, but no STX file is currently loaded. Please specify the STX file to store your strings in.");
+                    SaveFileDialog saveStxDialog = new SaveFileDialog();
+                    saveStxDialog.Filter = "STX text files (*.stx)|*.stx|All files (*.*)|*.*";
+
+                    if (!(saveStxDialog.ShowDialog() ?? false))
+                        return;
+
+                    if (string.IsNullOrWhiteSpace(saveStxDialog.FileName))
+                    {
+                        MessageBox.Show("ERROR: Specified file name is empty or null.");
+                        return;
+                    }
+
+                    loadedStxLocation = saveStxDialog.FileName;
+                }
+
+                stx.Save(loadedStxLocation);
+            }
+
             loadedWrd.Save(loadedWrdLocation);
         }
 
