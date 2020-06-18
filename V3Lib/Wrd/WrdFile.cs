@@ -225,7 +225,7 @@ namespace V3Lib.Wrd
             writer.Write(BitConverter.GetBytes((uint)0));   // strings pointer
 
             // Write command data
-            writer.Write(commandData.GetBuffer());
+            writer.Write(commandData.ToArray());
 
             // Write local branch offsets pointer & data
             uint localBranchOffsetsPtr = (uint)writer.BaseStream.Position;
