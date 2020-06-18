@@ -15,9 +15,7 @@ namespace SrdTool
     {
         private static SrdFile Srd;
         private static string SrdName;
-        private static byte[] Srdi;
         private static string SrdiName;
-        private static byte[] Srdv;
         private static string SrdvName;
 
         static void Main(string[] args)
@@ -49,22 +47,21 @@ namespace SrdTool
             // If the file exists and is valid, load it
             Srd = new SrdFile();
             SrdName = args[0];
-            Srd.Load(SrdName);
 
-            // Search for linked files like SRDI and SRDV and load them
-            Srdi = Array.Empty<byte>();
+            // Search for linked files like SRDI and SRDV
             SrdiName = SrdName.Remove(SrdName.LastIndexOf(new FileInfo(SrdName).Extension)) + ".srdi";
-            if (File.Exists(SrdiName))
+            if (!File.Exists(SrdiName))
             {
-                Srdi = File.ReadAllBytes(SrdiName);
+                SrdiName = string.Empty;
             }
 
-            Srdv = Array.Empty<byte>();
             SrdvName = SrdName.Remove(SrdName.LastIndexOf(new FileInfo(SrdName).Extension)) + ".srdv";
-            if (File.Exists(SrdvName))
-            { 
-                Srdv = File.ReadAllBytes(SrdvName);
+            if (!File.Exists(SrdvName))
+            {
+                SrdvName = string.Empty;
             }
+
+            Srd.Load(SrdName, SrdiName, SrdvName);
 
             // Process commands
             while (true)
@@ -88,7 +85,7 @@ namespace SrdTool
                         break;
 
                     case "save":
-                        Srd.Save(SrdName + "_tempSaveTest.srd");
+                        Srd.Save(SrdName, SrdiName, SrdvName);
                         Console.WriteLine("Save complete.");
                         break;
 
@@ -137,35 +134,30 @@ namespace SrdTool
             // Export the vertices and faces as an ASCII OBJ
             StringBuilder sb = new StringBuilder();
             int totalVerticesProcessed = 0;
+
             foreach (Block b in Srd.Blocks)
             {
-                if ((b is VtxBlock) && (b.Children[0] is RsiBlock))
+                if (b is VtxBlock vtx && b.Children[0] is RsiBlock rsi)
                 {
-                    VtxBlock vtx = (VtxBlock)b;
-                    RsiBlock rsi = (RsiBlock)b.Children[0];
-
-                    BinaryReader srdiReader = new BinaryReader(new MemoryStream(Srdi));
-
                     // Extract vertex data
+                    using BinaryReader vertexReader = new BinaryReader(new MemoryStream(rsi.ExternalData[0]));
                     List<float[]> vertexList = new List<float[]>();
                     List<float[]> normalList = new List<float[]>();
                     List<float[]> texmapList = new List<float[]>();
-                    int vertexBlockOffset = rsi.ResourceInfoList[0].Values[0] & 0x1FFFFFFF;    // NOTE: This might need to be 0x00FFFFFF
-                    int vertexBlockLength = rsi.ResourceInfoList[0].Values[1];
 
                     int combinedSize = 0;
                     foreach (var (Offset, Size) in vtx.VertexSubBlockList)
                     {
                         combinedSize += Size;
                     }
-                    if ((vertexBlockLength / combinedSize) != vtx.VertexCount)
+                    if ((rsi.ExternalData[0].Length / combinedSize) != vtx.VertexCount)
                     {
                         Console.WriteLine("WARNING: Total vertex block length and expected vertex count are misaligned.");
                     }
 
                     for (int sbNum = 0; sbNum < vtx.VertexSubBlockCount; ++sbNum)
                     {
-                        srdiReader.BaseStream.Seek(vertexBlockOffset + vtx.VertexSubBlockList[sbNum].Offset, SeekOrigin.Begin);
+                        vertexReader.BaseStream.Seek(vtx.VertexSubBlockList[sbNum].Offset, SeekOrigin.Begin);
                         for (int vNum = 0; vNum < vtx.VertexCount; ++vNum)
                         {
                             int bytesRead = 0;
@@ -174,22 +166,22 @@ namespace SrdTool
                                 case 0: // Vertex/Normal data (and Texture UV for boneless models)
                                     {
                                         float[] vertex = new float[3];
-                                        vertex[0] = srdiReader.ReadSingle() * -1.0f;    // X
-                                        vertex[1] = srdiReader.ReadSingle();            // Y
-                                        vertex[2] = srdiReader.ReadSingle();            // Z
+                                        vertex[0] = vertexReader.ReadSingle() * -1.0f;    // X
+                                        vertex[1] = vertexReader.ReadSingle();            // Y
+                                        vertex[2] = vertexReader.ReadSingle();            // Z
                                         vertexList.Add(vertex);
 
                                         float[] normal = new float[3];
-                                        normal[0] = srdiReader.ReadSingle() * -1.0f;    // X
-                                        normal[1] = srdiReader.ReadSingle();            // Y
-                                        normal[2] = srdiReader.ReadSingle();            // Z
+                                        normal[0] = vertexReader.ReadSingle() * -1.0f;    // X
+                                        normal[1] = vertexReader.ReadSingle();            // Y
+                                        normal[2] = vertexReader.ReadSingle();            // Z
                                         normalList.Add(normal);
 
                                         if (vtx.VertexSubBlockCount == 1)
                                         {
                                             float[] texmap = new float[3];
-                                            texmap[0] = srdiReader.ReadSingle();        // U
-                                            texmap[1] = srdiReader.ReadSingle() * -1.0f;// V
+                                            texmap[0] = vertexReader.ReadSingle();        // U
+                                            texmap[1] = vertexReader.ReadSingle() * -1.0f;// V
                                             texmapList.Add(texmap);
                                             bytesRead = 32;
                                         }
@@ -210,8 +202,8 @@ namespace SrdTool
                                 case 2: // Texture UVs (only for models with bones)
                                     {
                                         float[] texmap = new float[3];
-                                        texmap[0] = srdiReader.ReadSingle();            // U
-                                        texmap[1] = srdiReader.ReadSingle() * -1.0f;    // V
+                                        texmap[0] = vertexReader.ReadSingle();            // U
+                                        texmap[1] = vertexReader.ReadSingle() * -1.0f;    // V
                                         texmapList.Add(texmap);
                                         bytesRead = 8;
                                         break;
@@ -219,31 +211,23 @@ namespace SrdTool
                             }
 
                             // Skip data we don't currently use, though I may add support for this data later
-                            srdiReader.BaseStream.Seek(vtx.VertexSubBlockList[sbNum].Size - bytesRead, SeekOrigin.Current);
+                            vertexReader.BaseStream.Seek(vtx.VertexSubBlockList[sbNum].Size - bytesRead, SeekOrigin.Current);
                         }
                     }
 
                     // Extract face data
+                    using BinaryReader faceReader = new BinaryReader(new MemoryStream(rsi.ExternalData[1]));
                     List<ushort[]> faceList = new List<ushort[]>();
-                    int faceBlockOffset = rsi.ResourceInfoList[1].Values[0] & 0x1FFFFFFF;  // NOTE: This might need to be 0x00FFFFFF
-                    int faceBlockLength = rsi.ResourceInfoList[1].Values[1];
-
-                    srdiReader.BaseStream.Seek(faceBlockOffset, SeekOrigin.Begin);
-                    while (srdiReader.BaseStream.Position < (faceBlockOffset + faceBlockLength))
+                    while (faceReader.BaseStream.Position < faceReader.BaseStream.Length)
                     {
                         ushort[] faceIndices = new ushort[3];
                         for (int i = 0; i < 3; ++i)
                         {
-                            ushort index = srdiReader.ReadUInt16();
+                            ushort index = faceReader.ReadUInt16();
                             faceIndices[i] = index;
                         }
                         faceList.Add(faceIndices);
                     }
-
-
-                    // Close and Dispose our reader instances, we don't need them anymore
-                    srdiReader.Close();
-                    srdiReader.Dispose();
 
 
                     // Write mesh object data
@@ -293,16 +277,14 @@ namespace SrdTool
         {
             SrdFile textureSrd;
             string textureSrdName;
-            byte[] textureSrdv;
             string textureSrdvName;
 
             // Check if this SRD has an accompanying SRDV file.
             // If not, search for a "_texture" SRD and SRDV file of similar name.
-            if (!string.IsNullOrWhiteSpace(SrdvName) && Srdv.Length > 0)
+            if (!string.IsNullOrWhiteSpace(SrdvName))
             {
                 textureSrd = Srd;
                 textureSrdName = SrdName;
-                textureSrdv = Srdv;
                 textureSrdvName = SrdvName;
             }
             else
@@ -321,40 +303,28 @@ namespace SrdTool
                 }
 
                 textureSrd = new SrdFile();
-                textureSrd.Load(textureSrdName);
                 textureSrdvName = textureSrdName + 'v';
-                textureSrdv = File.ReadAllBytes(textureSrdvName);
+                textureSrd.Load(textureSrdName, SrdiName, textureSrdvName);
             }
-
-            // Now that we've found texture info, we can start extracting it
-            BinaryReader textureReader = new BinaryReader(new MemoryStream(textureSrdv));
 
             foreach (Block b in textureSrd.Blocks)
             {
-                if (b is TxrBlock && b.Children[0] is RsiBlock)
+                if (b is TxrBlock txr && b.Children[0] is RsiBlock rsi)
                 {
-                    TxrBlock txr = (TxrBlock)b;
-                    RsiBlock rsi = (RsiBlock)b.Children[0];
-
                     // Separate the palette ResourceInfo from the list beforehand if it exists
                     byte[] paletteData = Array.Empty<byte>();
                     if (txr.Palette == 1)
                     {
                         ResourceInfo paletteInfo = rsi.ResourceInfoList[txr.PaletteId];
                         rsi.ResourceInfoList.RemoveAt(txr.PaletteId);
-
-                        textureReader.BaseStream.Seek(paletteInfo.Values[0] & 0x1FFFFFFF, SeekOrigin.Begin);
-                        paletteData = textureReader.ReadBytes(paletteInfo.Values[1]);
+                        paletteData = rsi.ExternalData[txr.PaletteId];
                     }
 
                     // Read image data based on resource info
                     bool extractMipmaps = false;    // FIXME: TEMPORARY!!!
                     for (int m = 0; m < (extractMipmaps ? rsi.ResourceInfoList.Count : 1); m++)
                     {
-                        byte[] inputImageData;
-
-                        textureReader.BaseStream.Seek(rsi.ResourceInfoList[m].Values[0] & 0x1FFFFFFF, SeekOrigin.Begin);
-                        inputImageData = textureReader.ReadBytes(rsi.ResourceInfoList[m].Values[1]);
+                        byte[] inputImageData = rsi.ExternalData[m];
 
                         int dispWidth = txr.DisplayWidth;
                         int dispHeight = txr.DisplayHeight;
@@ -478,18 +448,13 @@ namespace SrdTool
                             mipmapName += ".png";
 
                         string outputFolder = new FileInfo(textureSrdName).DirectoryName;
-                        FileStream fs = new FileStream(outputFolder + Path.DirectorySeparatorChar + mipmapName, FileMode.Create);
+                        using FileStream fs = new FileStream(outputFolder + Path.DirectorySeparatorChar + mipmapName, FileMode.Create);
                         image.SaveAsPng(fs);
                         fs.Flush();
-                        fs.Close();
-                        fs.Dispose();
                         image.Dispose();
                     }
                 }
             }
-
-            textureReader.Close();
-            textureReader.Dispose();
         }
     }
 }

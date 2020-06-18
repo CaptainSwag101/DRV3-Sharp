@@ -13,7 +13,7 @@ namespace V3Lib.Srd.BlockTypes
         public int Unknown1C;
         public string FolderName;
 
-        public override void DeserializeData(byte[] rawData)
+        public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
             using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
@@ -24,7 +24,7 @@ namespace V3Lib.Srd.BlockTypes
             FolderName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
         }
 
-        public override byte[] SerializeData()
+        public override byte[] SerializeData(string srdiPath, string srdvPath)
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);

@@ -12,24 +12,28 @@ namespace V3Lib.Srd
     {
         public List<Block> Blocks;
 
-        public void Load(string srdPath)
+        public void Load(string srdPath, string srdiPath, string srdvPath)
         {
             using BinaryReader reader = new BinaryReader(new FileStream(srdPath, FileMode.Open));
-            Blocks = ReadBlocks(reader);
+            Blocks = ReadBlocks(reader, srdiPath, srdvPath);
 
             reader.Close();
         }
 
-        public void Save(string srdPath)
+        public void Save(string srdPath, string srdiPath, string srdvPath)
         {
+            // Empty out linked files if present
+            if (File.Exists(srdiPath)) File.Delete(srdiPath);
+            if (File.Exists(srdvPath)) File.Delete(srdvPath);
+
             using BinaryWriter writer = new BinaryWriter(new FileStream(srdPath, FileMode.Create));
-            WriteBlocks(writer, Blocks);
+            WriteBlocks(writer, Blocks, srdiPath, srdvPath);
 
             writer.Flush();
             writer.Close();
         }
 
-        public static List<Block> ReadBlocks(BinaryReader reader)
+        public static List<Block> ReadBlocks(BinaryReader reader, string srdiPath, string srdvPath)
         {
             List<Block> blockList = new List<Block>();
 
@@ -56,13 +60,13 @@ namespace V3Lib.Srd
 
 
                 byte[] rawData = reader.ReadBytes(dataLength);
-                block.DeserializeData(rawData);
+                block.DeserializeData(rawData, srdiPath, srdvPath);
                 Utils.ReadPadding(reader, 16);
 
 
                 byte[] rawSubdata = reader.ReadBytes(subdataLength);
                 BinaryReader subdataReader = new BinaryReader(new MemoryStream(rawSubdata));
-                List<Block> childBlocks = ReadBlocks(subdataReader);
+                List<Block> childBlocks = ReadBlocks(subdataReader, srdiPath, srdvPath);
                 block.Children = childBlocks;
                 subdataReader.Close();
                 subdataReader.Dispose();
@@ -76,17 +80,17 @@ namespace V3Lib.Srd
             return blockList;
         }
 
-        public static void WriteBlocks(BinaryWriter writer, List<Block> blockList)
+        public static void WriteBlocks(BinaryWriter writer, List<Block> blockList, string srdiPath, string srdvPath)
         {
             foreach (Block block in blockList)
             {
                 writer.Write(Encoding.ASCII.GetBytes(block.BlockType));
 
-                byte[] rawData = block.SerializeData();
+                byte[] rawData = block.SerializeData(srdiPath, srdvPath);
                 writer.WriteBE(rawData.Length);
 
                 using BinaryWriter subdataWriter = new BinaryWriter(new MemoryStream());
-                WriteBlocks(subdataWriter, block.Children);
+                WriteBlocks(subdataWriter, block.Children, srdiPath, srdvPath);
                 byte[] rawSubdata = ((MemoryStream)subdataWriter.BaseStream).ToArray();
                 subdataWriter.Close();
 

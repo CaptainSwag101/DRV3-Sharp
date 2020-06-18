@@ -14,7 +14,7 @@ namespace V3Lib.Srd.BlockTypes
         public int Unknown20;
         public string TextureFilename;
 
-        public override void DeserializeData(byte[] rawData)
+        public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
             using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
@@ -26,7 +26,7 @@ namespace V3Lib.Srd.BlockTypes
             TextureFilename = Utils.ReadNullTerminatedString(reader, Encoding.GetEncoding("shift-jis"));
         }
 
-        public override byte[] SerializeData()
+        public override byte[] SerializeData(string srdiPath, string srdvPath)
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);

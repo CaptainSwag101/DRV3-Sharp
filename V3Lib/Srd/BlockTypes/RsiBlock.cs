@@ -55,7 +55,9 @@ namespace V3Lib.Srd.BlockTypes
         public byte[] ResourceData;
         public List<string> ResourceStringList;
 
-        public override void DeserializeData(byte[] rawData)
+        public List<byte[]> ExternalData = new List<byte[]>();
+
+        public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
             using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
@@ -100,9 +102,46 @@ namespace V3Lib.Srd.BlockTypes
             {
                 ResourceStringList.Add(Utils.ReadNullTerminatedString(reader, Encoding.GetEncoding("shift-jis")));
             }
+
+            // Read external data, if any, based on the ResourceInfo data
+            foreach (ResourceInfo info in ResourceInfoList)
+            {
+                uint maskedOffset = (uint)(info.Values[0] & 0x1FFFFFFF);
+                uint location = (uint)(info.Values[0] & ~0x1FFFFFFF);
+
+                switch (location)
+                {
+                    case 0x20000000:    // Data is in SRDI
+                        {
+                            if (!string.IsNullOrEmpty(srdiPath))
+                            {
+                                using BinaryReader srdiReader = new BinaryReader(new FileStream(srdiPath, FileMode.Open, FileAccess.Read, FileShare.Read));
+                                srdiReader.BaseStream.Seek(maskedOffset, SeekOrigin.Begin);
+                                int size = info.Values[1];
+                                byte[] data = srdiReader.ReadBytes(size);
+                                ExternalData.Add(data);
+                            }
+                            
+                        }
+                        break;
+
+                    case 0x40000000:    // Data is in SRDV
+                        {
+                            if (!string.IsNullOrEmpty(srdvPath))
+                            {
+                                using BinaryReader srdvReader = new BinaryReader(new FileStream(srdvPath, FileMode.Open, FileAccess.Read, FileShare.Read));
+                                srdvReader.BaseStream.Seek(maskedOffset, SeekOrigin.Begin);
+                                int size = info.Values[1];
+                                byte[] data = srdvReader.ReadBytes(size);
+                                ExternalData.Add(data);
+                            }
+                        }
+                        break;
+                }
+            }
         }
 
-        public override byte[] SerializeData()
+        public override byte[] SerializeData(string srdiPath, string srdvPath)
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
@@ -116,7 +155,58 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(ResourceInfoSize);
             writer.Write(Unknown1A);
             writer.Write((ResourceInfoList.Count * 0x10) + ResourceData.Length + 0x10);
-            
+
+
+            // Write external data back out to linked files
+            BinaryWriter srdiWriter = null;
+            if (!string.IsNullOrEmpty(srdiPath)) srdiWriter = new BinaryWriter(new FileStream(srdiPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None));
+            BinaryWriter srdvWriter = null;
+            if (!string.IsNullOrEmpty(srdvPath)) srdvWriter = new BinaryWriter(new FileStream(srdvPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None));
+            for (int i = 0; i < ExternalData.Count; ++i)
+            {
+                // NOTE: When we re-save linked external data, we only care about which linked file the data's stored in,
+                // which means when we insert or replace existing data we can just write a placeholder offset in the
+                // accompanying ResourceInfo, which will be replaced here with the actual offset within the linked file.
+                uint location = (uint)(ResourceInfoList[i].Values[0] & ~0x1FFFFFFF);
+                switch (location)
+                {
+                    case 0x20000000:
+                        {
+                            if (srdiWriter != null)
+                            {
+                                // Seek to the end of existing data, if this is the first time we've written data it will be empty.
+                                srdiWriter.BaseStream.Seek(0, SeekOrigin.End);
+                                ResourceInfoList[i].Values[0] = (int)(srdiWriter.BaseStream.Position | 0x20000000);
+                                ResourceInfoList[i].Values[1] = (int)(ExternalData[i].Length);
+                                srdiWriter.Write(ExternalData[i]);
+                                Utils.WritePadding(srdiWriter, 16);
+                            }
+                        }
+                        break;
+
+                    case 0x40000000:
+                        {
+                            if (srdvWriter != null)
+                            {
+                                // Seek to the end of existing data, if this is the first time we've written data it will be empty.
+                                srdvWriter.BaseStream.Seek(0, SeekOrigin.End);
+                                ResourceInfoList[i].Values[0] = (int)(srdvWriter.BaseStream.Position | 0x40000000);
+                                ResourceInfoList[i].Values[1] = (int)(ExternalData[i].Length);
+                                srdvWriter.Write(ExternalData[i]);
+                                Utils.WritePadding(srdvWriter, 16);
+                            }
+                        }
+                        break;
+                }
+            }
+            srdiWriter?.Flush();
+            srdiWriter?.Close();
+            srdiWriter?.Dispose();
+            srdvWriter?.Flush();
+            srdvWriter?.Close();
+            srdvWriter?.Dispose();
+
+
             foreach (ResourceInfo info in ResourceInfoList)
             {
                 foreach (int value in info.Values)
@@ -156,10 +246,12 @@ namespace V3Lib.Srd.BlockTypes
             {
                 StringBuilder sb2 = new StringBuilder();
                 sb2.Append("{ ");
+                List<string> intStrings = new List<string>();
                 foreach (int val in info.Values)
                 {
-
+                    intStrings.Add(val.ToString("X8"));
                 }
+                sb2.AppendJoin(", ", intStrings);
                 sb2.Append(" }");
                 infoOutputList.Add(sb2.ToString());
             }

@@ -14,7 +14,7 @@ namespace V3Lib.Srd.BlockTypes
     {
         public byte[] Data;
 
-        public override void DeserializeData(byte[] rawData)
+        public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
             if (rawData != null)
                 Data = rawData;
@@ -22,7 +22,7 @@ namespace V3Lib.Srd.BlockTypes
                 Data = Array.Empty<byte>();
         }
 
-        public override byte[] SerializeData()
+        public override byte[] SerializeData(string srdiPath, string srdvPath)
         {
             return Data;
         }

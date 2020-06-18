@@ -27,7 +27,7 @@ namespace V3Lib.Srd.BlockTypes
         public List<(float F1, float F2, float F3)> UnknownFloatList;
         public List<string> UnknownStringList;
 
-        public override void DeserializeData(byte[] rawData)
+        public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
             using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
@@ -95,7 +95,7 @@ namespace V3Lib.Srd.BlockTypes
             }
         }
 
-        public override byte[] SerializeData()
+        public override byte[] SerializeData(string srdiPath, string srdvPath)
         {
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
