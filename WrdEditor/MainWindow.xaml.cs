@@ -14,6 +14,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using V3Lib.Stx;
 using V3Lib.Wrd;
 
 namespace WrdEditor
@@ -25,6 +26,7 @@ namespace WrdEditor
     {
         private string loadedWrdLocation;
         private WrdFile loadedWrd;
+        private string loadedStxLocation;
 
         private RoutedCommand newScriptCmd = new RoutedCommand();
         private RoutedCommand openScriptCmd = new RoutedCommand();
@@ -78,14 +80,50 @@ namespace WrdEditor
 
             // Generate a string for every command in the WRD
             StringBuilder sb = new StringBuilder();
-            foreach (var (Opcode, Arguments) in loadedWrd.Commands)
+            foreach (WrdCommand command in loadedWrd.Commands)
             {
-                sb.Append(Opcode);
+                sb.Append(command.Opcode);
                 sb.Append('|');
-                sb.AppendJoin(", ", Arguments);
+                sb.AppendJoin(", ", command.Arguments);
                 sb.Append('\n');
             }
             wrdCommandTextBox.Text = sb.ToString();
+
+            // Check if we need to prompt the user to open an external STX file for strings
+            wrdStringsTextBox.Text = string.Empty;
+            if (loadedWrd.UsesExternalStrings)
+            {
+                if (MessageBox.Show("The WRD file references external string data, load an STX file?", "Load external strings", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
+                {
+                    OpenFileDialog openStxDialog = new OpenFileDialog();
+                    openStxDialog.Filter = "STX text files (*.stx)|*.stx|All files (*.*)|*.*";
+
+                    if (!(openStxDialog.ShowDialog() ?? false))
+                        return;
+
+                    if (string.IsNullOrWhiteSpace(openStxDialog.FileName))
+                    {
+                        MessageBox.Show("ERROR: Specified file name is empty or null.");
+                        return;
+                    }
+
+                    StxFile stx = new StxFile();
+                    stx.Load(openStxDialog.FileName);
+                    loadedStxLocation = openStxDialog.FileName;
+
+                    foreach (string str in stx.StringTables.First().Strings)
+                    {
+                        wrdStringsTextBox.Text += str.Replace("\n", "\\n").Replace("\r", "\\r") + '\n';
+                    }
+                }
+            }
+            else
+            {
+                foreach (string str in loadedWrd.InternalStrings)
+                {
+                    wrdStringsTextBox.Text += str.Replace("\n", "\\n").Replace("\r", "\\r") + '\n';
+                }
+            }
         }
 
         private void SaveScriptMenuItem_Click(object sender, RoutedEventArgs e)
@@ -153,8 +191,7 @@ namespace WrdEditor
                     }
                 }
 
-                (string Opcode, List<string> Arguments) tuple = (opcode, args.ToList());
-                loadedWrd.Commands.Add(tuple);
+                loadedWrd.Commands.Add(new WrdCommand { Opcode = opcode, Arguments = args.ToList() });
             }
 
             loadedWrd.Save(loadedWrdLocation);

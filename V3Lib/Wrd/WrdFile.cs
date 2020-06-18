@@ -5,9 +5,17 @@ using System.Text;
 
 namespace V3Lib.Wrd
 {
+    public struct WrdCommand
+    {
+        public string Opcode;
+        public List<string> Arguments;
+    }
+
     public class WrdFile
     {
-        public List<(string Opcode, List<string> Arguments)> Commands = new List<(string Opcode, List<string> Arguments)>();    // Opcode, Arguments[]
+        public List<WrdCommand> Commands = new List<WrdCommand>();
+        public List<string> InternalStrings = new List<string>();
+        public bool UsesExternalStrings = false;
 
         public void Load(string wrdPath)
         {
@@ -35,7 +43,7 @@ namespace V3Lib.Wrd
             for (ushort i = 0; i < labelCount; ++i)
             {
                 string labelName = reader.ReadString();
-                reader.ReadByte();
+                reader.ReadByte();  // Null terminator
                 labelNames.Add(labelName);
             }
 
@@ -45,25 +53,28 @@ namespace V3Lib.Wrd
             for (ushort i = 0; i < parameterCount; ++i)
             {
                 string parameterName = reader.ReadString();
-                reader.ReadByte();
+                reader.ReadByte();  // Null terminator
                 parameters.Add(parameterName);
             }
 
-            // Read internal dialogue strings
-            // (not really sure how to do this properly since most scripts store strings externally)
-            /*
-            List<string> strings = new List<string>();
+            // Read internal dialogue strings, if any
             if (stringsPtr != 0)
             {
-                reader.BaseStream.Seek(stringsPtr, SeekOrigin.Begin);
+                using BinaryReader stringReader = new BinaryReader(reader.BaseStream, Encoding.Unicode);
+                stringReader.BaseStream.Seek(stringsPtr, SeekOrigin.Begin);
                 for (ushort i = 0; i < stringCount; ++i)
                 {
-                    string str = reader.ReadString();
-                    reader.ReadByte();
-                    strings.Add(str);
+                    string str = stringReader.ReadString();
+                    stringReader.ReadBytes(2);  // Null terminator
+                    InternalStrings.Add(str);
                 }
             }
-            */
+
+            // If no strings were loaded but the WRD indicates there should be some, it means they're external
+            if (InternalStrings.Count == 0 && stringCount > 0)
+            {
+                UsesExternalStrings = true;
+            }
 
             // Now that we've loaded all the plaintext,
             // convert the opcodes and arguments into their proper string representations
@@ -114,7 +125,7 @@ namespace V3Lib.Wrd
                     ++argNumber;
                 }
 
-                Commands.Add((opcodeName, args));
+                Commands.Add(new WrdCommand { Opcode = opcodeName, Arguments = args });
             }
         }
 
@@ -122,73 +133,77 @@ namespace V3Lib.Wrd
         {
             // Compile commands to raw bytecode in a separate array,
             // then iterate through it to get the offset addresses.
-            List<byte> commandData = new List<byte>();
+            using MemoryStream commandData = new MemoryStream();
+            using BinaryWriter commandWriter = new BinaryWriter(commandData);
             List<ushort> labelOffsets = new List<ushort>();
             List<(ushort ID, ushort Offset)> localBranchData = new List<(ushort ID, ushort Offset)>();
             List<string> labelNames = new List<string>();
             List<string> parameters = new List<string>();
             ushort stringCount = 0;
             
-            foreach (var (Opcode, Arguments) in Commands)
+            foreach (WrdCommand command in Commands)
             {
                 // First, check the opcode to see if there's any additional processing we need to do
-                switch (Opcode)
+                switch (command.Opcode)
                 {
                     case "LAB":
-                        labelOffsets.Add((ushort)commandData.Count);
-                        labelNames.Add(Arguments[0]);
+                        labelOffsets.Add((ushort)commandData.Length);
+                        labelNames.Add(command.Arguments[0]);
                         break;
 
                     case "LOC":
-                        ++stringCount;
+                        // The highest-numbered string index the script references must be
+                        // the total number of strings the script contains.
+                        stringCount = Math.Max(ushort.Parse(command.Arguments[0]), stringCount);
                         break;
 
                     case "LBN":
                         // Save the branch number AND the offset
-                        localBranchData.Add((ushort.Parse(Arguments[0]), (ushort)commandData.Count));
+                        localBranchData.Add((ushort.Parse(command.Arguments[0]), (ushort)commandData.Length));
                         break;
                 }
 
                 // Next, encode the opcode into commandData
-                commandData.Add(0x70);
-                byte opcodeId = (byte)Array.IndexOf(WrdCommandHelper.OpcodeNames, Opcode);
-                commandData.Add(opcodeId);
+                commandWriter.Write((byte)0x70);
+                byte opcodeId = (byte)Array.IndexOf(WrdCommandHelper.OpcodeNames, command.Opcode);
+                commandWriter.Write(opcodeId);
 
                 // Then, iterate through each argument and process/save it according to its type
-                for (int argNum = 0; argNum < Arguments.Count; ++argNum)
+                for (int argNum = 0; argNum < command.Arguments.Count; ++argNum)
                 {
                     switch (WrdCommandHelper.ArgTypeLists[opcodeId][argNum])
                     {
                         case 0: // Plaintext parameter
                             {
-                                int found = parameters.IndexOf(Arguments[argNum]);
+                                int found = parameters.IndexOf(command.Arguments[argNum]);
                                 if (found == -1)
                                 {
                                     found = parameters.Count;
-                                    parameters.Add(Arguments[argNum]);
+                                    parameters.Add(command.Arguments[argNum]);
                                 }
 
-                                commandData.AddRange(Utils.SwapEndian(BitConverter.GetBytes((ushort)found)));
+                                commandWriter.WriteBE((ushort)found);
                                 break;
                             }
 
                         case 1: // Raw number
                         case 2: // Dialogue string
                             {
-                                commandData.AddRange(Utils.SwapEndian(BitConverter.GetBytes(ushort.Parse(Arguments[argNum]))));
+                                commandWriter.WriteBE(ushort.Parse(command.Arguments[argNum]));
                                 break;
                             }
 
                         case 3: // Label
                             {
                                 // Note: we can probably simplify this since we already added the label name just above
-                                int found = labelNames.IndexOf(Arguments[argNum]);
-                                commandData.AddRange(Utils.SwapEndian(BitConverter.GetBytes((ushort)found)));
+                                int found = labelNames.IndexOf(command.Arguments[argNum]);
+                                commandWriter.WriteBE((ushort)found);
                                 break;
                             }
                     }
                 }
             }
+            commandWriter.Flush();
 
             // Finally, save the raw data to the file
             using BinaryWriter writer = new BinaryWriter(new FileStream(wrdPath, FileMode.Create));
@@ -210,7 +225,7 @@ namespace V3Lib.Wrd
             writer.Write(BitConverter.GetBytes((uint)0));   // strings pointer
 
             // Write command data
-            writer.Write(commandData.ToArray());
+            writer.Write(commandData.GetBuffer());
 
             // Write local branch offsets pointer & data
             uint localBranchOffsetsPtr = (uint)writer.BaseStream.Position;
@@ -255,6 +270,21 @@ namespace V3Lib.Wrd
                 writer.Write((byte)parameter.Length);               // string length
                 writer.Write(Encoding.ASCII.GetBytes(parameter));   // string
                 writer.Write((byte)0);                              // null terminator
+            }
+
+            // Write internal dialogue strings, if any
+            if (!UsesExternalStrings && stringCount > 0)
+            {
+                uint stringsPtr = (uint)writer.BaseStream.Position;
+                writer.BaseStream.Seek(0x1C, SeekOrigin.Begin);
+                writer.Write(stringsPtr);
+                writer.BaseStream.Seek(0, SeekOrigin.End);
+                using BinaryWriter stringWriter = new BinaryWriter(writer.BaseStream, Encoding.Unicode, true);
+                foreach (string str in InternalStrings)
+                {
+                    stringWriter.Write(str);
+                    stringWriter.Write((ushort)0);  // null terminator
+                }
             }
 
             writer.Flush(); // Just in case

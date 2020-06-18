@@ -19,12 +19,21 @@
                           Click="SaveScriptAsMenuItem_Click"/>
             </MenuItem>
         </Menu>
-        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Margin="0,24,0,24" >
-            <TextBox x:Name="wrdCommandTextBox" FontFamily="Consolas"/>
-        </ScrollViewer>
         <StatusBar VerticalAlignment="Bottom" Height="24">
             <TextBlock x:Name="statusText" Text="No file loaded."/>
         </StatusBar>
+        <TabControl Margin="0,24,0,24">
+            <TabItem Header="Commands">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <TextBox x:Name="wrdCommandTextBox" FontFamily="Consolas"/>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="Strings">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                    <TextBox x:Name="wrdStringsTextBox" FontFamily="Consolas"/>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
 
     </Grid>
 </Window>
