@@ -141,9 +141,11 @@ namespace V3Lib.Srd.BlockTypes
             // Iterate through the list to write the item data, while keeping track of
             // the number of entries so we know where each endpoint reference goes
             int totalEntryCount = RootNode.Flatten().Where(node => node.Count() > 0).Count();
-            int endpointOffset = 0x10 + (totalEntryCount * 16);
+            int endpointOffset = 0x10 + (totalEntryCount * 0x10);
             int totalEndpointCount = RootNode.Flatten().Where(node => node.Count() == 0).Count();
-            int stringOffset = endpointOffset + (totalEndpointCount * 8) + (UnknownFloatList.Count * sizeof(float));
+            int unknownFloatOffset = endpointOffset + (totalEndpointCount * 8);
+            unknownFloatOffset += (16 - (unknownFloatOffset % 16));
+            int stringOffset = unknownFloatOffset + (UnknownFloatList.Count * sizeof(float));
 
             int maxDepth = 0;
             using BinaryWriter entryWriter = new BinaryWriter(new MemoryStream());
@@ -159,7 +161,7 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write((short)totalEntryCount);
             writer.Write(Unknown18);
             writer.Write((short)totalEndpointCount);
-            writer.Write((int)(0x10 + entryData.Length + endpointData.Length));
+            writer.Write(unknownFloatOffset);
 
             writer.Write(entryData);
             Utils.WritePadding(writer, 16);
