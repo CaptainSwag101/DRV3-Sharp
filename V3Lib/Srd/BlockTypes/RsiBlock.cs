@@ -240,7 +240,7 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append($"{nameof(ResourceInfoSize)}: {ResourceInfoSize}\n");
             sb.Append($"{nameof(Unknown1A)}: {Unknown1A}\n");
 
-            sb.Append($"Resource Info: ");
+            sb.Append($"Resource Info: \n");
             List<string> infoOutputList = new List<string>();
             foreach (ResourceInfo info in ResourceInfoList)
             {
@@ -255,7 +255,7 @@ namespace V3Lib.Srd.BlockTypes
                 sb2.Append(" }");
                 infoOutputList.Add(sb2.ToString());
             }
-            sb.AppendJoin(", ", infoOutputList);
+            sb.AppendJoin("\n", infoOutputList);
             sb.Append('\n');
 
             sb.Append($"Resource Data length: {ResourceData.Length:n0} bytes\n");

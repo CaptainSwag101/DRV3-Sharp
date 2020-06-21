@@ -16,8 +16,6 @@ namespace V3Lib.Srd
         {
             using BinaryReader reader = new BinaryReader(new FileStream(srdPath, FileMode.Open));
             Blocks = ReadBlocks(reader, srdiPath, srdvPath);
-
-            reader.Close();
         }
 
         public void Save(string srdPath, string srdiPath, string srdvPath)
@@ -28,9 +26,7 @@ namespace V3Lib.Srd
 
             using BinaryWriter writer = new BinaryWriter(new FileStream(srdPath, FileMode.Create));
             WriteBlocks(writer, Blocks, srdiPath, srdvPath);
-
             writer.Flush();
-            writer.Close();
         }
 
         public static List<Block> ReadBlocks(BinaryReader reader, string srdiPath, string srdvPath)
@@ -49,6 +45,8 @@ namespace V3Lib.Srd
                     "$TXI" => new TxiBlock(),
                     "$TXR" => new TxrBlock(),
                     "$VTX" => new VtxBlock(),
+                    "$MSH" => new MshBlock(),
+                    "$SCN" => new ScnBlock(),
                     "$CT0" => new Ct0Block(),
                     _ => new UnknownBlock(),
                 };
@@ -65,11 +63,11 @@ namespace V3Lib.Srd
 
 
                 byte[] rawSubdata = reader.ReadBytes(subdataLength);
-                BinaryReader subdataReader = new BinaryReader(new MemoryStream(rawSubdata));
-                List<Block> childBlocks = ReadBlocks(subdataReader, srdiPath, srdvPath);
-                block.Children = childBlocks;
-                subdataReader.Close();
-                subdataReader.Dispose();
+                using (BinaryReader subdataReader = new BinaryReader(new MemoryStream(rawSubdata)))
+                {
+                    List<Block> childBlocks = ReadBlocks(subdataReader, srdiPath, srdvPath);
+                    block.Children = childBlocks;
+                }
                 Utils.ReadPadding(reader, 16);
 
 
