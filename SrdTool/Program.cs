@@ -6,8 +6,9 @@ using System.Text;
 using V3Lib;
 using V3Lib.Srd;
 using V3Lib.Srd.BlockTypes;
-using SixLabors.ImageSharp;
 using Scarlet.Drawing;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
 namespace SrdTool
 {
@@ -21,7 +22,7 @@ namespace SrdTool
         static void Main(string[] args)
         {
             Console.WriteLine("SRD Tool by CaptainSwag101\n" +
-                "Version 0.0.5, built on 2020-04-29\n");
+                "Version 0.0.6, built on 2020-06-21\n");
 
             // Setup text encoding so we can use Shift-JIS text later on
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -66,7 +67,7 @@ namespace SrdTool
             // Process commands
             while (true)
             {
-                Console.WriteLine("Type a command to perform on this SRD (print_blocks, extract_models, extract_textures, save, exit):");
+                Console.WriteLine("Type a command to perform on this SRD (print_blocks, extract_models, extract_textures, replace_textures, save, exit):");
                 string command = Console.ReadLine().ToLowerInvariant();
 
                 switch (command)
@@ -80,13 +81,21 @@ namespace SrdTool
                         ExtractModels();
                         break;
 
+                    //case "insert_models":
+                    //
+                    //    break;
+
                     case "extract_textures":
                         ExtractTextures();
                         break;
 
+                    case "replace_textures":
+                        ReplaceTextures();
+                        break;
+
                     case "save":
                         Srd.Save(SrdName, SrdiName, SrdvName);
-                        Console.WriteLine("Save complete.");
+                        //Console.WriteLine("Save complete.");
                         break;
 
                     case "exit":
@@ -275,6 +284,7 @@ namespace SrdTool
 
         private static void ExtractTextures()
         {
+            /*
             SrdFile textureSrd;
             string textureSrdName;
             string textureSrdvName;
@@ -306,7 +316,19 @@ namespace SrdTool
                 textureSrdvName = textureSrdName + 'v';
                 textureSrd.Load(textureSrdName, SrdiName, textureSrdvName);
             }
+            */
 
+            Console.Write("Would you like to extract mipmaps (Y/N)? ");
+            string answer = Console.Read().ToString().ToLowerInvariant();
+            while (answer == "y" || answer == "n")
+            {
+                Console.Write("Would you like to extract mipmaps (Y/N)? ");
+                answer = Console.Read().ToString().ToLowerInvariant();
+            }
+            bool extractMipmaps = (answer == "y");
+
+            SrdFile textureSrd = Srd;
+            string textureSrdName = SrdName;
             foreach (Block b in textureSrd.Blocks)
             {
                 if (b is TxrBlock txr && b.Children[0] is RsiBlock rsi)
@@ -321,8 +343,7 @@ namespace SrdTool
                     }
 
                     // Read image data based on resource info
-                    bool extractMipmaps = false;    // FIXME: TEMPORARY!!!
-                    for (int m = 0; m < (extractMipmaps ? rsi.ResourceInfoList.Count : 1); m++)
+                    for (int m = 0; m < (extractMipmaps ? rsi.ResourceInfoList.Count : 1); ++m)
                     {
                         byte[] inputImageData = rsi.ExternalData[m];
 
@@ -379,7 +400,8 @@ namespace SrdTool
                         bool swizzled = ((txr.Swizzle & 1) == 0);
 
                         // TODO: Unswizzle the image
-
+                        if (swizzled)
+                            Console.WriteLine("WARNING: This texture is swizzled, meaning it likely came from a console version of the game. These are not supported.");
 
                         // Calculate mipmap dimensions
                         int mipWidth = (int)Math.Max(1, dispWidth / Math.Pow(2, m));
@@ -388,12 +410,12 @@ namespace SrdTool
                         // Convert the raw pixel data into something we can actually write to an image file
                         ImageBinary imageBinary = new ImageBinary(mipWidth, mipHeight, pixelFormat, inputImageData);
                         byte[] outputImageData = imageBinary.GetOutputPixelData(0);
-                        var image = new Image<SixLabors.ImageSharp.PixelFormats.Rgba32>(mipWidth, mipHeight);
+                        var image = new Image<Rgba32>(mipWidth, mipHeight);
                         for (int y = 0; y < mipHeight; ++y)
                         {
                             for (int x = 0; x < mipWidth; ++x)
                             {
-                                SixLabors.ImageSharp.PixelFormats.Rgba32 pixelColor;
+                                Rgba32 pixelColor;
 
                                 if (pixelFormat == PixelDataFormat.FormatIndexed8)
                                 {
@@ -455,6 +477,73 @@ namespace SrdTool
                     }
                 }
             }
+        }
+
+        private static void ReplaceTextures()
+        {
+            //bool generateMipmaps = false;
+
+            // First, load the texture the user wants to insert
+            Console.WriteLine("Please type the path or drag and drop the texture file you want to insert, then press ENTER: ");
+            string texturePath = Console.ReadLine().Trim('\"');
+
+            while (string.IsNullOrWhiteSpace(texturePath) || !File.Exists(texturePath))
+            {
+                Console.WriteLine("ERROR: That is not a valid path, please try again.");
+                texturePath = Console.ReadLine();
+            }
+
+            string textureName = new FileInfo(texturePath).Name;
+
+            using FileStream textureStream = new FileStream(texturePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            Image<Rgba32> texture = Image.Load<Rgba32>(textureStream);
+            if (texture == null)
+            {
+                Console.WriteLine("ERROR: Texture is null.");
+                return;
+            }
+
+            List<byte> pixelData = new List<byte>();
+            for (int y = 0; y < texture.Height; ++y)
+            {
+                for (int x = 0; x < texture.Width; ++x)
+                {
+                    pixelData.AddRange(BitConverter.GetBytes(texture[x, y].Rgba));
+                }
+            }
+
+            ImageBinary imageBinary = new ImageBinary(texture.Width, texture.Height, PixelDataFormat.FormatAbgr8888, pixelData.ToArray());
+
+            foreach (Block b in Srd.Blocks)
+            {
+                if (b is TxrBlock txr && b.Children[0] is RsiBlock rsi)
+                {
+                    if (rsi.ResourceStringList[0] == textureName)
+                    {
+                        rsi.ExternalData.Clear();
+                        rsi.ExternalData.Add(imageBinary.GetOutputPixelData(0));
+
+                        rsi.ResourceInfoList.Clear();
+                        ResourceInfo info;
+                        info.Values = new int[] { 0x40000000, 0, 0, 0 };    // Placeholder, will be properly populated upon saving the SRD
+                        rsi.ResourceInfoList.Add(info);
+
+                        txr.Format = TextureFormat.ARGB8888;
+                        txr.DisplayWidth = (ushort)texture.Width;
+                        txr.DisplayHeight = (ushort)texture.Height;
+                        txr.Palette = 0;
+                        txr.PaletteId = 0;
+                        txr.Scanline = 0;
+                        txr.Swizzle = 1;
+
+                        Console.WriteLine($"Replaced texture in TXR block #{Srd.Blocks.IndexOf(txr)}");
+                        Console.WriteLine("REMEMBER TO SAVE YOUR CHANGES!!!");
+                        return;
+                    }
+                }
+            }
+
+            Console.WriteLine("Unable to find a texture to replace with the specified name.");
         }
     }
 }
