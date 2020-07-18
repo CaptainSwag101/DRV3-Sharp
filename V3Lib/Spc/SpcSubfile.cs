@@ -130,6 +130,15 @@ namespace V3Lib.Spc
             CompressionFlag = 2;
         }
 
+
+        // First, read from the readahead area into the sequence one byte at a time.
+        // Then, see if the sequence already exists in the previous 1024 bytes.
+        // If it does, note its position. Once we encounter a sequence that
+        // is not duplicated, take the last found duplicate and compress it.
+        // If we haven't found any duplicate sequences, add the first byte as raw data.
+        // If we did find a duplicate sequence, and it is adjacent to the readahead area,
+        // see how many bytes of that sequence can be repeated until we encounter
+        // a non-duplicate byte or reach the end of the readahead area.
         public void Compress()
         {
             // Don't compress the data if it is already compressed
@@ -138,6 +147,7 @@ namespace V3Lib.Spc
                 return;
             }
 
+            // Create our result array where we store compressed data as we generate it
             List<byte> compressedData = new List<byte>(OriginalSize);
 
             // Make a Span<byte> of the original uncompressed data so we can slice into it for our sliding window
@@ -184,16 +194,21 @@ namespace V3Lib.Spc
                     int readaheadLen = Math.Min(seqLen - 1, OriginalSize - pos);
                     ReadOnlySpan<byte> window = originalData.Slice(pos - searchbackLen, searchbackLen + readaheadLen);
 
+                    // If we've reached the end of the file, don't try to compress any more data, just use what we've got
+                    // NOTE: We do NOT need to backup/restore foundAt here because it hasn't been touched yet this iteration!
                     if (pos + seqLen > OriginalSize)
                     {
                         --seqLen;
                         break;
                     }
 
+                    // Slice the sequence we're searching for from the uncompressed data
                     ReadOnlySpan<byte> seq = originalData.Slice(pos, seqLen);
-                    int lastFoundAt = foundAt;
+                    int lastFoundAt = foundAt;  // Back up last found value
                     foundAt = window.LastIndexOf(seq);
 
+                    // If we fail to find a match, then try and restore the last match we found,
+                    // which must be one size smaller than the current.
                     if (foundAt == -1)
                     {
                         foundAt = lastFoundAt;
@@ -223,10 +238,12 @@ namespace V3Lib.Spc
                     curBlock.Add(originalData[pos]);
                 }
 
-                pos += Math.Max(1, seqLen); // Increment the current read position by the size of whatever sequence we found (even if it's non-compressable)
+                // Increment the current read position by the size of whatever sequence we found (even if it's non-compressable)
+                pos += Math.Max(1, seqLen);
                 ++curFlagBit;
             }
 
+            // Replace the old uncompressed data with the new compressed data, and update the other fields accordingly
             Data = compressedData.ToArray();
             CurrentSize = Data.Length;
             CompressionFlag = 2;
