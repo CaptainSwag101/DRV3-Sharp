@@ -97,25 +97,48 @@ namespace SpcTool
                             Console.WriteLine($"Subfile name: \"{subfile.Name}\"");
                             Console.WriteLine($"\tCompression flag: {subfile.CompressionFlag}");
                             Console.WriteLine($"\tUnknown flag: {subfile.UnknownFlag}");
-                            Console.WriteLine($"\tCurrent size: {subfile.CurrentSize.ToString("n0")} bytes");
-                            Console.WriteLine($"\tOriginal size: {subfile.OriginalSize.ToString("n0")} bytes");
+                            Console.WriteLine($"\tCurrent size: {subfile.CurrentSize:n0} bytes");
+                            Console.WriteLine($"\tOriginal size: {subfile.OriginalSize:n0} bytes");
 
                             // Benchmark decompression and compression
                             if (operation == "bench")
                             {
                                 Stopwatch stopwatch = new Stopwatch();
 
-                                Console.Write("Decompressing...");
+                                //Console.Write("Decompressing...");
                                 stopwatch.Start();
                                 subfile.Decompress();
                                 stopwatch.Stop();
-                                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                                //Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                                //File.WriteAllBytes("decompress1.bin", subfile.Data);
 
-                                Console.Write("Compressing...");
+                                Console.Write("Compressing with old method...");
+                                stopwatch.Restart();
+                                subfile.CompressOld();
+                                stopwatch.Stop();
+                                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                                //File.WriteAllBytes("compress1.bin", subfile.Data);
+
+                                //Console.Write("Decompressing...");
+                                stopwatch.Restart();
+                                subfile.Decompress();
+                                stopwatch.Stop();
+                                //Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                                //File.WriteAllBytes("decompress2.bin", subfile.Data);
+
+                                Console.Write("Compressing with new method...");
                                 stopwatch.Restart();
                                 subfile.Compress();
                                 stopwatch.Stop();
                                 Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                                //File.WriteAllBytes("compress2.bin", subfile.Data);
+
+                                //Console.Write("Decompressing...");
+                                stopwatch.Restart();
+                                subfile.Decompress();
+                                stopwatch.Stop();
+                                //Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                                //File.WriteAllBytes("decompress3.bin", subfile.Data);
                             }
 
                             Console.WriteLine();

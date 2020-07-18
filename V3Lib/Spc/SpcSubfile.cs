@@ -14,15 +14,20 @@ namespace V3Lib.Spc
         public int CurrentSize;
         public int OriginalSize;
 
-        public void Compress()
+        private const int SPC_BLOCK_SIZE = 16;
+        private const int SPC_WINDOW_MAX_SIZE = 1024;
+        private const int SPC_SEQUENCE_MAX_SIZE = 65;
+
+        public void CompressOld()
         {
-            // Don't decompress the data if it is already compressed
+            // Don't compress the data if it is already compressed
             if (CompressionFlag != 1)
             {
                 return;
             }
 
             List<byte> compressedData = new List<byte>(OriginalSize);
+
             // Make a copy of the original Data as a List<byte> so we can grab ranges via shallow copy
             List<byte> originalData = new List<byte>(Data);
 
@@ -125,9 +130,111 @@ namespace V3Lib.Spc
             CompressionFlag = 2;
         }
 
+        public void Compress()
+        {
+            // Don't compress the data if it is already compressed
+            if (CompressionFlag != 1)
+            {
+                return;
+            }
+
+            List<byte> compressedData = new List<byte>(OriginalSize);
+
+            // Make a Span<byte> of the original uncompressed data so we can slice into it for our sliding window
+            ReadOnlySpan<byte> originalData = Data;
+
+            // Keep track of the current compression state
+            int pos = 0;    // Current reading position in uncompressed data
+            int flag = 0;   // 8-bit (technically 9-bit) flag describing which parts of the current block are compressed/uncompressed
+            byte curFlagBit = 0;    // Which bit of the flag we're currently operating on ('8' triggers a block write and resets)
+            List<byte> curBlock = new List<byte>(SPC_BLOCK_SIZE);   // The current block of data that's finished being compressed
+
+            // This repeats until we've stored the final compressed block,
+            // after we reach the end of the uncompressed data.
+            while (true)
+            {
+                // At the end of each compressed block (or the end of the uncompressed data),
+                // append the flag and block to the compressed data.
+                if (curFlagBit == 8 || pos >= OriginalSize)
+                {
+                    flag = reverseBits((byte)flag);
+                    compressedData.Add((byte)flag);
+                    compressedData.AddRange(curBlock);
+
+                    // If we've reached the end, break out of the infinite compression loop
+                    if (pos >= OriginalSize)
+                        break;
+
+                    // Prep for the next block
+                    flag = 0;
+                    curFlagBit = 0;
+                    curBlock = new List<byte>(SPC_BLOCK_SIZE);
+                }
+
+                // Keep track of the current sequence of data we're trying to compress
+                int seqLen = 1; // The length of the sequence that we're trying to compress
+                int foundAt = -1;   // Where that sequence is found previously in the sliding window, relative to the start of the window
+                int searchbackLen = Math.Min(pos, SPC_WINDOW_MAX_SIZE);
+
+                // When we start this loop, we've just started looking for a new sequence to compress
+                for (; seqLen <= SPC_SEQUENCE_MAX_SIZE; ++seqLen)
+                {
+                    // The sliding window is a slice into the uncompressed data that we search for duplicate instances of the sequence
+                    // The readahead length MUST be at least one byte shorter than the current sequence length
+                    int readaheadLen = Math.Min(seqLen - 1, OriginalSize - pos);
+                    ReadOnlySpan<byte> window = originalData.Slice(pos - searchbackLen, searchbackLen + readaheadLen);
+
+                    if (pos + seqLen > OriginalSize)
+                    {
+                        --seqLen;
+                        break;
+                    }
+
+                    ReadOnlySpan<byte> seq = originalData.Slice(pos, seqLen);
+                    int lastFoundAt = foundAt;
+                    foundAt = window.LastIndexOf(seq);
+
+                    if (foundAt == -1)
+                    {
+                        foundAt = lastFoundAt;
+                        --seqLen;
+                        break;
+                    }
+                }
+
+                // If we exit the above loop due to seqLen exceeding SPC_SEQUENCE_MAX_SIZE then we must decrement seqLen
+                if (seqLen > SPC_SEQUENCE_MAX_SIZE)
+                {
+                    seqLen = SPC_SEQUENCE_MAX_SIZE;
+                }
+
+                if (seqLen >= 2 && foundAt != -1)
+                {
+                    // We found a duplicate sequence
+                    ushort repeat_data = 0;
+                    repeat_data |= (ushort)(SPC_WINDOW_MAX_SIZE - searchbackLen + foundAt);
+                    repeat_data |= (ushort)((seqLen - 2) << 10);
+                    curBlock.AddRange(BitConverter.GetBytes(repeat_data));
+                }
+                else
+                {
+                    // We found a new raw byte
+                    flag |= (1 << curFlagBit);
+                    curBlock.Add(originalData[pos]);
+                }
+
+                pos += Math.Max(1, seqLen); // Increment the current read position by the size of whatever sequence we found (even if it's non-compressable)
+                ++curFlagBit;
+            }
+
+            Data = compressedData.ToArray();
+            CurrentSize = Data.Length;
+            CompressionFlag = 2;
+        }
+
         public void Decompress()
         {
-            // Don't decompress the data if it isn't already compressed
+            // Don't decompress the data if it is already decompressed
             if (CompressionFlag != 2)
             {
                 return;
