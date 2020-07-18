@@ -1,54 +1,48 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace V3Lib
 {
-    public class Utils
+    public static class Utils
     {
         // Annoyingly, there's no easy way to read a null-terminated ASCII string in .NET
         // (or maybe I'm just a moron), so we have to do it manually.
         public static string ReadNullTerminatedString(BinaryReader reader, Encoding encoding)
         {
-            int bytesPerChar = encoding.GetByteCount("\0");
-
-            List<byte> charData = new List<byte>();
-            while (true)
+            using BinaryReader stringReader = new BinaryReader(reader.BaseStream, encoding, true);
+            StringBuilder sb = new StringBuilder();
+            while (stringReader.BaseStream.Position < stringReader.BaseStream.Length)
             {
-                List<byte> charBytes = new List<byte>();
-                charBytes.AddRange(reader.ReadBytes(bytesPerChar));
+                char c = stringReader.ReadChar();
 
-                // If all bytes are zero, it's a null terminator
-                if (charBytes.All((byte b) => b == 0))
-                {
+                if (c == 0)
                     break;
-                }
 
-                charData.AddRange(charBytes);
+                sb.Append(c);
             }
-            string result = encoding.GetString(charData.ToArray());
-            return result;
+
+            return sb.ToString();
         }
 
         public static void ReadPadding(BinaryReader reader, int padTo)
         {
-            int paddingLength = padTo - (int)(reader.BaseStream.Position % padTo);
-            if (paddingLength != padTo)
+            int padLength = padTo - (int)(reader.BaseStream.Position % padTo);
+            if (padLength != padTo)
             {
-                reader.BaseStream.Seek(paddingLength, SeekOrigin.Current);
+                reader.BaseStream.Seek(padLength, SeekOrigin.Current);
             }
         }
 
         public static void WritePadding(BinaryWriter writer, int padTo, byte padValue = 0)
         {
-            int paddingLength = padTo - (int)(writer.BaseStream.Position % padTo);
-            if (paddingLength != padTo)
+            int padLength = padTo - (int)(writer.BaseStream.Position % padTo);
+            if (padLength != padTo)
             {
-                byte[] padding = new byte[paddingLength];
-                Array.Fill(padding, padValue);
+                Span<byte> padding = new byte[padLength];
+                padding.Fill(padValue);
+
                 writer.Write(padding);
             }
         }
