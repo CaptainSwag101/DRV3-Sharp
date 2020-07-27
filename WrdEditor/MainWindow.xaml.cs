@@ -206,35 +206,22 @@ namespace WrdEditor
             }
             else
             {
-                string[] strings = wrdStringsTextBox.Text.Split('\n');
-                List<string> stringTable = new List<string>();
-                foreach (string str in strings)
+                if (!string.IsNullOrEmpty(loadedStxLocation) && loadedWrd.UsesExternalStrings)
                 {
-                    stringTable.Add(str.Replace("\\n", "\n").Replace("\\r", "\r"));
-                }
-
-                StxFile stx = new StxFile();
-                stx.StringTables.Add((stringTable, 0));
-
-                if (string.IsNullOrEmpty(loadedStxLocation))
-                {
-                    MessageBox.Show("There are external strings defined, but no STX file is currently loaded. Please specify the STX file to store your strings in.");
-                    SaveFileDialog saveStxDialog = new SaveFileDialog();
-                    saveStxDialog.Filter = "STX text files (*.stx)|*.stx|All files (*.*)|*.*";
-
-                    if (!(saveStxDialog.ShowDialog() ?? false))
-                        return;
-
-                    if (string.IsNullOrWhiteSpace(saveStxDialog.FileName))
+                   string[] strings = wrdStringsTextBox.Text.Split('\n');
+                    List<string> stringTable = new List<string>();
+                    foreach (string str in strings)
                     {
-                        MessageBox.Show("ERROR: Specified file name is empty or null.");
-                        return;
+                        stringTable.Add(str.Replace("\\n", "\n").Replace("\\r", "\r"));
                     }
 
-                    loadedStxLocation = saveStxDialog.FileName;
-                }
+                    StxFile stx = new StxFile();
+                    stx.StringTables.Add((stringTable, 0));
 
-                stx.Save(loadedStxLocation);
+                
+
+                    stx.Save(loadedStxLocation);
+                }
             }
 
             loadedWrd.Save(loadedWrdLocation);
