@@ -348,3 +348,19 @@ healthchecksdb
 
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
+
+AcbTool/Properties/launchSettings.json
+
+DatTool/Properties/launchSettings.json
+
+RsctTool/Properties/launchSettings.json
+
+SflTool/Properties/launchSettings.json
+
+SpcTool/Properties/launchSettings.json
+
+SrdTool/Properties/launchSettings.json
+
+StxTool/Properties/launchSettings.json
+
+WrdEditor/Properties/launchSettings.json
