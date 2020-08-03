@@ -10,6 +10,12 @@
     <ProjectReference Include="..\V3Lib\V3Lib.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Reference Include="CommandParser-Alpha">
+      <HintPath>..\dependencies\CommandParser-Alpha.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
   <PropertyGroup>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>

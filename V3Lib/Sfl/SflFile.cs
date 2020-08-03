@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
-using System.Windows;
 using V3Lib.Sfl.EntryTypes;
 
 namespace V3Lib.Sfl
@@ -71,7 +69,7 @@ namespace V3Lib.Sfl
                             Id = entryId,
                             Unknown1 = entryUnk1
                         };
-                        ((DataEntry)entry).Data = reader.ReadBytes(entryLength);
+                        (entry as DataEntry).Data = reader.ReadBytes(entryLength);
                     }
                     else // Final two tables contain transformation entries
                     {
@@ -87,7 +85,8 @@ namespace V3Lib.Sfl
                             int subentryDataLength = reader.ReadInt32();
                             ushort subentryHeaderLength = reader.ReadUInt16();
                             ushort subentrySectionCount = reader.ReadUInt16();
-                            string subentryName = Encoding.ASCII.GetString(reader.ReadBytes(subentryHeaderLength - 8));
+                            string subentryName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+                            Utils.ReadPadding(reader, 4);
 
                             // Read transformation commands
                             var commands = new List<TransformationCommand>();
@@ -99,7 +98,7 @@ namespace V3Lib.Sfl
                                 command.Data = reader.ReadBytes((int)commandDataLength);
                                 commands.Add(command);
                             }
-                            ((TransformationEntry)entry).Subentries.Add(new TransformationSubentry(subentryName, commands));
+                            (entry as TransformationEntry).Subentries.Add(new TransformationSubentry(subentryName, commands));
                         }
                     }
                     table.Entries.Add(entry);

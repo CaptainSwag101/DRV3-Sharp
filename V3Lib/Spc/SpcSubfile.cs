@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -129,7 +129,6 @@ namespace V3Lib.Spc
             CurrentSize = Data.Length;
             CompressionFlag = 2;
         }
-
 
         // First, read from the readahead area into the sequence one byte at a time.
         // Then, see if the sequence already exists in the previous 1024 bytes.
@@ -291,14 +290,14 @@ namespace V3Lib.Spc
                     // Pull from the buffer
                     // xxxxxxyy yyyyyyyy
                     // Count  -> x + 2 (max length of 65 bytes)
-                    // Offset -> y (from the beginning of a 1023-byte sliding window)
+                    // Offset -> y (from the beginning of a 1024-byte sliding window)
                     ushort b = BitConverter.ToUInt16(new byte[] { Data[pos++], Data[pos++] });
                     byte count = (byte)((b >> 10) + 2);
-                    short offset = (short)(b & 1023);
+                    short offset = (short)(b & (SPC_WINDOW_MAX_SIZE - 1));
 
                     for (int i = 0; i < count; ++i)
                     {
-                        int reverseIndex = decompressedData.Count - 1024 + offset;
+                        int reverseIndex = decompressedData.Count - SPC_WINDOW_MAX_SIZE + offset;
                         decompressedData.Add(decompressedData[reverseIndex]);
                     }
                 }
@@ -312,7 +311,7 @@ namespace V3Lib.Spc
         }
 
         // The 4-step method seems to be faster than the 3-step method slightly
-        // taken from: https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64BitsDiv
+        // taken from: https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64Bits
         private byte reverseBits(byte b)
         {
             return (byte)((((b * (ulong)0x80200802) & (ulong)0x0884422110) * (ulong)0x0101010101) >> 32);

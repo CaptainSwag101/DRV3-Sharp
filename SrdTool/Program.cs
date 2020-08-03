@@ -6,6 +6,7 @@ using System.Text;
 using V3Lib;
 using V3Lib.Srd;
 using V3Lib.Srd.BlockTypes;
+using CommandParser_Alpha;
 using Scarlet.Drawing;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -22,7 +23,7 @@ namespace SrdTool
         static void Main(string[] args)
         {
             Console.WriteLine("SRD Tool by CaptainSwag101\n" +
-                "Version 0.0.6, built on 2020-06-21\n");
+                "Version 1.0.0, built on 2020-08-03\n");
 
             // Setup text encoding so we can use Shift-JIS text later on
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -38,11 +39,6 @@ namespace SrdTool
             {
                 Console.WriteLine($"ERROR: \"{args[0]}\" does not exist.");
                 return;
-            }
-
-            if (info.Extension.ToLower() != ".srd")
-            {
-                Console.WriteLine("WARNING: Input file does not have the \".srd\" extension. This may be correct, however.");
             }
 
             // If the file exists and is valid, load it
@@ -64,48 +60,61 @@ namespace SrdTool
 
             Srd.Load(SrdName, SrdiName, SrdvName);
 
-            // Process commands
-            while (true)
+            // Setup command dictionary
+            var commandDict = new Dictionary<string, Action>
             {
-                Console.WriteLine("Type a command to perform on this SRD (print_blocks, extract_models, extract_textures, replace_textures, save, exit):");
-                string command = Console.ReadLine().ToLowerInvariant();
-
-                switch (command)
                 {
-                    case "print_blocks":
+                    @"print_blocks",
+                    delegate
+                    {
                         Console.WriteLine($"\"{info.FullName}\" contains the following blocks:\n");
                         PrintBlocks(Srd.Blocks, 0);
-                        break;
-
-                    case "extract_models":
+                    }
+                },
+                {
+                    @"extract_models",
+                    delegate
+                    {
                         ExtractModels();
-                        break;
-
-                    //case "insert_models":
-                    //
-                    //    break;
-
-                    case "extract_textures":
+                    }
+                },
+                {
+                    @"extract_textures",
+                    delegate
+                    {
                         ExtractTextures();
-                        break;
-
-                    case "replace_textures":
+                    }
+                },
+                {
+                    @"replace_textures",
+                    delegate
+                    {
                         ReplaceTextures();
-                        break;
-
-                    case "save":
+                    }
+                },
+                {
+                    @"save",
+                    delegate
+                    {
                         Srd.Save(SrdName, SrdiName, SrdvName);
                         //Console.WriteLine("Save complete.");
-                        break;
-
-                    case "exit":
-                        return;
-
-                    default:
-                        Console.WriteLine("Invalid command.");
-                        break;
+                    }
                 }
+            };
+
+            // Process commands
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.Append($"Loaded SRD file: {SrdName}\n");
+            if (info.Extension.ToLower() != ".srd")
+            {
+                promptBuilder.Append("WARNING: Input file does not have the \".srd\" extension. This may be correct, however.\n");
             }
+            promptBuilder.Append($"Valid commands to perform on this SRD file:\n");
+            promptBuilder.AppendJoin(", ", commandDict.Keys);
+            promptBuilder.Append("\nPlease enter your command, or \"exit\" to quit: ");
+
+            CommandParser parser = new CommandParser(commandDict);
+            parser.Prompt(promptBuilder.ToString(), @"exit");
         }
 
         private static void PrintBlocks(List<Block> blockList, int tabLevel)

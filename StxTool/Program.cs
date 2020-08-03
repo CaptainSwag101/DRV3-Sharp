@@ -10,7 +10,7 @@ namespace StxTool
         static void Main(string[] args)
         {
             Console.WriteLine("STX Tool by CaptainSwag101\n" +
-                "Version 0.0.1, built on 2019-10-14\n");
+                "Version 1.0.0, built on 2020-08-03\n");
 
             if (args.Length == 0)
             {

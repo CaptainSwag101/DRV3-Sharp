@@ -15,7 +15,7 @@ namespace DatTool
         static void Main(string[] args)
         {
             Console.WriteLine("DAT Tool by CaptainSwag101\n" +
-                "Version 0.0.3, built on 2020-06-05\n");
+                "Version 1.0.0, built on 2020-08-03\n");
 
             if (args.Length == 0)
             {

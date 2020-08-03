@@ -2,29 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using V3Lib.Spc;
+using CommandParser_Alpha;
 
 namespace SpcTool
 {
     class Program
     {
-        private static bool pauseAfterComplete = false;
-        private static string operation = null;
-        private static string input = null;
-        private static List<string> targets = new List<string>();
-        private static string output = null;
-
-        private static readonly Dictionary<string, int> validOperations = new Dictionary<string, int> {
-            { "list", 0 }, { "bench", 0 }, { "extract", -1 }, { "insert", -1 } };
-
         static void Main(string[] args)
         {
             Console.WriteLine("SPC Tool by CaptainSwag101\n" +
-                "Version 0.0.2, built on 2020-04-29\n");
+                "Version 1.0.0, built on 2020-08-03\n");
 
             // Setup text encoding so we can use Shift-JIS text later on
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -32,190 +23,225 @@ namespace SpcTool
             // Ensure we actually have some arguments, if not, print usage string
             if (args.Length == 0)
             {
-                Console.WriteLine($"Usage: SpcTool.exe <SPC file> <command to perform ({new StringBuilder().AppendJoin(", ", validOperations.Keys)})>");
+                Console.WriteLine("Usage: SpcTool.exe <SPC file>");
                 return;
             }
+
+            // If the first argument is a valid SPC file (and if we reach this point it probably is), load it.
+            string loadedSpcName = args[0];
 
             // Parse input argument
-            FileInfo info = new FileInfo(args[0]);
-            if (!info.Exists)
+            FileInfo loadedSpcInfo = new FileInfo(loadedSpcName);
+            if (!loadedSpcInfo.Exists)
             {
-                Console.WriteLine($"ERROR: \"{args[0]}\" does not exist.");
+                Console.WriteLine($"ERROR: \"{loadedSpcName}\" does not exist.");
                 return;
             }
 
-            if (info.Extension.ToLowerInvariant() != ".spc")
+            if (loadedSpcInfo.Extension.ToLowerInvariant() != ".spc")
             {
-                Console.WriteLine("ERROR: Input file does not have the \".spc\" extension.");
-                return;
+                Console.WriteLine("WARNING: Input file does not have the \".spc\" extension.\nIf you experience any issues, it means this file probably isn't an SPC archive.");
             }
 
-            // If the first argument is a valid SPC file (and if we reach this point it probably is), it is the input.
-            input = args[0];
+            SpcFile loadedSpc = new SpcFile();
+            loadedSpc.Load(loadedSpcName);
 
-            // Parse operation argument
-            string op = args[1].ToLowerInvariant();
-            if (validOperations.Keys.Any(op.Contains))
+            // Setup command dictionary
+            var commandDict = new Dictionary<string, Action>
             {
-                operation = op;
-            }
-            else
-            {
-                Console.WriteLine("ERROR: Invalid operation specified.");
-                Console.WriteLine($"Valid operations are: {new StringBuilder().AppendJoin(", ", validOperations.Keys)}");
-                return;
-            }
-
-            // Parse target arguments
-            for (int i = 2; i < args.Length; ++i)
-            {
-                targets.Add(args[i]);
-            }
-
-            // Load the input file
-            SpcFile spc = new SpcFile();
-            spc.Load(input);
-
-            // Execute operation
-            if (operation == null)
-            {
-                Console.WriteLine("ERROR: No operation specified.");
-            }
-            else if (validOperations[operation] != -1 && targets.Count != validOperations[operation])
-            {
-                Console.WriteLine($"ERROR: Invalid number of target(s) specified, expected {validOperations[operation]}.");
-            }
-            else
-            {
-                switch (operation)
                 {
-                    case "list":
-                    case "bench":
-                        Console.WriteLine($"\"{info.Name}\" contains the following subfiles:\n");
-                        foreach (SpcSubfile subfile in spc.Subfiles)
+                    @"extract",
+                    delegate
+                    {
+                        // Parse target arguments
+                        var targets = new List<string>();
+                        for (int i = 2; i < args.Length; ++i)
                         {
-                            Console.WriteLine($"Subfile name: \"{subfile.Name}\"");
-                            Console.WriteLine($"\tCompression flag: {subfile.CompressionFlag}");
-                            Console.WriteLine($"\tUnknown flag: {subfile.UnknownFlag}");
-                            Console.WriteLine($"\tCurrent size: {subfile.CurrentSize:n0} bytes");
-                            Console.WriteLine($"\tOriginal size: {subfile.OriginalSize:n0} bytes");
-
-                            // Benchmark decompression and compression
-                            if (operation == "bench")
-                            {
-                                Stopwatch stopwatch = new Stopwatch();
-
-                                //Console.Write("Decompressing...");
-                                stopwatch.Start();
-                                subfile.Decompress();
-                                stopwatch.Stop();
-                                //Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
-                                //File.WriteAllBytes("decompress1.bin", subfile.Data);
-
-                                Console.Write("Compressing with old method...");
-                                stopwatch.Restart();
-                                subfile.CompressOld();
-                                stopwatch.Stop();
-                                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
-                                //File.WriteAllBytes("compress1.bin", subfile.Data);
-
-                                //Console.Write("Decompressing...");
-                                stopwatch.Restart();
-                                subfile.Decompress();
-                                stopwatch.Stop();
-                                //Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
-                                //File.WriteAllBytes("decompress2.bin", subfile.Data);
-
-                                Console.Write("Compressing with new method...");
-                                stopwatch.Restart();
-                                subfile.Compress();
-                                stopwatch.Stop();
-                                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
-                                //File.WriteAllBytes("compress2.bin", subfile.Data);
-
-                                //Console.Write("Decompressing...");
-                                stopwatch.Restart();
-                                subfile.Decompress();
-                                stopwatch.Stop();
-                                //Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
-                                //File.WriteAllBytes("decompress3.bin", subfile.Data);
-                            }
-
-                            Console.WriteLine();
-                        }
-                        break;
-
-                    case "extract":
-                        // Setup an output directory for extracted files
-                        output ??= info.DirectoryName + Path.DirectorySeparatorChar + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
-                        Directory.CreateDirectory(output);
-
-                        // Generate list of subfiles to be extracted that match the target regex
-                        List<string> subfilesToExtract = new List<string>();
-                        foreach (string target in targets)
-                        {
-                            string regexTarget = "^" + Regex.Escape(target).Replace("\\?", ".").Replace("\\*", ".*") + "$";
-
-                            foreach (SpcSubfile subfile in spc.Subfiles)
-                            {
-                                if (Regex.IsMatch(subfile.Name, regexTarget))
-                                {
-                                    subfilesToExtract.Add(subfile.Name);
-                                }
-                            }
+                            targets.Add(args[i]);
                         }
 
-                        // Extract the subfiles using Tasks
-                        Task[] extractTasks = new Task[subfilesToExtract.Count];
-
-                        // IMPORTANT: If we ever switch to a for loop instead of foreach,
-                        // make sure to make a local scoped copy of the subfile name in order to prevent
-                        // threading weirdness from passing the wrong string value and causing random issues.
-                        foreach (string subfileName in subfilesToExtract)
+                        ExtractSubfiles(loadedSpc, loadedSpcInfo, targets);
+                    }
+                },
+                {
+                    @"insert",
+                    delegate
+                    {
+                        // Parse target arguments
+                        var targets = new List<string>();
+                        for (int i = 2; i < args.Length; ++i)
                         {
-                            Console.WriteLine($"Extracting \"{subfileName}\"...");
-
-                            extractTasks[subfilesToExtract.IndexOf(subfileName)] = Task.Factory.StartNew(() => spc.ExtractSubfile(subfileName, output));
+                            targets.Add(args[i]);
                         }
 
-                        // Wait until all target subfiles have been extracted
-                        Task.WaitAll(extractTasks);
-                        break;
+                        InsertSubfiles(loadedSpc, loadedSpcInfo, targets);
+                    }
+                },
+                {
+                    @"list",
+                    delegate
+                    {
+                        ListSubfiles(loadedSpc, loadedSpcInfo);
+                    }
+                },
+                {
+                    @"bench",
+                    delegate
+                    {
+                        BenchmarkCompression(loadedSpc, loadedSpcInfo);
+                    }
+                }
+            };
 
-                    case "insert":
-                        // Insert the subfiles using Tasks
-                        Task[] insertTasks = new Task[targets.Count];
+            // Setup command parser
+            CommandParser parser = new CommandParser(commandDict);
 
-                        // IMPORTANT: If we ever switch to a for loop instead of foreach,
-                        // make sure to make a local scoped copy of the subfile name in order to prevent
-                        // threading weirdness from passing the wrong string value and causing random issues.
-                        foreach (string subfileName in targets)
-                        {
-                            Console.WriteLine($"Inserting \"{subfileName}\"...");
+            // Process commands
+            StringBuilder promptBuilder = new StringBuilder();
+            promptBuilder.Append($"Loaded SPC archive: {loadedSpcName}\n");
+            promptBuilder.Append($"Valid commands to perform on this archive:\n");
+            promptBuilder.AppendJoin(", ", commandDict.Keys);
+            promptBuilder.Append("\nPlease enter your command, or \"exit\" to quit: ");
+            parser.Prompt(promptBuilder.ToString(), @"exit");
+        }
 
-                            insertTasks[targets.IndexOf(subfileName)] = new Task(() => spc.InsertSubfile(subfileName));
-                        }
+        private static void ExtractSubfiles(SpcFile loadedSpc, FileInfo loadedSpcInfo, List<string> targets)
+        {
+            // Setup an output directory for extracted files
+            string outputDir = loadedSpcInfo.DirectoryName + Path.DirectorySeparatorChar + loadedSpcInfo.Name.Substring(0, loadedSpcInfo.Name.Length - loadedSpcInfo.Extension.Length);
+            Directory.CreateDirectory(outputDir);
 
-                        // Wait until all target subfiles have been inserted
-                        foreach (Task task in insertTasks)
-                        {
-                            task.Start();
-                            task.Wait();
-                        }
+            // Generate list of subfiles to be extracted that match the target regex
+            List<string> subfilesToExtract = new List<string>();
+            foreach (string target in targets)
+            {
+                string regexTarget = "^" + Regex.Escape(target).Replace("\\?", ".").Replace("\\*", ".*") + "$";
 
-                        // Save the spc file
-                        spc.Save(input);
-                        break;
-
+                foreach (SpcSubfile subfile in loadedSpc.Subfiles)
+                {
+                    if (Regex.IsMatch(subfile.Name, regexTarget))
+                    {
+                        subfilesToExtract.Add(subfile.Name);
+                    }
                 }
             }
 
-            if (pauseAfterComplete)
+            // Extract the subfiles using Tasks
+            Task[] extractTasks = new Task[subfilesToExtract.Count];
+
+            // IMPORTANT: If we ever switch to a for loop instead of foreach,
+            // make sure to make a local scoped copy of the subfile name in order to prevent
+            // threading weirdness from passing the wrong string value and causing random issues.
+            foreach (string subfileName in subfilesToExtract)
             {
-                Console.WriteLine("Press Enter to close...");
-                Console.Read();
+                Console.WriteLine($"Extracting \"{subfileName}\"...");
+
+                extractTasks[subfilesToExtract.IndexOf(subfileName)] = Task.Factory.StartNew(() => loadedSpc.ExtractSubfile(subfileName, outputDir));
             }
-            
+
+            // Wait until all target subfiles have been extracted
+            Task.WaitAll(extractTasks);
+        }
+
+        private static void InsertSubfiles(SpcFile loadedSpc, FileInfo loadedSpcInfo, List<string> targets)
+        {
+            // Insert the subfiles using Tasks
+            Task[] insertTasks = new Task[targets.Count];
+
+            // IMPORTANT: If we ever switch to a for loop instead of foreach,
+            // make sure to make a local scoped copy of the subfile name in order to prevent
+            // threading weirdness from passing the wrong string value and causing random issues.
+            foreach (string subfileName in targets)
+            {
+                Console.WriteLine($"Inserting \"{subfileName}\"...");
+
+                insertTasks[targets.IndexOf(subfileName)] = new Task(() => loadedSpc.InsertSubfile(subfileName));
+            }
+
+            // Wait until all target subfiles have been inserted
+            foreach (Task task in insertTasks)
+            {
+                task.Start();
+                task.Wait();
+            }
+
+            // Save the spc file
+            loadedSpc.Save(loadedSpcInfo.FullName);
+        }
+
+        private static void ListSubfiles(SpcFile loadedSpc, FileInfo loadedSpcInfo)
+        {
+            foreach (SpcSubfile subfile in loadedSpc.Subfiles)
+            {
+                Console.WriteLine($"Subfile name: \"{subfile.Name}\"");
+                Console.WriteLine($"\tCompression flag: {subfile.CompressionFlag}");
+                Console.WriteLine($"\tUnknown flag: {subfile.UnknownFlag}");
+                Console.WriteLine($"\tCurrent size: {subfile.CurrentSize:n0} bytes");
+                Console.WriteLine($"\tOriginal size: {subfile.OriginalSize:n0} bytes");
+                Console.WriteLine();
+            }
+        }
+
+        private static void BenchmarkCompression(SpcFile loadedSpc, FileInfo loadedSpcInfo)
+        {
+            foreach (SpcSubfile subfile in loadedSpc.Subfiles)
+            {
+                Console.WriteLine($"Subfile name: \"{subfile.Name}\"");
+                Console.WriteLine($"\tCompression flag: {subfile.CompressionFlag}");
+                Console.WriteLine($"\tUnknown flag: {subfile.UnknownFlag}");
+                Console.WriteLine($"\tCurrent size: {subfile.CurrentSize:n0} bytes");
+                Console.WriteLine($"\tOriginal size: {subfile.OriginalSize:n0} bytes");
+
+                // Benchmark decompression and compression
+                Stopwatch stopwatch = new Stopwatch();
+
+                Console.Write("Decompressing (Preliminary)...");
+                stopwatch.Start();
+                subfile.Decompress();
+                stopwatch.Stop();
+                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                //File.WriteAllBytes("decompress1.bin", subfile.Data);
+
+                int decompSize = subfile.Data.Length;
+
+                Console.Write("Compressing with old method...");
+                stopwatch.Restart();
+                subfile.CompressOld();
+                stopwatch.Stop();
+                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                //File.WriteAllBytes("compress1.bin", subfile.Data);
+
+                int compSize = subfile.Data.Length;
+
+                Console.WriteLine($"Compression Ratio (Old Method): {(compSize * 100.0f) / decompSize}%");
+
+                Console.Write("Decompressing (Old Method Compressed)...");
+                stopwatch.Restart();
+                subfile.Decompress();
+                stopwatch.Stop();
+                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                //File.WriteAllBytes("decompress2.bin", subfile.Data);
+
+                Console.Write("Compressing with new method...");
+                stopwatch.Restart();
+                subfile.Compress();
+                stopwatch.Stop();
+                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                //File.WriteAllBytes("compress2.bin", subfile.Data);
+
+                compSize = subfile.Data.Length;
+
+                Console.WriteLine($"Compression Ratio (New Method): {(compSize * 100.0f) / decompSize}%");
+
+                Console.Write("Decompressing (New Method Compressed)...");
+                stopwatch.Restart();
+                subfile.Decompress();
+                stopwatch.Stop();
+                Console.WriteLine($" Done! Took {stopwatch.Elapsed}");
+                //File.WriteAllBytes("decompress3.bin", subfile.Data);
+
+                Console.WriteLine();
+            }
         }
     }
 }

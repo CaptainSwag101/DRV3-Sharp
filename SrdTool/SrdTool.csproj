@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0007" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-rc0003" />
   </ItemGroup>
 
   <ItemGroup>
@@ -15,8 +15,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="CommandParser-Alpha">
+      <HintPath>..\dependencies\CommandParser-Alpha.dll</HintPath>
+    </Reference>
     <Reference Include="Scarlet">
-      <HintPath>..\..\Scarlet\Scarlet\bin\Debug\Scarlet.dll</HintPath>
+      <HintPath>..\dependencies\Scarlet.dll</HintPath>
+    </Reference>
+    <Reference Include="Scarlet.IO.ImageFormats">
+      <HintPath>..\dependencies\Scarlet.IO.ImageFormats.dll</HintPath>
     </Reference>
   </ItemGroup>
 

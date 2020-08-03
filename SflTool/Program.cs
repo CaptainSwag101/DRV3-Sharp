@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using Newtonsoft.Json;
 using V3Lib.Sfl;
@@ -10,7 +10,7 @@ namespace SflTool
         static void Main(string[] args)
         {
             Console.WriteLine("SFL Tool by CaptainSwag101\n" +
-                "Version 0.0.1, built on 2020-02-10\n");
+                "Version 1.0.0, built on 2020-08-03\n");
 
             if (args.Length == 0)
             {
