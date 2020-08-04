@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29201.188
@@ -8,8 +7,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SrdTool", "SrdTool\SrdTool.csproj", "{8A5CECF8-5B08-4132-9BCD-76337AD365BF}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "StxTool", "StxTool\StxTool.csproj", "{6F6C1E82-D230-43EB-86D0-245BBA3D3E2D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WrdEditor", "WrdEditor\WrdEditor.csproj", "{421AF152-AFAF-46A3-95E4-619E6758F680}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DatTool", "DatTool\DatTool.csproj", "{5E43748F-BFA9-4B04-A4CC-CFCD8363BA4C}"
 EndProject
@@ -37,10 +34,6 @@ Global
 		{6F6C1E82-D230-43EB-86D0-245BBA3D3E2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6F6C1E82-D230-43EB-86D0-245BBA3D3E2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6F6C1E82-D230-43EB-86D0-245BBA3D3E2D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{421AF152-AFAF-46A3-95E4-619E6758F680}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{421AF152-AFAF-46A3-95E4-619E6758F680}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{421AF152-AFAF-46A3-95E4-619E6758F680}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{421AF152-AFAF-46A3-95E4-619E6758F680}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5E43748F-BFA9-4B04-A4CC-CFCD8363BA4C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5E43748F-BFA9-4B04-A4CC-CFCD8363BA4C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5E43748F-BFA9-4B04-A4CC-CFCD8363BA4C}.Release|Any CPU.ActiveCfg = Release|Any CPU
