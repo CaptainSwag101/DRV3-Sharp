@@ -15,9 +15,9 @@ namespace V3Lib.Spc
         {
             using BinaryReader reader = new BinaryReader(new FileStream(spcPath, FileMode.Open));
 
-            // Verify the magic value, it could either be "CPS." (the one we want) or "$CFH" (most files in the console version, unusable for now)
+            // Verify the magic value, it could either be "CPS." (the one we want) or "$CMP" (most files in the console version, unusable for now)
             string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
-            if (magic == "$CFH")
+            if (magic == "$CMP")
             {
                 // decompress using SRD method first, then resume
                 return;
