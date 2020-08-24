@@ -10,6 +10,8 @@ using CommandParser_Alpha;
 using Scarlet.Drawing;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Drawing.Processing;
 
 namespace SrdTool
 {
@@ -69,6 +71,13 @@ namespace SrdTool
                     {
                         Console.WriteLine($"\"{info.FullName}\" contains the following blocks:\n");
                         PrintBlocks(Srd.Blocks, 0);
+                    }
+                },
+                {
+                    @"extract_fonts",
+                    delegate
+                    {
+                        ExtractFonts();
                     }
                 },
                 {
@@ -144,6 +153,87 @@ namespace SrdTool
                 }
 
                 Console.WriteLine();
+            }
+        }
+
+        private static void ExtractFonts()
+        {
+            bool foundFont = false;
+            foreach (Block b in Srd.Blocks)
+            {
+                if (b is TxrBlock txr && b.Children[0] is RsiBlock rsi)
+                {
+                    using BinaryReader fontReader = new BinaryReader(new MemoryStream(rsi.ResourceData));
+                    string fontMagic = Encoding.ASCII.GetString(fontReader.ReadBytes(4));
+                    if (fontMagic != @"SpFt")
+                    {
+                        continue;
+                    }
+
+                    foundFont = true;
+
+                    uint unknown44 = fontReader.ReadUInt32();
+                    uint unknown48 = fontReader.ReadUInt32();
+                    uint unknown4C = fontReader.ReadUInt32();
+                    uint fontNamePtr = fontReader.ReadUInt32();
+                    uint charCount = fontReader.ReadUInt32();
+                    uint bbListPtr = fontReader.ReadUInt32();
+                    uint unknown5C = fontReader.ReadUInt32();
+                    uint unknownData2Ptr = fontReader.ReadUInt32();
+                    ushort unknown64 = fontReader.ReadUInt16();
+                    ushort unknown66 = fontReader.ReadUInt16();
+                    uint fontNamePtrsPtr = fontReader.ReadUInt32();
+                    uint unknown6C = fontReader.ReadUInt32();
+
+                    byte[] unknownData1 = fontReader.ReadBytes((int)(unknownData2Ptr - fontReader.BaseStream.Position));
+                    byte[] unknownData2 = fontReader.ReadBytes((int)(bbListPtr - fontReader.BaseStream.Position));
+
+                    var bbList = new List<(Rectangle Box, sbyte[] Unknown)>();
+                    while (fontReader.BaseStream.Position < fontNamePtrsPtr)
+                    {
+                        // Each glyph's texture position is stored as two 12-bit integers
+                        byte[] rawTexPos = fontReader.ReadBytes(3);
+                        short xPos = (short)(((rawTexPos[1] & 0x0F) << 8) | rawTexPos[0]);
+                        short yPos = (short)((rawTexPos[1] >> 4) | rawTexPos[2] << 4);
+
+                        byte width = fontReader.ReadByte();
+                        byte height = fontReader.ReadByte();
+
+                        Rectangle bbRect = new Rectangle(xPos, yPos, width, height);
+
+                        bbList.Add((bbRect, new sbyte[] { fontReader.ReadSByte(), fontReader.ReadSByte(), fontReader.ReadSByte() }));
+                    }
+
+                    var fontNamePtrList = new List<uint>();
+                    while (fontReader.BaseStream.Position < fontNamePtr)
+                    {
+                        fontNamePtrList.Add(fontReader.ReadUInt32());
+                    }
+
+                    using Image img = new Image<Rgba32>(txr.DisplayWidth, txr.DisplayHeight);
+                    img.Mutate(ctx => ctx
+                        .Fill(Color.Black));
+
+                    foreach (var bb in bbList)
+                    {
+                        PointF[] rectPoints = new PointF[]
+                        {
+                            new PointF(bb.Box.Left, bb.Box.Top),
+                            new PointF(bb.Box.Right, bb.Box.Top),
+                            new PointF(bb.Box.Right, bb.Box.Bottom),
+                            new PointF(bb.Box.Left, bb.Box.Bottom)
+                        };
+
+                        img.Mutate(ctx => ctx
+                            .DrawPolygon(new Pen(Color.White, 2.0f), rectPoints));
+                    }
+                    img.SaveAsPng(SrdName + "_font_boxes.png");
+                }
+            }
+
+            if (!foundFont)
+            {
+                Console.WriteLine("Unable to find font data in the provided SRD file.");
             }
         }
 
