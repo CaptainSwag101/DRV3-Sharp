@@ -169,12 +169,11 @@ namespace SrdTool
                     {
                         continue;
                     }
-
                     foundFont = true;
 
                     uint unknown44 = fontReader.ReadUInt32();
                     uint unknown48 = fontReader.ReadUInt32();
-                    uint unknown4C = fontReader.ReadUInt32();
+                    uint fontNameLength = fontReader.ReadUInt32();
                     uint fontNamePtr = fontReader.ReadUInt32();
                     uint charCount = fontReader.ReadUInt32();
                     uint bbListPtr = fontReader.ReadUInt32();
@@ -186,7 +185,21 @@ namespace SrdTool
                     uint unknown6C = fontReader.ReadUInt32();
 
                     byte[] unknownData1 = fontReader.ReadBytes((int)(unknownData2Ptr - fontReader.BaseStream.Position));
-                    byte[] unknownData2 = fontReader.ReadBytes((int)(bbListPtr - fontReader.BaseStream.Position));
+                    var unknownData2 = new List<int>();
+                    //int index = 0;
+                    while (fontReader.BaseStream.Position < bbListPtr)
+                    {
+                        unknownData2.Add(fontReader.ReadInt32());
+                        //unknownData2.Add(fontReader.ReadInt32() + (index++));
+                    }
+
+                    // Count number of unique values in unknownData2
+                    //var unique = new List<int>();
+                    //foreach (int i in unknownData2)
+                    //{
+                    //    if (!unique.Contains(i))
+                    //        unique.Add(i);
+                    //}
 
                     var bbList = new List<(Rectangle Box, sbyte[] Unknown)>();
                     while (fontReader.BaseStream.Position < fontNamePtrsPtr)
@@ -201,7 +214,11 @@ namespace SrdTool
 
                         Rectangle bbRect = new Rectangle(xPos, yPos, width, height);
 
-                        bbList.Add((bbRect, new sbyte[] { fontReader.ReadSByte(), fontReader.ReadSByte(), fontReader.ReadSByte() }));
+                        sbyte[] glyphKerning = new sbyte[3];
+                        glyphKerning[0] = fontReader.ReadSByte();   // left
+                        glyphKerning[1] = fontReader.ReadSByte();   // right
+                        glyphKerning[2] = fontReader.ReadSByte();   // vertical
+                        bbList.Add((bbRect, glyphKerning));
                     }
 
                     var fontNamePtrList = new List<uint>();
@@ -209,6 +226,8 @@ namespace SrdTool
                     {
                         fontNamePtrList.Add(fontReader.ReadUInt32());
                     }
+
+                    string fontName = Utils.ReadNullTerminatedString(fontReader, Encoding.Unicode);
 
                     using Image img = new Image<Rgba32>(txr.DisplayWidth, txr.DisplayHeight);
                     img.Mutate(ctx => ctx
@@ -483,7 +502,7 @@ namespace SrdTool
                                 pixelFormat = PixelDataFormat.FormatRGTC2;
                                 break;
 
-                            case TextureFormat.BC4:  // RCTC1 / BC4
+                            case TextureFormat.BC4:  // RGTC1 / BC4
                                 pixelFormat = PixelDataFormat.FormatRGTC1;
                                 break;
 
@@ -548,6 +567,7 @@ namespace SrdTool
                                     {
                                         pixelColor.G = pixelColor.R;
                                         pixelColor.B = pixelColor.R;
+                                        //pixelColor.A = pixelColor.R;
                                     }
                                 }
 
