@@ -118,12 +118,12 @@ namespace SrdTool
             {
                 promptBuilder.Append("WARNING: Input file does not have the \".srd\" extension. This may be correct, however.\n");
             }
-            promptBuilder.Append($"Valid commands to perform on this SRD file:\n");
+            promptBuilder.Append($"Valid commands to perform on this SRD file: ");
             promptBuilder.AppendJoin(", ", commandDict.Keys);
-            promptBuilder.Append("\nPlease enter your command, or \"exit\" to quit: ");
+            Console.WriteLine(promptBuilder.ToString());
 
             CommandParser parser = new CommandParser(commandDict);
-            parser.Prompt(promptBuilder.ToString(), @"exit");
+            parser.Prompt("Please enter your command, or \"exit\" to quit: ", @"exit");
         }
 
         private static void PrintBlocks(List<Block> blockList, int tabLevel)
