@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using V3Lib.Spc;
 using CommandParser_Alpha;
+using System.Linq;
 
 namespace SpcTool
 {
@@ -54,13 +55,11 @@ namespace SpcTool
                     delegate
                     {
                         // Parse target arguments
-                        var targets = new List<string>();
-                        for (int i = 2; i < args.Length; ++i)
-                        {
-                            targets.Add(args[i]);
-                        }
+                        Console.WriteLine("Type the files you want to extract, separated by spaces (wildcard * supported): ");
+                        string targetsRaw = Console.ReadLine();
+                        var targets = targetsRaw.Split();
 
-                        ExtractSubfiles(loadedSpc, loadedSpcInfo, targets);
+                        ExtractSubfiles(loadedSpc, loadedSpcInfo, targets.ToList());
                     }
                 },
                 {
@@ -68,13 +67,11 @@ namespace SpcTool
                     delegate
                     {
                         // Parse target arguments
-                        var targets = new List<string>();
-                        for (int i = 2; i < args.Length; ++i)
-                        {
-                            targets.Add(args[i]);
-                        }
+                        Console.WriteLine("Type the files you want to insert, separated by spaces (or drag and drop): ");
+                        string targetsRaw = Console.ReadLine();
+                        var targets = targetsRaw.Split();
 
-                        InsertSubfiles(loadedSpc, loadedSpcInfo, targets);
+                        InsertSubfiles(loadedSpc, loadedSpcInfo, targets.ToList());
                     }
                 },
                 {
