@@ -8,9 +8,6 @@ namespace V3Lib.Srd.BlockTypes
     public sealed class MshBlock : Block
     {
         public uint Unknown10;
-        public ushort Unknown14;
-        public ushort Unknown16;
-        public ushort Unknown18;
         public ushort Unknown1A;
         public ushort Unknown1C;
         public ushort Unknown1E;
@@ -18,17 +15,18 @@ namespace V3Lib.Srd.BlockTypes
         public byte Unknown21;
         public byte Unknown22;
         public byte Unknown23;
-        public List<ushort> UnknownShortList = new List<ushort>();
-        public List<string> UnknownStringList = new List<string>();
+        public string FullMeshName;
+        public string ShortMeshName;
+        public List<string> MappedStrings = new List<string>();
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
             using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadUInt32();
-            Unknown14 = reader.ReadUInt16();
-            Unknown16 = reader.ReadUInt16();
-            Unknown18 = reader.ReadUInt16();
+            ushort fullMeshNameOffset = reader.ReadUInt16();
+            ushort shortMeshNameOffset = reader.ReadUInt16();
+            ushort stringMapEndOffset = reader.ReadUInt16();
             Unknown1A = reader.ReadUInt16();
             Unknown1C = reader.ReadUInt16();
             Unknown1E = reader.ReadUInt16();
@@ -37,24 +35,21 @@ namespace V3Lib.Srd.BlockTypes
             Unknown22 = reader.ReadByte();
             Unknown23 = reader.ReadByte();
 
-            // Read unknown shorts
-            while (true)
+            // Read string mapping offsets
+            while (reader.BaseStream.Position < stringMapEndOffset)
             {
-                // If the first byte of a supposed ushort is zero, abort; we've reached string data
-                if (reader.PeekChar() == 0)
-                    break;
-
-                UnknownShortList.Add(reader.ReadUInt16());
+                ushort strOff = reader.ReadUInt16();
+                long oldPos = reader.BaseStream.Position;
+                reader.BaseStream.Seek(strOff, SeekOrigin.Begin);
+                MappedStrings.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
+                reader.BaseStream.Seek(oldPos, SeekOrigin.Begin);
             }
 
-            // Skip the one empty byte separating short data from string data
-            _ = reader.ReadByte();
-
-            // Read unknown string data
-            while (reader.BaseStream.Position < reader.BaseStream.Length)
-            {
-                UnknownStringList.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
-            }
+            // Read mesh name strings
+            reader.BaseStream.Seek(fullMeshNameOffset, SeekOrigin.Begin);
+            FullMeshName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            reader.BaseStream.Seek(shortMeshNameOffset, SeekOrigin.Begin);
+            ShortMeshName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
         }
 
         public override byte[] SerializeData(string srdiPath, string srdvPath)
@@ -67,9 +62,8 @@ namespace V3Lib.Srd.BlockTypes
             StringBuilder sb = new StringBuilder();
 
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
-            sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
-            sb.Append($"{nameof(Unknown16)}: {Unknown16}\n");
-            sb.Append($"{nameof(Unknown18)}: {Unknown18}\n");
+            sb.Append($"{nameof(FullMeshName)}: {FullMeshName}\n");
+            sb.Append($"{nameof(ShortMeshName)}: {ShortMeshName}\n");
             sb.Append($"{nameof(Unknown1A)}: {Unknown1A}\n");
             sb.Append($"{nameof(Unknown1C)}: {Unknown1C}\n");
             sb.Append($"{nameof(Unknown1E)}: {Unknown1E}\n");
@@ -78,12 +72,8 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append($"{nameof(Unknown22)}: {Unknown22}\n");
             sb.Append($"{nameof(Unknown23)}: {Unknown23}\n");
 
-            sb.Append($"{nameof(UnknownShortList)}: ");
-            sb.AppendJoin(", ", UnknownShortList);
-            sb.Append('\n');
-
-            sb.Append($"{nameof(UnknownStringList)}: ");
-            sb.AppendJoin(", ", UnknownStringList);
+            sb.Append($"{nameof(MappedStrings)}: ");
+            sb.AppendJoin(", ", MappedStrings);
 
             return sb.ToString();
         }
