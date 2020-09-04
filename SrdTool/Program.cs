@@ -274,25 +274,10 @@ namespace SrdTool
             daeWriter.WriteAttributeString("version", "1.4.1");
 
             // Get a list of all VTX and MSH blocks
-            var VtxBlockList = new List<VtxBlock>();
-            var MshBlockList = new List<MshBlock>();
-            var ScnBlockList = new List<ScnBlock>();
-
-            foreach (Block block in Srd.Blocks)
-            {
-                if (block is VtxBlock vtx)
-                {
-                    VtxBlockList.Add(vtx);
-                }
-                else if (block is MshBlock msh)
-                {
-                    MshBlockList.Add(msh);
-                }
-                else if (block is ScnBlock scn)
-                {
-                    ScnBlockList.Add(scn);
-                }
-            }
+            var ScnBlockList = Srd.Blocks.Where(scn => scn is ScnBlock);
+            var VtxBlockList = Srd.Blocks.Where(vtx => vtx is VtxBlock);
+            var MshBlockList = Srd.Blocks.Where(msh => msh is MshBlock);
+            //var MatBlockList = Srd.Blocks.Where(mat => mat is MatBlock);
 
             // Write asset data
             {
@@ -314,17 +299,17 @@ namespace SrdTool
             {
                 daeWriter.WriteStartElement("library_geometries");
 
-                if (VtxBlockList.Count != MshBlockList.Count)
+                if (VtxBlockList.Count() != MshBlockList.Count())
                 {
                     Console.WriteLine("ERROR: Vertex and Mesh block counts are not equal!");
                     return;
                 }
 
-                for (int b = 0; b < VtxBlockList.Count; ++b)
+                for (int b = 0; b < VtxBlockList.Count(); ++b)
                 {
-                    VtxBlock vtx = VtxBlockList[b];
+                    VtxBlock vtx = VtxBlockList.ElementAt(b) as VtxBlock;
                     RsiBlock vtxResources = vtx.Children[0] as RsiBlock;
-                    MshBlock msh = MshBlockList[b];
+                    MshBlock msh = MshBlockList.ElementAt(b) as MshBlock;
                     RsiBlock mshResources = msh.Children[0] as RsiBlock;
 
                     // Extract vertex data
@@ -420,17 +405,19 @@ namespace SrdTool
 
 
                     // Write data to DAE
+                    string meshName = mshResources.ResourceStringList[0];
+
                     daeWriter.WriteStartElement("geometry");
-                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}");
-                    daeWriter.WriteAttributeString("name", $"{mshResources.ResourceStringList[0]}");
+                    daeWriter.WriteAttributeString("id", $"{meshName}");
+                    daeWriter.WriteAttributeString("name", $"{meshName}");
 
                     daeWriter.WriteStartElement("mesh");
 
                     daeWriter.WriteStartElement("source");  // source Positions START
-                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-positions");
+                    daeWriter.WriteAttributeString("id", $"{meshName}-positions");
 
                     daeWriter.WriteStartElement("float_array");
-                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-positions-array");
+                    daeWriter.WriteAttributeString("id", $"{meshName}-positions-array");
                     daeWriter.WriteAttributeString("count", $"{vertexList.Count * 3}");
                     foreach (float[] vertexTriplet in vertexList)
                     {
@@ -446,7 +433,7 @@ namespace SrdTool
                     daeWriter.WriteStartElement("technique_common");
 
                     daeWriter.WriteStartElement("accessor");
-                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-positions-array");
+                    daeWriter.WriteAttributeString("source", $"#{meshName}-positions-array");
                     daeWriter.WriteAttributeString("count", $"{vertexList.Count}");
                     daeWriter.WriteAttributeString("stride", $"{3}");
 
@@ -470,10 +457,10 @@ namespace SrdTool
                     daeWriter.WriteEndElement();    // source Positions END
 
                     daeWriter.WriteStartElement("source");  // source Normals START
-                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-normals");
+                    daeWriter.WriteAttributeString("id", $"{meshName}-normals");
 
                     daeWriter.WriteStartElement("float_array");
-                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-normals-array");
+                    daeWriter.WriteAttributeString("id", $"{meshName}-normals-array");
                     daeWriter.WriteAttributeString("count", $"{normalList.Count * 3}");
                     foreach (float[] normalTriplet in normalList)
                     {
@@ -489,7 +476,7 @@ namespace SrdTool
                     daeWriter.WriteStartElement("technique_common");
 
                     daeWriter.WriteStartElement("accessor");
-                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-normals-array");
+                    daeWriter.WriteAttributeString("source", $"#{meshName}-normals-array");
                     daeWriter.WriteAttributeString("count", $"{normalList.Count}");
                     daeWriter.WriteAttributeString("stride", $"{3}");
 
@@ -513,10 +500,10 @@ namespace SrdTool
                     daeWriter.WriteEndElement();    // source Normals END
 
                     daeWriter.WriteStartElement("source");  // source TexMap START
-                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-map");
+                    daeWriter.WriteAttributeString("id", $"{meshName}-map");
 
                     daeWriter.WriteStartElement("float_array");
-                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-map-array");
+                    daeWriter.WriteAttributeString("id", $"{meshName}-map-array");
                     daeWriter.WriteAttributeString("count", $"{texmapList.Count * 2}");
                     foreach (float[] texmapPair in texmapList)
                     {
@@ -530,7 +517,7 @@ namespace SrdTool
                     daeWriter.WriteStartElement("technique_common");
 
                     daeWriter.WriteStartElement("accessor");
-                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-map-array");
+                    daeWriter.WriteAttributeString("source", $"#{meshName}-map-array");
                     daeWriter.WriteAttributeString("count", $"{texmapList.Count}");
                     daeWriter.WriteAttributeString("stride", $"{2}");
 
@@ -550,11 +537,11 @@ namespace SrdTool
                     daeWriter.WriteEndElement();    // source TexMap END
 
                     daeWriter.WriteStartElement("vertices");
-                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-vertices");
+                    daeWriter.WriteAttributeString("id", $"{meshName}-vertices");
 
                     daeWriter.WriteStartElement("input");
                     daeWriter.WriteAttributeString("semantic", "POSITION");
-                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-positions");
+                    daeWriter.WriteAttributeString("source", $"#{meshName}-positions");
                     daeWriter.WriteEndElement();    // input
 
                     daeWriter.WriteEndElement();    // vertices
@@ -565,19 +552,19 @@ namespace SrdTool
 
                     daeWriter.WriteStartElement("input");
                     daeWriter.WriteAttributeString("semantic", "VERTEX");
-                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-vertices");
+                    daeWriter.WriteAttributeString("source", $"#{meshName}-vertices");
                     daeWriter.WriteAttributeString("offset", $"{0}");
                     daeWriter.WriteEndElement();    // input VERTEX
 
                     daeWriter.WriteStartElement("input");
                     daeWriter.WriteAttributeString("semantic", "NORMAL");
-                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-normals");
+                    daeWriter.WriteAttributeString("source", $"#{meshName}-normals");
                     daeWriter.WriteAttributeString("offset", $"{0}");
                     daeWriter.WriteEndElement();    // input NORMAL
 
                     daeWriter.WriteStartElement("input");
                     daeWriter.WriteAttributeString("semantic", "TEXCOORD");
-                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-map");
+                    daeWriter.WriteAttributeString("source", $"#{meshName}-map");
                     daeWriter.WriteAttributeString("offset", $"{0}");
                     daeWriter.WriteAttributeString("set", $"{0}");
                     daeWriter.WriteEndElement();    // input TEXCOORD
@@ -614,7 +601,7 @@ namespace SrdTool
             // Write scene data
             {
                 // Get the scene block
-                ScnBlock scn = ScnBlockList[0];
+                ScnBlock scn = ScnBlockList.First() as ScnBlock;
                 RsiBlock scnResources = scn.Children[0] as RsiBlock;
 
                 daeWriter.WriteStartElement("library_visual_scenes");
@@ -623,11 +610,11 @@ namespace SrdTool
                 daeWriter.WriteAttributeString("id", $"{scnResources.ResourceStringList[0]}");
                 daeWriter.WriteAttributeString("name", $"{scnResources.ResourceStringList[0]}");
 
-                for (int b = 0; b < VtxBlockList.Count; ++b)
+                for (int b = 0; b < VtxBlockList.Count(); ++b)
                 {
-                    VtxBlock vtx = VtxBlockList[b];
+                    VtxBlock vtx = VtxBlockList.ElementAt(b) as VtxBlock;
                     RsiBlock vtxResources = vtx.Children[0] as RsiBlock;
-                    MshBlock msh = MshBlockList[b];
+                    MshBlock msh = MshBlockList.ElementAt(b) as MshBlock;
                     RsiBlock mshResources = msh.Children[0] as RsiBlock;
 
                     daeWriter.WriteStartElement("node");
