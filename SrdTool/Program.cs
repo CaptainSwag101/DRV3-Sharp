@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Xml;
 using V3Lib;
 using V3Lib.Srd;
 using V3Lib.Srd.BlockTypes;
@@ -258,16 +259,76 @@ namespace SrdTool
 
         private static void ExtractModels()
         {
-            // Export the vertices and faces as an ASCII OBJ
-            StringBuilder sb = new StringBuilder();
-            int totalVerticesProcessed = 0;
-
-            foreach (Block b in Srd.Blocks)
+            // Export the vertices and faces as a Collada file
+            XmlWriterSettings daeSettings = new XmlWriterSettings
             {
-                if (b is VtxBlock vtx && b.Children[0] is RsiBlock rsi)
+                OmitXmlDeclaration = false,
+                CloseOutput = true,
+                Indent = true,
+                Encoding = Encoding.UTF8,
+                ConformanceLevel = ConformanceLevel.Document
+            };
+            using XmlWriter daeWriter = XmlWriter.Create(new FileStream(SrdName + ".dae", FileMode.Create, FileAccess.Write, FileShare.Read), daeSettings);
+            daeWriter.WriteStartDocument();
+            daeWriter.WriteStartElement("COLLADA", "http://www.collada.org/2005/11/COLLADASchema");
+            daeWriter.WriteAttributeString("version", "1.4.1");
+
+            // Get a list of all VTX and MSH blocks
+            var VtxBlockList = new List<VtxBlock>();
+            var MshBlockList = new List<MshBlock>();
+            var ScnBlockList = new List<ScnBlock>();
+
+            foreach (Block block in Srd.Blocks)
+            {
+                if (block is VtxBlock vtx)
                 {
+                    VtxBlockList.Add(vtx);
+                }
+                else if (block is MshBlock msh)
+                {
+                    MshBlockList.Add(msh);
+                }
+                else if (block is ScnBlock scn)
+                {
+                    ScnBlockList.Add(scn);
+                }
+            }
+
+            // Write asset data
+            {
+                daeWriter.WriteStartElement("asset");
+
+                daeWriter.WriteStartElement("unit");
+                daeWriter.WriteAttributeString("name", "meter");
+                daeWriter.WriteAttributeString("meter", "1.0");
+                daeWriter.WriteEndElement();    // unit
+
+                daeWriter.WriteStartElement("up_axis");
+                daeWriter.WriteString("Y_UP");
+                daeWriter.WriteEndElement();    // up_axis
+
+                daeWriter.WriteEndElement();    // asset
+            }
+
+            // Write geometry data
+            {
+                daeWriter.WriteStartElement("library_geometries");
+
+                if (VtxBlockList.Count != MshBlockList.Count)
+                {
+                    Console.WriteLine("ERROR: Vertex and Mesh block counts are not equal!");
+                    return;
+                }
+
+                for (int b = 0; b < VtxBlockList.Count; ++b)
+                {
+                    VtxBlock vtx = VtxBlockList[b];
+                    RsiBlock vtxResources = vtx.Children[0] as RsiBlock;
+                    MshBlock msh = MshBlockList[b];
+                    RsiBlock mshResources = msh.Children[0] as RsiBlock;
+
                     // Extract vertex data
-                    using BinaryReader vertexReader = new BinaryReader(new MemoryStream(rsi.ExternalData[0]));
+                    using BinaryReader vertexReader = new BinaryReader(new MemoryStream(vtxResources.ExternalData[0]));
                     List<float[]> vertexList = new List<float[]>();
                     List<float[]> normalList = new List<float[]>();
                     List<float[]> texmapList = new List<float[]>();
@@ -277,7 +338,7 @@ namespace SrdTool
                     {
                         combinedSize += Size;
                     }
-                    if ((rsi.ExternalData[0].Length / combinedSize) != vtx.VertexCount)
+                    if ((vtxResources.ExternalData[0].Length / combinedSize) != vtx.VertexCount)
                     {
                         Console.WriteLine("WARNING: Total vertex block length and expected vertex count are misaligned.");
                     }
@@ -328,7 +389,7 @@ namespace SrdTool
 
                                 case 2: // Texture UVs (only for models with bones)
                                     {
-                                        float[] texmap = new float[3];
+                                        float[] texmap = new float[2];
                                         texmap[0] = vertexReader.ReadSingle();            // U
                                         texmap[1] = vertexReader.ReadSingle() * -1.0f;    // V
                                         texmapList.Add(texmap);
@@ -342,62 +403,268 @@ namespace SrdTool
                         }
                     }
 
-                    // Extract face data
-                    using BinaryReader faceReader = new BinaryReader(new MemoryStream(rsi.ExternalData[1]));
-                    List<ushort[]> faceList = new List<ushort[]>();
-                    while (faceReader.BaseStream.Position < faceReader.BaseStream.Length)
+                    // Extract index data
+                    using BinaryReader indexReader = new BinaryReader(new MemoryStream(vtxResources.ExternalData[1]));
+                    List<ushort[]> indexList = new List<ushort[]>();
+                    while (indexReader.BaseStream.Position < indexReader.BaseStream.Length)
                     {
-                        ushort[] faceIndices = new ushort[3];
+                        ushort[] indices = new ushort[3];
                         for (int i = 0; i < 3; ++i)
                         {
-                            ushort index = faceReader.ReadUInt16();
-                            faceIndices[i] = index;
+                            ushort index = indexReader.ReadUInt16();
+                            indices[i] = index;
                         }
-                        faceList.Add(faceIndices);
+                        indexList.Add(indices);
                     }
 
 
-                    // Write mesh object data
-                    sb.Append($"o {rsi.ResourceStringList[0]}\n");
 
-                    int verticesProcessed = 0;
-                    foreach (float[] v in vertexList)
+                    // Write data to DAE
+                    daeWriter.WriteStartElement("geometry");
+                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}");
+                    daeWriter.WriteAttributeString("name", $"{mshResources.ResourceStringList[0]}");
+
+                    daeWriter.WriteStartElement("mesh");
+
+                    daeWriter.WriteStartElement("source");  // source Positions START
+                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-positions");
+
+                    daeWriter.WriteStartElement("float_array");
+                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-positions-array");
+                    daeWriter.WriteAttributeString("count", $"{vertexList.Count * 3}");
+                    foreach (float[] vertexTriplet in vertexList)
                     {
-                        sb.Append($"v {v[0]} {v[1]} {v[2]}\n");
-                        ++verticesProcessed;
+                        daeWriter.WriteValue(vertexTriplet[0]);
+                        daeWriter.WriteString(" ");
+                        daeWriter.WriteValue(vertexTriplet[1]);
+                        daeWriter.WriteString(" ");
+                        daeWriter.WriteValue(vertexTriplet[2]);
+                        daeWriter.WriteString(" ");
                     }
-                    sb.Append("\n");
+                    daeWriter.WriteEndElement();    // float_array
 
-                    foreach (float[] vn in normalList)
+                    daeWriter.WriteStartElement("technique_common");
+
+                    daeWriter.WriteStartElement("accessor");
+                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-positions-array");
+                    daeWriter.WriteAttributeString("count", $"{vertexList.Count}");
+                    daeWriter.WriteAttributeString("stride", $"{3}");
+
+                    daeWriter.WriteStartElement("param");
+                    daeWriter.WriteAttributeString("name", "X");
+                    daeWriter.WriteAttributeString("type", "float");
+                    daeWriter.WriteEndElement();    // param X
+                    daeWriter.WriteStartElement("param");
+                    daeWriter.WriteAttributeString("name", "Y");
+                    daeWriter.WriteAttributeString("type", "float");
+                    daeWriter.WriteEndElement();    // param Y
+                    daeWriter.WriteStartElement("param");
+                    daeWriter.WriteAttributeString("name", "Z");
+                    daeWriter.WriteAttributeString("type", "float");
+                    daeWriter.WriteEndElement();    // param Z
+
+                    daeWriter.WriteEndElement();    // accessor
+
+                    daeWriter.WriteEndElement();    // technique_common
+
+                    daeWriter.WriteEndElement();    // source Positions END
+
+                    daeWriter.WriteStartElement("source");  // source Normals START
+                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-normals");
+
+                    daeWriter.WriteStartElement("float_array");
+                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-normals-array");
+                    daeWriter.WriteAttributeString("count", $"{normalList.Count * 3}");
+                    foreach (float[] normalTriplet in normalList)
                     {
-                        sb.Append($"vn {vn[0]} {vn[1]} {vn[2]}\n");
+                        daeWriter.WriteValue(normalTriplet[0]);
+                        daeWriter.WriteString(" ");
+                        daeWriter.WriteValue(normalTriplet[1]);
+                        daeWriter.WriteString(" ");
+                        daeWriter.WriteValue(normalTriplet[2]);
+                        daeWriter.WriteString(" ");
                     }
-                    sb.Append("\n");
+                    daeWriter.WriteEndElement();    // float_array
 
+                    daeWriter.WriteStartElement("technique_common");
 
-                    foreach (float[] vt in texmapList)
+                    daeWriter.WriteStartElement("accessor");
+                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-normals-array");
+                    daeWriter.WriteAttributeString("count", $"{normalList.Count}");
+                    daeWriter.WriteAttributeString("stride", $"{3}");
+
+                    daeWriter.WriteStartElement("param");
+                    daeWriter.WriteAttributeString("name", "X");
+                    daeWriter.WriteAttributeString("type", "float");
+                    daeWriter.WriteEndElement();    // param X
+                    daeWriter.WriteStartElement("param");
+                    daeWriter.WriteAttributeString("name", "Y");
+                    daeWriter.WriteAttributeString("type", "float");
+                    daeWriter.WriteEndElement();    // param Y
+                    daeWriter.WriteStartElement("param");
+                    daeWriter.WriteAttributeString("name", "Z");
+                    daeWriter.WriteAttributeString("type", "float");
+                    daeWriter.WriteEndElement();    // param Z
+
+                    daeWriter.WriteEndElement();    // accessor
+
+                    daeWriter.WriteEndElement();    // technique_common
+
+                    daeWriter.WriteEndElement();    // source Normals END
+
+                    daeWriter.WriteStartElement("source");  // source TexMap START
+                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-map");
+
+                    daeWriter.WriteStartElement("float_array");
+                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-map-array");
+                    daeWriter.WriteAttributeString("count", $"{texmapList.Count * 2}");
+                    foreach (float[] texmapPair in texmapList)
                     {
-                        sb.Append($"vt {vt[0]} {vt[1]}\n");
+                        daeWriter.WriteValue(texmapPair[0]);
+                        daeWriter.WriteString(" ");
+                        daeWriter.WriteValue(texmapPair[1]);
+                        daeWriter.WriteString(" ");
                     }
-                    sb.Append("\n");
+                    daeWriter.WriteEndElement();    // float_array
 
-                    foreach (ushort[] f in faceList)
+                    daeWriter.WriteStartElement("technique_common");
+
+                    daeWriter.WriteStartElement("accessor");
+                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-map-array");
+                    daeWriter.WriteAttributeString("count", $"{texmapList.Count}");
+                    daeWriter.WriteAttributeString("stride", $"{2}");
+
+                    daeWriter.WriteStartElement("param");
+                    daeWriter.WriteAttributeString("name", "S");
+                    daeWriter.WriteAttributeString("type", "float");
+                    daeWriter.WriteEndElement();    // param S
+                    daeWriter.WriteStartElement("param");
+                    daeWriter.WriteAttributeString("name", "T");
+                    daeWriter.WriteAttributeString("type", "float");
+                    daeWriter.WriteEndElement();    // param T
+
+                    daeWriter.WriteEndElement();    // accessor
+
+                    daeWriter.WriteEndElement();    // technique_common
+
+                    daeWriter.WriteEndElement();    // source TexMap END
+
+                    daeWriter.WriteStartElement("vertices");
+                    daeWriter.WriteAttributeString("id", $"{mshResources.ResourceStringList[0]}-vertices");
+
+                    daeWriter.WriteStartElement("input");
+                    daeWriter.WriteAttributeString("semantic", "POSITION");
+                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-positions");
+                    daeWriter.WriteEndElement();    // input
+
+                    daeWriter.WriteEndElement();    // vertices
+
+                    daeWriter.WriteStartElement("polylist");
+                    //daeWriter.WriteAttributeString("material", $"MATERIAL_NAME_GOES_HERE");
+                    daeWriter.WriteAttributeString("count", $"{indexList.Count}");
+
+                    daeWriter.WriteStartElement("input");
+                    daeWriter.WriteAttributeString("semantic", "VERTEX");
+                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-vertices");
+                    daeWriter.WriteAttributeString("offset", $"{0}");
+                    daeWriter.WriteEndElement();    // input VERTEX
+
+                    daeWriter.WriteStartElement("input");
+                    daeWriter.WriteAttributeString("semantic", "NORMAL");
+                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-normals");
+                    daeWriter.WriteAttributeString("offset", $"{0}");
+                    daeWriter.WriteEndElement();    // input NORMAL
+
+                    daeWriter.WriteStartElement("input");
+                    daeWriter.WriteAttributeString("semantic", "TEXCOORD");
+                    daeWriter.WriteAttributeString("source", $"#{mshResources.ResourceStringList[0]}-map");
+                    daeWriter.WriteAttributeString("offset", $"{0}");
+                    daeWriter.WriteAttributeString("set", $"{0}");
+                    daeWriter.WriteEndElement();    // input TEXCOORD
+
+                    daeWriter.WriteStartElement("vcount");
+                    for (int f = 0; f < indexList.Count; ++f)
                     {
-                        int faceIndex1 = f[0] + totalVerticesProcessed + 1;
-                        int faceIndex2 = f[1] + totalVerticesProcessed + 1;
-                        int faceIndex3 = f[2] + totalVerticesProcessed + 1;
-                        sb.Append($"f {faceIndex1}/{faceIndex1}/{faceIndex1} "
-                            + $"{faceIndex2}/{faceIndex2}/{faceIndex2} "
-                            + $"{faceIndex3}/{faceIndex3}/{faceIndex3}\n");
+                        daeWriter.WriteValue($"{3}");
+                        daeWriter.WriteString(" ");
                     }
+                    daeWriter.WriteEndElement();    // vcount
 
-                    totalVerticesProcessed += verticesProcessed;
-                    sb.Append('\n');
+                    daeWriter.WriteStartElement("p");
+                    foreach (ushort[] indices in indexList)
+                    {
+                        daeWriter.WriteValue(indices[0]);
+                        daeWriter.WriteString(" ");
+                        daeWriter.WriteValue(indices[1]);
+                        daeWriter.WriteString(" ");
+                        daeWriter.WriteValue(indices[2]);
+                        daeWriter.WriteString(" ");
+                    }
+                    daeWriter.WriteEndElement();    // p
+
+                    daeWriter.WriteEndElement();    // polylist
+
+                    daeWriter.WriteEndElement();    // mesh
+
+                    daeWriter.WriteEndElement();    // geometry
                 }
+                daeWriter.WriteEndElement();    // library_geometry
             }
 
-            string objString = sb.ToString();
-            File.WriteAllText(SrdName + ".obj", objString);
+            // Write scene data
+            {
+                // Get the scene block
+                ScnBlock scn = ScnBlockList[0];
+                RsiBlock scnResources = scn.Children[0] as RsiBlock;
+
+                daeWriter.WriteStartElement("library_visual_scenes");
+                
+                daeWriter.WriteStartElement("visual_scene");
+                daeWriter.WriteAttributeString("id", $"{scnResources.ResourceStringList[0]}");
+                daeWriter.WriteAttributeString("name", $"{scnResources.ResourceStringList[0]}");
+
+                for (int b = 0; b < VtxBlockList.Count; ++b)
+                {
+                    VtxBlock vtx = VtxBlockList[b];
+                    RsiBlock vtxResources = vtx.Children[0] as RsiBlock;
+                    MshBlock msh = MshBlockList[b];
+                    RsiBlock mshResources = msh.Children[0] as RsiBlock;
+
+                    daeWriter.WriteStartElement("node");
+                    daeWriter.WriteAttributeString("id", $"node_{b}");
+                    daeWriter.WriteAttributeString("name", $"node_{b}");
+                    daeWriter.WriteAttributeString("type", "NODE");
+
+                    daeWriter.WriteStartElement("matrix");
+                    daeWriter.WriteAttributeString("sid", "transform");
+                    daeWriter.WriteString("1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1");   // TODO: REPLACE THIS WITH ACTUAL TRANSFORM!!!
+                    daeWriter.WriteEndElement();    // matrix
+
+                    daeWriter.WriteStartElement("instance_geometry");
+                    daeWriter.WriteAttributeString("url", $"#{mshResources.ResourceStringList[0]}");
+                    daeWriter.WriteAttributeString("name", $"{mshResources.ResourceStringList[0]}");
+                    daeWriter.WriteEndElement();    // instance_geometry
+
+                    daeWriter.WriteEndElement();    // node
+                }
+
+                daeWriter.WriteEndElement();    // visual_scene
+
+                daeWriter.WriteEndElement();    // library_visual_scenes
+
+                daeWriter.WriteStartElement("scene");
+
+                daeWriter.WriteStartElement("instance_visual_scene");
+                daeWriter.WriteAttributeString("url", $"#{scnResources.ResourceStringList[0]}");
+                daeWriter.WriteEndElement();    // instance_visual_scene
+
+                daeWriter.WriteEndElement();    // scene
+            }
+
+            daeWriter.WriteEndElement();
+            daeWriter.WriteEndDocument();
+            daeWriter.Flush();
+            daeWriter.Close();
         }
 
         private static void ExtractTextures()

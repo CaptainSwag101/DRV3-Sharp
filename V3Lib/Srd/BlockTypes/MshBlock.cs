@@ -55,8 +55,6 @@ namespace V3Lib.Srd.BlockTypes
             {
                 UnknownStringList.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
             }
-
-            return;
         }
 
         public override byte[] SerializeData(string srdiPath, string srdvPath)
