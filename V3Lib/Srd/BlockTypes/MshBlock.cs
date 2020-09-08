@@ -15,8 +15,8 @@ namespace V3Lib.Srd.BlockTypes
         public byte Unknown21;
         public byte Unknown22;
         public byte Unknown23;
-        public string FullMeshName;
-        public string ShortMeshName;
+        public string MeshName;
+        public string ParentName;
         public List<string> MappedStrings = new List<string>();
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
@@ -24,8 +24,8 @@ namespace V3Lib.Srd.BlockTypes
             using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadUInt32();
-            ushort fullMeshNameOffset = reader.ReadUInt16();
-            ushort shortMeshNameOffset = reader.ReadUInt16();
+            ushort meshNameOffset = reader.ReadUInt16();
+            ushort parentNameOffset = reader.ReadUInt16();
             ushort stringMapEndOffset = reader.ReadUInt16();
             Unknown1A = reader.ReadUInt16();
             Unknown1C = reader.ReadUInt16();
@@ -46,10 +46,10 @@ namespace V3Lib.Srd.BlockTypes
             }
 
             // Read mesh name strings
-            reader.BaseStream.Seek(fullMeshNameOffset, SeekOrigin.Begin);
-            FullMeshName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
-            reader.BaseStream.Seek(shortMeshNameOffset, SeekOrigin.Begin);
-            ShortMeshName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            reader.BaseStream.Seek(meshNameOffset, SeekOrigin.Begin);
+            MeshName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            reader.BaseStream.Seek(parentNameOffset, SeekOrigin.Begin);
+            ParentName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
         }
 
         public override byte[] SerializeData(string srdiPath, string srdvPath)
@@ -62,8 +62,8 @@ namespace V3Lib.Srd.BlockTypes
             StringBuilder sb = new StringBuilder();
 
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
-            sb.Append($"{nameof(FullMeshName)}: {FullMeshName}\n");
-            sb.Append($"{nameof(ShortMeshName)}: {ShortMeshName}\n");
+            sb.Append($"{nameof(MeshName)}: {MeshName}\n");
+            sb.Append($"{nameof(ParentName)}: {ParentName}\n");
             sb.Append($"{nameof(Unknown1A)}: {Unknown1A}\n");
             sb.Append($"{nameof(Unknown1C)}: {Unknown1C}\n");
             sb.Append($"{nameof(Unknown1E)}: {Unknown1E}\n");

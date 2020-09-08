@@ -46,6 +46,7 @@ namespace V3Lib.Srd
                     "$TXR" => new TxrBlock(),
                     "$VTX" => new VtxBlock(),
                     "$MSH" => new MshBlock(),
+                    "$MAT" => new MatBlock(),
                     "$SCN" => new ScnBlock(),
                     "$CT0" => new Ct0Block(),
                     _ => new UnknownBlock(),
