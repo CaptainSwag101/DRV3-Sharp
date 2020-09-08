@@ -57,9 +57,14 @@ namespace SpcTool
                         // Parse target arguments
                         Console.WriteLine("Type the files you want to extract, separated by spaces (wildcard * supported): ");
                         string targetsRaw = Console.ReadLine();
-                        var targets = targetsRaw.Split();
 
-                        ExtractSubfiles(loadedSpc, loadedSpcInfo, targets.ToList());
+                        // Implemented based on https://stackoverflow.com/a/5227134/
+                        Regex regex = new Regex("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
+                        var targets = (from Match m in regex.Matches(targetsRaw)
+                                        where m.Groups["match"].Success
+                                        select m.Groups["match"].Value).ToList();
+
+                        ExtractSubfiles(loadedSpc, loadedSpcInfo, targets);
                     }
                 },
                 {
@@ -69,9 +74,14 @@ namespace SpcTool
                         // Parse target arguments
                         Console.WriteLine("Type the files you want to insert, separated by spaces (or drag and drop): ");
                         string targetsRaw = Console.ReadLine();
-                        var targets = targetsRaw.Split();
 
-                        InsertSubfiles(loadedSpc, loadedSpcInfo, targets.ToList());
+                        // Implemented based on https://stackoverflow.com/a/5227134
+                        Regex regex = new Regex("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
+                        var targets = (from Match m in regex.Matches(targetsRaw)
+                                        where m.Groups["match"].Success
+                                        select m.Groups["match"].Value).ToList();
+
+                        InsertSubfiles(loadedSpc, loadedSpcInfo, targets);
                     }
                 },
                 {
@@ -112,7 +122,7 @@ namespace SpcTool
             List<string> subfilesToExtract = new List<string>();
             foreach (string target in targets)
             {
-                string regexTarget = "^" + Regex.Escape(target).Replace("\\?", ".").Replace("\\*", ".*") + "$";
+                string regexTarget = "^" + Regex.Escape(target).Replace("\\?", ".?").Replace("\\*", ".*") + "$";
 
                 foreach (SpcSubfile subfile in loadedSpc.Subfiles)
                 {
@@ -152,15 +162,11 @@ namespace SpcTool
             {
                 Console.WriteLine($"Inserting \"{subfileName}\"...");
 
-                insertTasks[targets.IndexOf(subfileName)] = new Task(() => loadedSpc.InsertSubfile(subfileName));
+                insertTasks[targets.IndexOf(subfileName)] = Task.Factory.StartNew(() => loadedSpc.InsertSubfile(subfileName));
             }
 
             // Wait until all target subfiles have been inserted
-            foreach (Task task in insertTasks)
-            {
-                task.Start();
-                task.Wait();
-            }
+            Task.WaitAll(insertTasks);
 
             // Save the spc file
             loadedSpc.Save(loadedSpcInfo.FullName);
