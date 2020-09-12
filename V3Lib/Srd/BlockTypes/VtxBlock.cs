@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics;
 using System.Text;
 
 namespace V3Lib.Srd.BlockTypes
@@ -8,83 +9,77 @@ namespace V3Lib.Srd.BlockTypes
     // Holds information about vertex data and index lists
     public sealed class VtxBlock : Block
     {
-        public int FloatTripletCount;   // Likely the number of half-float triplets in the "float list"
+        public int VectorCount;   // Likely the number of half-float triplets in the "float list"
         public short Unknown14;
         public short Unknown16;
         public int VertexCount;
         public short Unknown1C;
         public byte Unknown1E;
-        public byte VertexSubBlockCount;
-        public short BindBoneRootOffset;
-        public short VertexSubBlockListOffset;
-        public short UnknownFloatListOffset;
-        public short BindBoneListOffset;
         public short Unknown28;
         public List<short> UnknownShortList;
         public List<(int Offset, int Size)> VertexSubBlockList;
         public short BindBoneRoot;
         public List<short> BindBoneList;
-        public List<(float F1, float F2, float F3)> UnknownFloatList;
+        public List<Vector3> UnknownVectorList;
         public List<string> UnknownStringList;
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
             using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
-            FloatTripletCount = reader.ReadInt32();
+            VectorCount = reader.ReadInt32();
             Unknown14 = reader.ReadInt16();
             Unknown16 = reader.ReadInt16();
             VertexCount = reader.ReadInt32();
             Unknown1C = reader.ReadInt16();
             Unknown1E = reader.ReadByte();
-            VertexSubBlockCount = reader.ReadByte();
-            BindBoneRootOffset = reader.ReadInt16();
-            VertexSubBlockListOffset = reader.ReadInt16();
-            UnknownFloatListOffset = reader.ReadInt16();
-            BindBoneListOffset = reader.ReadInt16();
+            byte vertexSubBlockCount = reader.ReadByte();
+            short bindBoneRootOffset = reader.ReadInt16();
+            short vertexSubBlockListOffset = reader.ReadInt16();
+            short unknownFloatListOffset = reader.ReadInt16();
+            short bindBoneListOffset = reader.ReadInt16();
             Unknown28 = reader.ReadInt16();
             Utils.ReadPadding(reader, 16);
 
             // Read unknown list of shorts
             UnknownShortList = new List<short>();
-            while (reader.BaseStream.Position < VertexSubBlockListOffset)
+            while (reader.BaseStream.Position < vertexSubBlockListOffset)
             {
                 UnknownShortList.Add(reader.ReadInt16());
             }
 
             // Read vertex sub-blocks
-            reader.BaseStream.Seek(VertexSubBlockListOffset, SeekOrigin.Begin);
+            reader.BaseStream.Seek(vertexSubBlockListOffset, SeekOrigin.Begin);
             VertexSubBlockList = new List<(int Offset, int Size)>();
-            for (int s = 0; s < VertexSubBlockCount; ++s)
+            for (int s = 0; s < vertexSubBlockCount; ++s)
             {
                 VertexSubBlockList.Add((reader.ReadInt32(), reader.ReadInt32()));
             }
 
             // Read bone list
-            reader.BaseStream.Seek(BindBoneRootOffset, SeekOrigin.Begin);
+            reader.BaseStream.Seek(bindBoneRootOffset, SeekOrigin.Begin);
             BindBoneRoot = reader.ReadInt16();
 
-            if (BindBoneListOffset != 0)
-                reader.BaseStream.Seek(BindBoneListOffset, SeekOrigin.Begin);
+            if (bindBoneListOffset != 0)
+                reader.BaseStream.Seek(bindBoneListOffset, SeekOrigin.Begin);
 
             BindBoneList = new List<short>();
-            while (reader.BaseStream.Position < UnknownFloatListOffset)
+            while (reader.BaseStream.Position < unknownFloatListOffset)
             {
                 BindBoneList.Add(reader.ReadInt16());
             }
 
             // Read unknown list of floats
-            reader.BaseStream.Seek(UnknownFloatListOffset, SeekOrigin.Begin);
-            UnknownFloatList = new List<(float F1, float F2, float F3)>();
-            for (int h = 0; h < FloatTripletCount / 2; ++h)
+            reader.BaseStream.Seek(unknownFloatListOffset, SeekOrigin.Begin);
+            UnknownVectorList = new List<Vector3>();
+            for (int h = 0; h < VectorCount / 2; ++h)
             {
-                var floatTriplet = (
-                    reader.ReadSingle(),
-                    reader.ReadSingle(),
-                    reader.ReadSingle()
-                    );
+                Vector3 vec;
+                vec.X = reader.ReadSingle();
+                vec.Y = reader.ReadSingle();
+                vec.Z = reader.ReadSingle();
 
-                UnknownFloatList.Add(floatTriplet);
+                UnknownVectorList.Add(vec);
             }
 
             // Read unknown string data
@@ -100,7 +95,7 @@ namespace V3Lib.Srd.BlockTypes
             using MemoryStream ms = new MemoryStream();
             using BinaryWriter writer = new BinaryWriter(ms);
 
-            writer.Write((int)(UnknownFloatList.Count * 2));
+            writer.Write((int)(UnknownVectorList.Count * 2));
             writer.Write(Unknown14);
             writer.Write(Unknown16);
             writer.Write(VertexCount);
@@ -159,11 +154,11 @@ namespace V3Lib.Srd.BlockTypes
             writer.BaseStream.Seek(0x14, SeekOrigin.Begin);
             writer.Write((short)lastPos);   // UnknownFloatListOffset
             writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
-            foreach (var (F1, F2, F3) in UnknownFloatList)
+            foreach (Vector3 vec in UnknownVectorList)
             {
-                writer.Write(F1);
-                writer.Write(F2);
-                writer.Write(F3);
+                writer.Write(vec.X);
+                writer.Write(vec.Y);
+                writer.Write(vec.Z);
             }
 
             // Write unknown string data
@@ -202,8 +197,8 @@ namespace V3Lib.Srd.BlockTypes
             sb.AppendJoin(", ", BindBoneList);
             sb.Append('\n');
 
-            sb.Append($"{nameof(UnknownFloatList)}: ");
-            sb.AppendJoin(", ", UnknownFloatList);
+            sb.Append($"{nameof(UnknownVectorList)}: ");
+            sb.AppendJoin(", ", UnknownVectorList);
             sb.Append('\n');
 
             sb.Append($"{nameof(UnknownStringList)}: ");

@@ -10,13 +10,14 @@ namespace V3Lib.Srd.BlockTypes
         public uint Unknown10;
         public ushort Unknown1A;
         public ushort Unknown1C;
-        public ushort Unknown1E;
+        public ushort StringMapDataAlmostEndOffset;
         public byte Unknown20;
         public byte Unknown21;
         public byte Unknown22;
         public byte Unknown23;
         public string MeshName;
         public string ParentName;
+        public string UnknownString;
         public List<string> MappedStrings = new List<string>();
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
@@ -26,17 +27,17 @@ namespace V3Lib.Srd.BlockTypes
             Unknown10 = reader.ReadUInt32();
             ushort meshNameOffset = reader.ReadUInt16();
             ushort parentNameOffset = reader.ReadUInt16();
-            ushort stringMapEndOffset = reader.ReadUInt16();
+            ushort unknownStringOffset = reader.ReadUInt16();
             Unknown1A = reader.ReadUInt16();
             Unknown1C = reader.ReadUInt16();
-            Unknown1E = reader.ReadUInt16();
+            StringMapDataAlmostEndOffset = reader.ReadUInt16();
             Unknown20 = reader.ReadByte();
             Unknown21 = reader.ReadByte();
             Unknown22 = reader.ReadByte();
             Unknown23 = reader.ReadByte();
 
             // Read string mapping offsets
-            while (reader.BaseStream.Position < stringMapEndOffset)
+            while (reader.BaseStream.Position < (StringMapDataAlmostEndOffset + 4))
             {
                 ushort strOff = reader.ReadUInt16();
                 long oldPos = reader.BaseStream.Position;
@@ -45,11 +46,13 @@ namespace V3Lib.Srd.BlockTypes
                 reader.BaseStream.Seek(oldPos, SeekOrigin.Begin);
             }
 
-            // Read mesh name strings
+            // Read other strings
             reader.BaseStream.Seek(meshNameOffset, SeekOrigin.Begin);
             MeshName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
             reader.BaseStream.Seek(parentNameOffset, SeekOrigin.Begin);
             ParentName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            reader.BaseStream.Seek(unknownStringOffset, SeekOrigin.Begin);
+            UnknownString = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
         }
 
         public override byte[] SerializeData(string srdiPath, string srdvPath)
@@ -64,9 +67,10 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
             sb.Append($"{nameof(MeshName)}: {MeshName}\n");
             sb.Append($"{nameof(ParentName)}: {ParentName}\n");
+            sb.Append($"{nameof(UnknownString)}: {UnknownString}\n");
             sb.Append($"{nameof(Unknown1A)}: {Unknown1A}\n");
             sb.Append($"{nameof(Unknown1C)}: {Unknown1C}\n");
-            sb.Append($"{nameof(Unknown1E)}: {Unknown1E}\n");
+            sb.Append($"{nameof(StringMapDataAlmostEndOffset)}: {StringMapDataAlmostEndOffset}\n");
             sb.Append($"{nameof(Unknown20)}: {Unknown20}\n");
             sb.Append($"{nameof(Unknown21)}: {Unknown21}\n");
             sb.Append($"{nameof(Unknown22)}: {Unknown22}\n");
