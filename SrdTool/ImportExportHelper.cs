@@ -1,4 +1,5 @@
 ﻿using glTFLoader.Schema;
+using SrdTool.GltfExtensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -130,6 +131,31 @@ namespace SrdTool
                                 Index = txiBlocks.IndexOf(matchingTexture),
                                 TexCoord = 0,
                             };
+                            break;
+
+                        case "SPECULARMAP0":
+                            var specGlossExtension = new KHR_materials_pbrSpecularGlossinessExtension();
+                            specGlossExtension.specularGlossinessTexture = new TextureInfo()
+                            {
+                                Index = txiBlocks.IndexOf(matchingTexture),
+                                TexCoord = 0,
+                            };
+                            specGlossExtension.diffuseTexture = material.PbrMetallicRoughness.BaseColorTexture;
+                            specGlossExtension.glossinessFactor = 0.75f;
+
+                            material.Extensions = new Dictionary<string, object>();
+                            material.Extensions.Add("KHR_materials_pbrSpecularGlossiness", specGlossExtension);
+                            gltf.ExtensionsRequired = new string[] { "KHR_materials_pbrSpecularGlossiness" };
+                            gltf.ExtensionsUsed = new string[] { "KHR_materials_pbrSpecularGlossiness" };
+
+                            //material.PbrMetallicRoughness.MetallicRoughnessTexture = new TextureInfo()
+                            //{
+                            //    Index = txiBlocks.IndexOf(matchingTexture),
+                            //    TexCoord = 0,
+                            //};
+                            //material.PbrMetallicRoughness.MetallicFactor = 0.0f;
+                            //material.PbrMetallicRoughness.RoughnessFactor = 0.5f;
+
                             break;
 
                         case "TRANSPARENCYMAP0":
