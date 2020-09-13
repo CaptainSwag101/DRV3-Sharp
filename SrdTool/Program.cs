@@ -260,8 +260,11 @@ namespace SrdTool
 
         private static void ExtractModels()
         {
-            Gltf model = ImportExportHelper.SrdModelToGltf(Srd, SrdName);
-            model.SaveModel(SrdName + ".gltf");
+            //FileInfo info = new FileInfo(SrdName);
+            //string modelExportPath = info.DirectoryName + Path.DirectorySeparatorChar + "model" + Path.DirectorySeparatorChar + info.Name;
+            string modelExportPath = SrdName;
+            Gltf model = ImportExportHelper.SrdModelToGltf(Srd, modelExportPath);
+            model.SaveModel(modelExportPath + ".gltf");
         }
 
         private static void ExtractTextures()
@@ -315,6 +318,11 @@ namespace SrdTool
             {
                 if (b is TxrBlock txr && b.Children[0] is RsiBlock rsi)
                 {
+                    int textureIndex = Srd.Blocks.Where(b => b is TxrBlock).ToList().IndexOf(txr);
+                    // This check is needed because otherwise it crashes if the TXR doesn't map to a TXI for some strange reason (UNUSUAL BEHAVIOR)
+                    if (textureIndex < Srd.Blocks.Where(b => b is TxiBlock).Count())
+                        Console.WriteLine($"Extracting {(Srd.Blocks.Where(b => b is TxiBlock).ElementAt(textureIndex) as TxiBlock).TextureFilename}");
+
                     // Separate the palette ResourceInfo from the list beforehand if it exists
                     byte[] paletteData = Array.Empty<byte>();
                     if (txr.Palette == 1)
@@ -448,13 +456,25 @@ namespace SrdTool
                         if (m > 0)
                             mipmapName = mipmapName.Insert(mipmapNameNoExtension.Length, $" ({mipWidth}x{mipHeight})");
 
-                        // Change file extension to Png if it isn't already
-                        if (mipmapExtension != "png")
-                            mipmapName += ".png";
-
                         string outputFolder = new FileInfo(textureSrdName).DirectoryName;
                         using FileStream fs = new FileStream(outputFolder + Path.DirectorySeparatorChar + mipmapName, FileMode.Create);
-                        image.SaveAsPng(fs);
+                        switch (mipmapExtension)
+                        {
+                            case ".png":
+                                image.SaveAsPng(fs);
+                                break;
+
+                            case ".bmp":
+                                image.SaveAsBmp(fs);
+                                break;
+
+                            case ".tga":
+                                image.SaveAsTga(fs);
+                                break;
+
+                            default:
+                                throw new UnknownImageFormatException($"The provided image is not in a known format, {mipmapExtension}");
+                        }
                         fs.Flush();
                         image.Dispose();
                     }

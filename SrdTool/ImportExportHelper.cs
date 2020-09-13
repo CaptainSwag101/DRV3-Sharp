@@ -44,8 +44,107 @@ namespace SrdTool
             var meshes = new List<Mesh>();
 
             // Generate temporary Lists of each kind of block we need to keep track of
+            var matBlocks = srd.Blocks.Where(b => b is MatBlock).ToList();
             var mshBlocks = srd.Blocks.Where(b => b is MshBlock).ToList();
+            var txiBlocks = srd.Blocks.Where(b => b is TxiBlock).ToList();
             var vtxBlocks = srd.Blocks.Where(b => b is VtxBlock).ToList();
+
+            // Generate textures
+            gltf.Images = new Image[txiBlocks.Count];
+            gltf.Textures = new Texture[txiBlocks.Count];
+            foreach (TxiBlock txi in txiBlocks)
+            {
+                Image img = new Image()
+                {
+                    Name = txi.TextureFilename,
+                    Uri = txi.TextureFilename,
+                };
+                gltf.Images[txiBlocks.IndexOf(txi)] = img;
+
+                Texture texture = new Texture()
+                {
+                    Name = txi.TextureFilename,
+                    Source = txiBlocks.IndexOf(txi),
+                };
+                gltf.Textures[txiBlocks.IndexOf(txi)] = texture;
+            }
+
+            // Generate materials
+            gltf.Materials = new Material[matBlocks.Count];
+            foreach (MatBlock mat in matBlocks)
+            {
+                Material material = new Material();
+
+                foreach (var textureMap in mat.MapTexturePairs)
+                {
+                    TxiBlock matchingTexture = new TxiBlock();
+                    foreach (TxiBlock txi in txiBlocks)
+                    {
+                        string altName = (txi.Children[0] as RsiBlock).ResourceStringList[0];
+                        if (textureMap.Value == altName)
+                        {
+                            matchingTexture = txi;
+                            break;
+                        }
+                    }
+
+                    if (string.IsNullOrEmpty(matchingTexture.TextureFilename))
+                    {
+                        throw new FileNotFoundException($"Could not find the texture referenced: {textureMap.Value}");
+                        //continue;
+                    }
+
+                    // TODO: A LOT of these aren't mapping correctly, such as multi-layered colormaps
+                    switch (textureMap.Key)
+                    {
+                        case "COLORMAP0":
+                            material.PbrMetallicRoughness = new MaterialPbrMetallicRoughness();
+                            material.PbrMetallicRoughness.BaseColorTexture = new TextureInfo()
+                            {
+                                Index = txiBlocks.IndexOf(matchingTexture),
+                                TexCoord = 0,
+                            };
+                            break;
+
+                        case "COLORMAP1":
+                            material.PbrMetallicRoughness = new MaterialPbrMetallicRoughness();
+                            material.PbrMetallicRoughness.BaseColorTexture = new TextureInfo()
+                            {
+                                Index = txiBlocks.IndexOf(matchingTexture),
+                                TexCoord = 0,
+                            };
+                            break;
+
+                        case "COLORMAP2":
+                            material.PbrMetallicRoughness = new MaterialPbrMetallicRoughness();
+                            material.PbrMetallicRoughness.BaseColorTexture = new TextureInfo()
+                            {
+                                Index = txiBlocks.IndexOf(matchingTexture),
+                                TexCoord = 0,
+                            };
+                            break;
+
+                        case "NORMALMAP0":
+                            material.NormalTexture = new MaterialNormalTextureInfo()
+                            {
+                                Index = txiBlocks.IndexOf(matchingTexture),
+                                TexCoord = 0,
+                            };
+                            break;
+
+                        case "TRANSPARENCYMAP0":
+                            material.AlphaMode = Material.AlphaModeEnum.BLEND;
+                            break;
+
+                        default:
+                            //throw new NotImplementedException($"The map type {textureMap.Key} is not supported.");
+                            Console.WriteLine($"The map type {textureMap.Key} is not supported.");
+                            continue;
+                    }
+                }
+
+                gltf.Materials[matBlocks.IndexOf(mat)] = material;
+            }
 
             if (vtxBlocks.Count != mshBlocks.Count)
             {
@@ -90,7 +189,7 @@ namespace SrdTool
                                     {
                                         Vector2 texcoord;
                                         texcoord.X = positionReader.ReadSingle();           // U
-                                        texcoord.Y = positionReader.ReadSingle() * -1.0f;   // V
+                                        texcoord.Y = positionReader.ReadSingle();           // V
                                         curTexcoordList.Add(texcoord);
                                     }
                                 }
@@ -106,7 +205,7 @@ namespace SrdTool
                                 {
                                     Vector2 texcoord;
                                     texcoord.X = positionReader.ReadSingle();               // U
-                                    texcoord.Y = positionReader.ReadSingle() * -1.0f;       // V
+                                    texcoord.Y = positionReader.ReadSingle();               // V
                                     curTexcoordList.Add(texcoord);
                                 }
                                 break;
@@ -127,7 +226,10 @@ namespace SrdTool
                     for (int i = 0; i < 3; ++i)
                     {
                         ushort index = indexReader.ReadUInt16();
-                        indices[i] = index;
+                        // We need to reverse the order of the indices to prevent the normals
+                        // from becoming permanently flipped due to the clockwise/counter-clockwise
+                        // order of the indices determining the face's direction
+                        indices[3 - (i + 1)] = index;   
                     }
                     curIndexList.Add(indices);
                 }
@@ -275,6 +377,17 @@ namespace SrdTool
                 accessors.Add(indexAccessor);
 
 
+                // Find the proper material for this mesh (EXAMPLE CODE FOR DEBUGGING)
+                //foreach (MatBlock mat in matBlocks)
+                //{
+                //    var matResources = mat.Children[0] as RsiBlock;
+
+                //    if (matResources.ResourceStringList[0] == msh.MaterialName)
+                //    {
+                //        break;
+                //    }
+                //}
+
                 // Generate a mesh and its associated primitives
                 MeshPrimitive prim = new MeshPrimitive()
                 {
@@ -286,6 +399,7 @@ namespace SrdTool
                         { "TEXCOORD_0", accessors.IndexOf(texcoordAccessor) },
                     },
                     Mode = MeshPrimitive.ModeEnum.TRIANGLES,
+                    Material = matBlocks.IndexOf(matBlocks.Where(b => (b.Children[0] as RsiBlock).ResourceStringList[0] == msh.MaterialName).First()),
                 };
                 Mesh mesh = new Mesh()
                 {
