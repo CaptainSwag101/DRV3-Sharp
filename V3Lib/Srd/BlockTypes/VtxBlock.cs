@@ -11,7 +11,7 @@ namespace V3Lib.Srd.BlockTypes
     {
         public int VectorCount;   // Likely the number of half-float triplets in the "float list"
         public short Unknown14;
-        public short Unknown16;
+        public short MeshType;
         public int VertexCount;
         public short Unknown1C;
         public byte Unknown1E;
@@ -29,7 +29,7 @@ namespace V3Lib.Srd.BlockTypes
 
             VectorCount = reader.ReadInt32();
             Unknown14 = reader.ReadInt16();
-            Unknown16 = reader.ReadInt16();
+            MeshType = reader.ReadInt16();
             VertexCount = reader.ReadInt32();
             Unknown1C = reader.ReadInt16();
             Unknown1E = reader.ReadByte();
@@ -97,7 +97,7 @@ namespace V3Lib.Srd.BlockTypes
 
             writer.Write((int)(UnknownVectorList.Count * 2));
             writer.Write(Unknown14);
-            writer.Write(Unknown16);
+            writer.Write(MeshType);
             writer.Write(VertexCount);
             writer.Write(Unknown1C);
             writer.Write(Unknown1E);
@@ -177,7 +177,7 @@ namespace V3Lib.Srd.BlockTypes
             StringBuilder sb = new StringBuilder();
 
             sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
-            sb.Append($"{nameof(Unknown16)}: {Unknown16}\n");
+            sb.Append($"{nameof(MeshType)}: {MeshType}\n");
             sb.Append($"{nameof(VertexCount)}: {VertexCount}\n");
             sb.Append($"{nameof(Unknown1C)}: {Unknown1C}\n");
             sb.Append($"{nameof(Unknown1E)}: {Unknown1E}\n");

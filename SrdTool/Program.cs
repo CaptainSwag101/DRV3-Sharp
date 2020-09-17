@@ -7,8 +7,6 @@ using V3Lib;
 using V3Lib.Srd;
 using V3Lib.Srd.BlockTypes;
 using CommandParser_Alpha;
-using glTFLoader;
-using glTFLoader.Schema;
 using Scarlet.Drawing;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -260,11 +258,8 @@ namespace SrdTool
 
         private static void ExtractModels()
         {
-            //FileInfo info = new FileInfo(SrdName);
-            //string modelExportPath = info.DirectoryName + Path.DirectorySeparatorChar + "model" + Path.DirectorySeparatorChar + info.Name;
             string modelExportPath = SrdName;
-            Gltf model = ImportExportHelper.SrdModelToGltf(Srd, modelExportPath);
-            model.SaveModel(modelExportPath + ".gltf");
+            ImportExportHelper.ExportModel(Srd, modelExportPath);
         }
 
         private static void ExtractTextures()
