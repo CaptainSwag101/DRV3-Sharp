@@ -35,51 +35,74 @@ namespace SrdTool
 
         private static Node GetNodeTree(SrdFile srd, List<Material> materials, List<Mesh> meshes)
         {
-            var tre = srd.Blocks.Where(b => b is TreBlock).First() as TreBlock;
-            var treResources = tre.Children[0] as RsiBlock;
-            var flattenedTreeNodes = tre.RootNode.Flatten().ToList();
+            var scn = srd.Blocks.Where(b => b is ScnBlock).First() as ScnBlock;
+            var scnResources = scn.Children[0] as RsiBlock;
+            var treBlocks = srd.Blocks.Where(b => b is TreBlock).ToList();
 
-            // This is done in two passes, one to generate the list of nodes, second to assign children to parents
-            var flattenedNodes = new List<Node>();
-            //var nodeNameList = new List<string>();
-            foreach (TreeNode treeNode in flattenedTreeNodes)
+            // Create a manual root node in case the scene has multiple roots
+            Node RootNode = new Node("RootNode");
+
+            foreach (TreBlock tre in treBlocks)
             {
-                Node n = new Node(treeNode.StringValue);
+                var treResources = tre.Children[0] as RsiBlock;
 
-                foreach (Mesh mesh in meshes)
+                var flattenedTreeNodes = tre.RootNode.Flatten().ToList();
+
+                // This is done in two passes, one to generate the list of nodes, second to assign children to parents
+                var flattenedNodes = new List<Node>();
+
+                // Generate a list of real nodes in the scene
+                foreach (TreeNode treeNode in flattenedTreeNodes)
                 {
-                    if (mesh.Name == n.Name)
-                        n.MeshIndices.Add(meshes.IndexOf(mesh));
+                    Node n = new Node(treeNode.StringValue);
+
+                    foreach (Mesh mesh in meshes)
+                    {
+                        if (mesh.Name == n.Name)
+                            n.MeshIndices.Add(meshes.IndexOf(mesh));
+                    }
+
+                    flattenedNodes.Add(n);
+                    //nodeNameList.Add(n.Name);
+                }
+                foreach (TreeNode treeNode in flattenedTreeNodes)
+                {
+                    int currentNodeIndex = flattenedTreeNodes.IndexOf(treeNode);
+
+                    foreach (TreeNode childTreeNode in treeNode)
+                    {
+                        int childNodeIndex = flattenedTreeNodes.IndexOf(childTreeNode);
+                        flattenedNodes[currentNodeIndex].Children.Add(flattenedNodes[childNodeIndex]);
+                    }
                 }
 
-                flattenedNodes.Add(n);
-                //nodeNameList.Add(n.Name);
-            }
-            foreach (TreeNode treeNode in flattenedTreeNodes)
-            {
-                int currentNodeIndex = flattenedTreeNodes.IndexOf(treeNode);
-
-                foreach (TreeNode childTreeNode in treeNode)
+                // Add any root nodes to the manual root node
+                foreach (string rootNodeName in scn.SceneRootNodes)
                 {
-                    int childNodeIndex = flattenedTreeNodes.IndexOf(childTreeNode);
-                    flattenedNodes[currentNodeIndex].Children.Add(flattenedNodes[childNodeIndex]);
+                    foreach (Node matchingNode in flattenedNodes.Where(n => n.Name == rootNodeName))
+                    {
+                        RootNode.Children.Add(matchingNode);
+                    }
                 }
             }
 
-            return flattenedNodes.First();
+            return RootNode;
         }
 
         private static List<Mesh> GetMeshes(SrdFile srd, List<Material> materials)
         {
             var meshList = new List<Mesh>();
 
+            //var treBlocks = srd.Blocks.Where(b => b is TreBlock).ToList();
+            var sklBlocks = srd.Blocks.Where(b => b is SklBlock).ToList();
             var mshBlocks = srd.Blocks.Where(b => b is MshBlock).ToList();
             var vtxBlocks = srd.Blocks.Where(b => b is VtxBlock).ToList();
 
-            if (vtxBlocks.Count != mshBlocks.Count)
-            {
-                Console.WriteLine("WARNING: Vertex and Mesh block counts are not equal!");
-            }
+            // This warning is unnecessary
+            //if (vtxBlocks.Count != mshBlocks.Count)
+            //{
+            //    Console.WriteLine("WARNING: Vertex and Mesh block counts are not equal!");
+            //}
 
             // For debugging
             //var vtxNameList = new List<string>();
@@ -94,7 +117,7 @@ namespace SrdTool
             //}
 
             // Iterate through each VTX block simultaneously and extract the data we need
-            var extractedData = new List<(List<Vector3> Vertices, List<Vector3> Normals, List<Vector2> Texcoords, List<ushort[]> Indices)>();
+            var extractedData = new List<(List<Vector3> Vertices, List<Vector3> Normals, List<Vector2> Texcoords, List<ushort[]> Indices, List<string> Bones, List<float> Weights)>();
             foreach (MshBlock msh in mshBlocks)
             {
                 var vtx = vtxBlocks.Where(b => (b.Children[0] as RsiBlock).ResourceStringList[0] == msh.VertexBlockName).First() as VtxBlock;
@@ -139,9 +162,10 @@ namespace SrdTool
                                 }
                                 break;
 
-                            case 1: // Bone weights
+                            case 1: // Bone weights?
                                 {
-                                    curWeightList.Add(positionReader.ReadSingle());
+                                    //while (positionReader.BaseStream.Position < subBlock.Offset + subBlock.Size)
+                                    //    curWeightList.Add(positionReader.ReadSingle());
                                 }
                                 break;
 
@@ -152,6 +176,10 @@ namespace SrdTool
                                     texcoord.Y = positionReader.ReadSingle();               // V, invert for non-glTF exports
                                     curTexcoordList.Add(texcoord);
                                 }
+                                break;
+
+                            default:
+                                throw new NotImplementedException();
                                 break;
                         }
 
@@ -179,13 +207,13 @@ namespace SrdTool
                 }
 
                 // Add the extracted data to our list
-                extractedData.Add((curVertexList, curNormalList, curTexcoordList, curIndexList));
+                extractedData.Add((curVertexList, curNormalList, curTexcoordList, curIndexList, vtx.BindBoneList, curWeightList));
             }
 
             // Now that we've extracted the data we need, convert it to Assimp equivalents
             for (int d = 0; d < extractedData.Count; ++d)
             {
-                var (Vertices, Normals, Texcoords, Indices) = extractedData[d];
+                var (Vertices, Normals, Texcoords, Indices, Bones, Weights) = extractedData[d];
                 var msh = mshBlocks[d] as MshBlock;
                 var mshResources = msh.Children[0] as RsiBlock;
 
@@ -231,6 +259,49 @@ namespace SrdTool
 
                     mesh.Faces.Add(face);
                 }
+
+                // Add bones
+                /*
+                foreach (string boneName in Bones)
+                {
+                    var boneInfoList = (sklBlocks.First() as SklBlock).BoneInfoList;
+
+                    var matchingBone = boneInfoList.Where(b => b.BoneName == boneName).First();
+
+                    Bone bone = new Bone();
+                    bone.Name = boneName;
+
+                    Assimp.Matrix4x4 offset;
+                    offset.A1 = matchingBone.Matrix1[0][0];
+                    offset.A2 = matchingBone.Matrix1[0][1];
+                    offset.A3 = matchingBone.Matrix1[0][2];
+                    offset.A4 = 0.0f;
+                    offset.B1 = matchingBone.Matrix1[1][0];
+                    offset.B2 = matchingBone.Matrix1[1][1];
+                    offset.B3 = matchingBone.Matrix1[1][2];
+                    offset.B4 = 0.0f;
+                    offset.C1 = matchingBone.Matrix1[2][0];
+                    offset.C2 = matchingBone.Matrix1[2][1];
+                    offset.C3 = matchingBone.Matrix1[2][2];
+                    offset.C4 = 0.0f;
+                    offset.D1 = matchingBone.Matrix1[3][0];
+                    offset.D2 = matchingBone.Matrix1[3][1];
+                    offset.D3 = matchingBone.Matrix1[3][2];
+                    offset.D4 = 1.0f;
+                    bone.OffsetMatrix = offset;
+
+                    // Add weights to bone
+                    foreach (float w in Weights)
+                    {
+                        VertexWeight vWeight;
+                        vWeight.VertexID = Weights.IndexOf(w);
+                        vWeight.Weight = w;
+                        bone.VertexWeights.Add(vWeight);
+                    }
+
+                    mesh.Bones.Add(bone);
+                }
+                */
 
                 meshList.Add(mesh);
             }

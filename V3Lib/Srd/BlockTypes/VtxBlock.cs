@@ -15,13 +15,12 @@ namespace V3Lib.Srd.BlockTypes
         public int VertexCount;
         public short Unknown1C;
         public byte Unknown1E;
-        public short Unknown28;
+        public uint Unknown28;
         public List<short> UnknownShortList;
         public List<(int Offset, int Size)> VertexSubBlockList;
         public short BindBoneRoot;
-        public List<short> BindBoneList;
+        public List<string> BindBoneList;
         public List<Vector3> UnknownVectorList;
-        public List<string> UnknownStringList;
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
@@ -34,11 +33,11 @@ namespace V3Lib.Srd.BlockTypes
             Unknown1C = reader.ReadInt16();
             Unknown1E = reader.ReadByte();
             byte vertexSubBlockCount = reader.ReadByte();
-            short bindBoneRootOffset = reader.ReadInt16();
-            short vertexSubBlockListOffset = reader.ReadInt16();
-            short unknownFloatListOffset = reader.ReadInt16();
-            short bindBoneListOffset = reader.ReadInt16();
-            Unknown28 = reader.ReadInt16();
+            ushort bindBoneRootOffset = reader.ReadUInt16();
+            ushort vertexSubBlockListOffset = reader.ReadUInt16();
+            ushort unknownFloatListOffset = reader.ReadUInt16();
+            ushort bindBoneListOffset = reader.ReadUInt16();
+            Unknown28 = reader.ReadUInt32();
             Utils.ReadPadding(reader, 16);
 
             // Read unknown list of shorts
@@ -63,10 +62,18 @@ namespace V3Lib.Srd.BlockTypes
             if (bindBoneListOffset != 0)
                 reader.BaseStream.Seek(bindBoneListOffset, SeekOrigin.Begin);
 
-            BindBoneList = new List<short>();
+            BindBoneList = new List<string>();
             while (reader.BaseStream.Position < unknownFloatListOffset)
             {
-                BindBoneList.Add(reader.ReadInt16());
+                ushort boneNameOffset = reader.ReadUInt16();
+
+                if (boneNameOffset == 0)
+                    break;
+
+                long oldPos = reader.BaseStream.Position;
+                reader.BaseStream.Seek(boneNameOffset, SeekOrigin.Begin);
+                BindBoneList.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
+                reader.BaseStream.Seek(oldPos, SeekOrigin.Begin);
             }
 
             // Read unknown list of floats
@@ -80,13 +87,6 @@ namespace V3Lib.Srd.BlockTypes
                 vec.Z = reader.ReadSingle();
 
                 UnknownVectorList.Add(vec);
-            }
-
-            // Read unknown string data
-            UnknownStringList = new List<string>();
-            while (reader.BaseStream.Position < reader.BaseStream.Length)
-            {
-                UnknownStringList.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
             }
         }
 
@@ -102,10 +102,10 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(Unknown1C);
             writer.Write(Unknown1E);
             writer.Write((byte)VertexSubBlockList.Count);
-            writer.Write((short)0);     // Placeholder for BindBoneRootOffset
-            writer.Write((short)0);     // Placeholder for VertexSubBlockListOffset
-            writer.Write((short)0);     // Placeholder for FloatListOffset
-            writer.Write((short)0);     // Placeholder for BindBoneListOffset
+            writer.Write((ushort)0);     // Placeholder for BindBoneRootOffset
+            writer.Write((ushort)0);     // Placeholder for VertexSubBlockListOffset
+            writer.Write((ushort)0);     // Placeholder for FloatListOffset
+            writer.Write((ushort)0);     // Placeholder for BindBoneListOffset
             writer.Write(Unknown28);
             Utils.WritePadding(writer, 16);
 
@@ -118,7 +118,7 @@ namespace V3Lib.Srd.BlockTypes
             // Write vertex sub-blocks
             long lastPos = writer.BaseStream.Position;
             writer.BaseStream.Seek(0x12, SeekOrigin.Begin);
-            writer.Write((short)lastPos);   // VertexSubBlockListOffset
+            writer.Write((ushort)lastPos);   // VertexSubBlockListOffset
             writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
             foreach (var (Offset, Size) in VertexSubBlockList)
             {
@@ -129,30 +129,25 @@ namespace V3Lib.Srd.BlockTypes
             // Write bone list
             lastPos = writer.BaseStream.Position;
             writer.BaseStream.Seek(0x10, SeekOrigin.Begin);
-            writer.Write((short)lastPos);   // BindBoneRootOffset
+            writer.Write((ushort)lastPos);   // BindBoneRootOffset
             writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
             writer.Write(BindBoneRoot);
 
-            if (BindBoneList.Count > 0)
+            // Write placeholder(s) for BindBoneList
+            long bindBoneListOffset = writer.BaseStream.Position;
+            writer.BaseStream.Seek(0x26, SeekOrigin.Begin);
+            writer.Write((ushort)bindBoneListOffset);
+            writer.BaseStream.Seek(bindBoneListOffset, SeekOrigin.Begin);
+            foreach (string str in BindBoneList)
             {
-                if (BindBoneList.Count > 1 || (BindBoneList.Count == 1 && BindBoneList[0] != 0))
-                {
-                    lastPos = writer.BaseStream.Position;
-                    writer.BaseStream.Seek(0x16, SeekOrigin.Begin);
-                    writer.Write((short)lastPos);   // BindBoneListOffset
-                    writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
-                }
-
-                foreach (short bone in BindBoneList)
-                {
-                    writer.Write(bone);
-                }
+                writer.Write((ushort)0);
             }
+            Utils.WritePadding(writer, 4);
 
             // Write unknown list of floats
             lastPos = writer.BaseStream.Position;
             writer.BaseStream.Seek(0x14, SeekOrigin.Begin);
-            writer.Write((short)lastPos);   // UnknownFloatListOffset
+            writer.Write((ushort)lastPos);   // UnknownFloatListOffset
             writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
             foreach (Vector3 vec in UnknownVectorList)
             {
@@ -161,11 +156,21 @@ namespace V3Lib.Srd.BlockTypes
                 writer.Write(vec.Z);
             }
 
-            // Write unknown string data
-            foreach (string str in UnknownStringList)
+            // Write bone names and store their location
+            List<ushort> boneNameOffsets = new List<ushort>();
+            foreach (string str in BindBoneList)
             {
+                boneNameOffsets.Add((ushort)writer.BaseStream.Position);
+
                 writer.Write(Encoding.ASCII.GetBytes(str));
                 writer.Write((byte)0);  // Null terminator
+            }
+
+            // Go back and write final values for BindBoneList
+            writer.BaseStream.Seek(bindBoneListOffset, SeekOrigin.Begin);
+            foreach (ushort offset in boneNameOffsets)
+            {
+                writer.Write(offset);
             }
 
             byte[] result = ms.ToArray();
@@ -190,7 +195,11 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append($"{nameof(VertexSubBlockList)}: ");
             sb.AppendJoin(", ", VertexSubBlockList);
             sb.Append('\n');
-            
+
+            sb.Append($"{nameof(BindBoneList)}: ");
+            sb.AppendJoin(", ", BindBoneList);
+            sb.Append('\n');
+
             sb.Append($"{nameof(BindBoneRoot)}: {BindBoneRoot}\n");
 
             sb.Append($"{nameof(BindBoneList)}: ");
@@ -199,10 +208,6 @@ namespace V3Lib.Srd.BlockTypes
 
             sb.Append($"{nameof(UnknownVectorList)}: ");
             sb.AppendJoin(", ", UnknownVectorList);
-            sb.Append('\n');
-
-            sb.Append($"{nameof(UnknownStringList)}: ");
-            sb.AppendJoin(", ", UnknownStringList);
 
             return sb.ToString();
         }
