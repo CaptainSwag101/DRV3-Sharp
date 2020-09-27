@@ -48,6 +48,7 @@ namespace V3Lib.Srd
                     "$MSH" => new MshBlock(),
                     "$MAT" => new MatBlock(),
                     "$SCN" => new ScnBlock(),
+                    "$SKL" => new SklBlock(),
                     "$CT0" => new Ct0Block(),
                     _ => new UnknownBlock(),
                 };

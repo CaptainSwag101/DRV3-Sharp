@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +11,31 @@ namespace SrdTool
 {
     static class ImportExportHelper
     {
+        private struct MeshData
+        {
+            public readonly List<Vector3> Vertices;
+            public readonly List<Vector3> Normals;
+            public readonly List<Vector2> Texcoords;
+            public readonly List<ushort[]> Indices;
+            public readonly List<string> Bones;
+            public readonly List<float> Weights;
+
+            public MeshData(List<Vector3> vertices,
+                List<Vector3> normals,
+                List<Vector2> texcoords,
+                List<ushort[]> indices,
+                List<string> bones,
+                List<float> weights)
+            {
+                Vertices = vertices;
+                Normals = normals;
+                Texcoords = texcoords;
+                Indices = indices;
+                Bones = bones;
+                Weights = weights;
+            }
+        }
+
         public static void ExportModel(SrdFile srd, string exportName)
         {
             // Setup the scene for the root of our model
@@ -98,12 +123,6 @@ namespace SrdTool
             var mshBlocks = srd.Blocks.Where(b => b is MshBlock).ToList();
             var vtxBlocks = srd.Blocks.Where(b => b is VtxBlock).ToList();
 
-            // This warning is unnecessary
-            //if (vtxBlocks.Count != mshBlocks.Count)
-            //{
-            //    Console.WriteLine("WARNING: Vertex and Mesh block counts are not equal!");
-            //}
-
             // For debugging
             //var vtxNameList = new List<string>();
             //var mshNameList = new List<string>();
@@ -117,7 +136,7 @@ namespace SrdTool
             //}
 
             // Iterate through each VTX block simultaneously and extract the data we need
-            var extractedData = new List<(List<Vector3> Vertices, List<Vector3> Normals, List<Vector2> Texcoords, List<ushort[]> Indices, List<string> Bones, List<float> Weights)>();
+            var extractedData = new List<MeshData>();
             foreach (MshBlock msh in mshBlocks)
             {
                 var vtx = vtxBlocks.Where(b => (b.Children[0] as RsiBlock).ResourceStringList[0] == msh.VertexBlockName).First() as VtxBlock;
@@ -130,13 +149,13 @@ namespace SrdTool
                 var curTexcoordList = new List<Vector2>();
                 var curWeightList = new List<float>();
 
-                foreach (var subBlock in vtx.VertexSubBlockList)
+                foreach (var section in vtx.VertexDataSections)
                 {
-                    positionReader.BaseStream.Seek(subBlock.Offset, SeekOrigin.Begin);
+                    positionReader.BaseStream.Seek(section.StartOffset, SeekOrigin.Begin);
                     for (int vNum = 0; vNum < vtx.VertexCount; ++vNum)
                     {
                         long oldPos = positionReader.BaseStream.Position;
-                        switch (vtx.VertexSubBlockList.IndexOf(subBlock))
+                        switch (vtx.VertexDataSections.IndexOf(section))
                         {
                             case 0: // Vertex/Normal data (and Texture UV for boneless models)
                                 {
@@ -152,7 +171,7 @@ namespace SrdTool
                                     normal.Z = positionReader.ReadSingle();                 // Z
                                     curNormalList.Add(normal);
 
-                                    if (vtx.VertexSubBlockList.Count == 1)
+                                    if (vtx.VertexDataSections.Count == 1)
                                     {
                                         Vector2 texcoord;
                                         texcoord.X = positionReader.ReadSingle();           // U
@@ -164,8 +183,11 @@ namespace SrdTool
 
                             case 1: // Bone weights?
                                 {
-                                    //while (positionReader.BaseStream.Position < subBlock.Offset + subBlock.Size)
-                                    //    curWeightList.Add(positionReader.ReadSingle());
+                                    var weightsPerVert = (section.SizePerVertex / sizeof(float));   // TODO: Is this always 8?
+                                    for (int wNum = 0; wNum < weightsPerVert; ++wNum)
+                                    {
+                                        curWeightList.Add(positionReader.ReadSingle());
+                                    }
                                 }
                                 break;
 
@@ -179,12 +201,12 @@ namespace SrdTool
                                 break;
 
                             default:
-                                throw new NotImplementedException();
+                                Console.WriteLine($"WARNING: Unknown vertex sub-block index {vtx.VertexDataSections.IndexOf(section)} is present in VTX block {vtxBlocks.IndexOf(vtx)}!");
                                 break;
                         }
 
                         // Skip data we don't currently use, though I may add support for this data later
-                        long remainingBytes = subBlock.Size - (positionReader.BaseStream.Position - oldPos);
+                        long remainingBytes = section.SizePerVertex - (positionReader.BaseStream.Position - oldPos);
                         positionReader.BaseStream.Seek(remainingBytes, SeekOrigin.Current);
                     }
                 }
@@ -207,13 +229,13 @@ namespace SrdTool
                 }
 
                 // Add the extracted data to our list
-                extractedData.Add((curVertexList, curNormalList, curTexcoordList, curIndexList, vtx.BindBoneList, curWeightList));
+                extractedData.Add(new MeshData(curVertexList, curNormalList, curTexcoordList, curIndexList, vtx.BindBoneList, curWeightList));
             }
 
             // Now that we've extracted the data we need, convert it to Assimp equivalents
             for (int d = 0; d < extractedData.Count; ++d)
             {
-                var (Vertices, Normals, Texcoords, Indices, Bones, Weights) = extractedData[d];
+                MeshData meshData = extractedData[d];
                 var msh = mshBlocks[d] as MshBlock;
                 var mshResources = msh.Children[0] as RsiBlock;
 
@@ -225,14 +247,14 @@ namespace SrdTool
                 };
 
                 // Add vertices
-                foreach (var vertex in Vertices)
+                foreach (var vertex in meshData.Vertices)
                 {
                     Vector3D vec3D = new Vector3D(vertex.X, vertex.Y, vertex.Z);
                     mesh.Vertices.Add(vec3D);
                 }
 
                 // Add normals
-                foreach (var normal in Normals)
+                foreach (var normal in meshData.Normals)
                 {
                     Vector3D vec3D = new Vector3D(normal.X, normal.Y, normal.Z);
                     mesh.Normals.Add(vec3D);
@@ -241,14 +263,14 @@ namespace SrdTool
                 // Add UVs
                 mesh.UVComponentCount[0] = 2;
                 mesh.TextureCoordinateChannels[0] = new List<Vector3D>();
-                foreach (var uv in Texcoords)
+                foreach (var uv in meshData.Texcoords)
                 {
                     Vector3D vec3D = new Vector3D(uv.X, uv.Y, 0.0f);
                     mesh.TextureCoordinateChannels[0].Add(vec3D);
                 }
 
                 // Add faces
-                foreach (var indexArray in Indices)
+                foreach (var indexArray in meshData.Indices)
                 {
                     Face face = new Face();
 
@@ -261,8 +283,7 @@ namespace SrdTool
                 }
 
                 // Add bones
-                /*
-                foreach (string boneName in Bones)
+                foreach (string boneName in meshData.Bones)
                 {
                     var boneInfoList = (sklBlocks.First() as SklBlock).BoneInfoList;
 
@@ -271,37 +292,25 @@ namespace SrdTool
                     Bone bone = new Bone();
                     bone.Name = boneName;
 
-                    Assimp.Matrix4x4 offset;
-                    offset.A1 = matchingBone.Matrix1[0][0];
-                    offset.A2 = matchingBone.Matrix1[0][1];
-                    offset.A3 = matchingBone.Matrix1[0][2];
-                    offset.A4 = 0.0f;
-                    offset.B1 = matchingBone.Matrix1[1][0];
-                    offset.B2 = matchingBone.Matrix1[1][1];
-                    offset.B3 = matchingBone.Matrix1[1][2];
-                    offset.B4 = 0.0f;
-                    offset.C1 = matchingBone.Matrix1[2][0];
-                    offset.C2 = matchingBone.Matrix1[2][1];
-                    offset.C3 = matchingBone.Matrix1[2][2];
-                    offset.C4 = 0.0f;
-                    offset.D1 = matchingBone.Matrix1[3][0];
-                    offset.D2 = matchingBone.Matrix1[3][1];
-                    offset.D3 = matchingBone.Matrix1[3][2];
-                    offset.D4 = 1.0f;
-                    bone.OffsetMatrix = offset;
-
-                    // Add weights to bone
-                    foreach (float w in Weights)
-                    {
-                        VertexWeight vWeight;
-                        vWeight.VertexID = Weights.IndexOf(w);
-                        vWeight.Weight = w;
-                        bone.VertexWeights.Add(vWeight);
-                    }
-
                     mesh.Bones.Add(bone);
                 }
-                */
+
+                // Add weights to those bones
+                int weightsPerVert = (meshData.Weights.Count / meshData.Vertices.Count);
+                for (int vNum = 0; vNum < meshData.Vertices.Count; ++vNum)
+                {
+                    for (int wNum = 0; wNum < weightsPerVert; ++wNum)
+                    {
+                        // Make sure the bone actually exists
+                        if (mesh.BoneCount <= (wNum % weightsPerVert))
+                            break;
+
+                        VertexWeight vWeight;
+                        vWeight.VertexID = vNum;
+                        vWeight.Weight = meshData.Weights[wNum + (vNum * weightsPerVert)];
+                        mesh.Bones[wNum % weightsPerVert].VertexWeights.Add(vWeight);
+                    }
+                }
 
                 meshList.Add(mesh);
             }
