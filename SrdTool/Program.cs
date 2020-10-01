@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -314,9 +314,7 @@ namespace SrdTool
                 if (b is TxrBlock txr && b.Children[0] is RsiBlock rsi)
                 {
                     int textureIndex = Srd.Blocks.Where(b => b is TxrBlock).ToList().IndexOf(txr);
-                    // This check is needed because otherwise it crashes if the TXR doesn't map to a TXI for some strange reason (UNUSUAL BEHAVIOR)
-                    if (textureIndex < Srd.Blocks.Where(b => b is TxiBlock).Count())
-                        Console.WriteLine($"Extracting {(Srd.Blocks.Where(b => b is TxiBlock).ElementAt(textureIndex) as TxiBlock).TextureFilename}");
+                    Console.WriteLine($"Extracting {rsi.ResourceStringList[0]}");
 
                     // Separate the palette ResourceInfo from the list beforehand if it exists
                     byte[] paletteData = Array.Empty<byte>();
