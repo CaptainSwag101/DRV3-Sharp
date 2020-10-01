@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -173,9 +173,20 @@ namespace SrdTool
 
                                     if (vtx.VertexDataSections.Count == 1)
                                     {
+                                        Console.WriteLine($"Mesh type: {vtx.MeshType}");
                                         Vector2 texcoord;
+                                        texcoord.X = float.PositiveInfinity;
                                         texcoord.X = positionReader.ReadSingle();           // U
+                                        while (float.IsNaN(texcoord.X) || !float.IsFinite(texcoord.X))
+                                            texcoord.X = positionReader.ReadSingle();
                                         texcoord.Y = positionReader.ReadSingle();           // V, invert for non-glTF exports
+                                        while (float.IsNaN(texcoord.Y) || !float.IsFinite(texcoord.Y))
+                                            texcoord.Y = positionReader.ReadSingle();
+
+                                        if (float.IsNaN(texcoord.X) || float.IsNaN(texcoord.Y) || Math.Abs(texcoord.X) > 1 || Math.Abs(texcoord.Y) > 1)
+                                        {
+                                            Console.WriteLine($"INVALID UVs DETECTED!");
+                                        }
                                         curTexcoordList.Add(texcoord);
                                     }
                                 }
@@ -356,7 +367,10 @@ namespace SrdTool
                     // Determine map type
                     if (pair.Key.StartsWith("COLORMAP"))
                     {
-                        texSlot.TextureType = TextureType.Diffuse;
+                        if (matchingTxi.TextureFilename.StartsWith("lm"))
+                            texSlot.TextureType = TextureType.Lightmap;
+                        else
+                            texSlot.TextureType = TextureType.Diffuse;
                     }
                     else if (pair.Key.StartsWith("NORMALMAP"))
                     {
