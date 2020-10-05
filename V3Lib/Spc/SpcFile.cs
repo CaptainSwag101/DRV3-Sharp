@@ -135,7 +135,7 @@ namespace V3Lib.Spc
         /// </summary>
         /// <param name="filename">The path of the file to be inserted into the SPC archive.</param>
         /// <param name="compress">Whether the subfile should be compressed before inserting. Unless you know what you're doing, leave this set to "true".</param>
-        public void InsertSubfile(string filename, bool compress = true)
+        public void InsertSubfile(string filename, bool compress = true, bool autoClobber = false)
         {
             FileInfo info = new FileInfo(filename);
 
@@ -151,15 +151,25 @@ namespace V3Lib.Spc
             {
                 if (info.Name == Subfiles[s].Name)
                 {
-                    Console.WriteLine("The specified file already exists within the SPC archive. Overwrite? (y/N)");
-                    string yesNo = Console.ReadLine().ToLowerInvariant();
-                    if (yesNo.StartsWith("y"))
+                    if (autoClobber)
                     {
                         existingIndex = s;
                         break;
                     }
-
-                    return;
+                    else
+                    {
+                        Console.WriteLine("The specified file already exists within the SPC archive. Overwrite? (y/N)");
+                        string yesNo = Console.ReadLine().ToLowerInvariant();
+                        if (yesNo.StartsWith("y"))
+                        {
+                            existingIndex = s;
+                            break;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
                 }
             }
 
