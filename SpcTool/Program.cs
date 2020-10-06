@@ -162,6 +162,17 @@ namespace SpcTool
             {
                 Console.WriteLine($"Inserting \"{subfileName}\"...");
 
+                // Check if the file already exists and prompt to overwrite
+                if (loadedSpc.Subfiles.Where(subfile => (subfile.Name == subfileName)).Count() > 0)
+                {
+                    Console.WriteLine("The specified file already exists within the SPC archive. Overwrite? (y/N)");
+                    string yesNo = Console.ReadLine().ToLowerInvariant();
+                    if (!yesNo.StartsWith("y"))
+                    {
+                        continue;   // Skip this file
+                    }
+                }
+
                 insertTasks[targets.IndexOf(subfileName)] = Task.Factory.StartNew(() => loadedSpc.InsertSubfile(subfileName));
             }
 
