@@ -11,6 +11,11 @@ namespace V3Lib.Spc
         private byte[] Unknown1;
         private int Unknown2;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="spcPath"></param>
+        /// <exception cref="InvalidDataException">Occurs when the file you're trying to read does not conform to the SPC specification, and is likely invalid.</exception>
         public void Load(string spcPath)
         {
             using BinaryReader reader = new BinaryReader(new FileStream(spcPath, FileMode.Open));
@@ -25,8 +30,9 @@ namespace V3Lib.Spc
 
             if (magic != "CPS.")
             {
-                Console.WriteLine("ERROR: Not a valid SPC file, magic number invalid.");
-                return;
+                //Console.WriteLine("ERROR: Not a valid SPC file, magic number invalid.");
+                //return;
+                throw new InvalidDataException($"Invalid magic number, expected \"CPS.\" but got \"{magic}\".");
             }
 
             // Read the first set of data
@@ -36,10 +42,12 @@ namespace V3Lib.Spc
             reader.BaseStream.Seek(0x10, SeekOrigin.Current);
 
             // Verify file table header, should be "Root"
-            if (!Encoding.ASCII.GetString(reader.ReadBytes(4)).Equals("Root"))
+            string tableHeader = Encoding.ASCII.GetString(reader.ReadBytes(4));
+            if (tableHeader != "Root")
             {
-                Console.WriteLine("ERROR: Not a valid SPC file, table header invalid.");
-                return;
+                //Console.WriteLine("ERROR: Not a valid SPC file, table header invalid.");
+                //return;
+                throw new InvalidDataException($"Invalid file table header, expected \"Root\" but got \"{tableHeader}\".");
             }
             reader.BaseStream.Seek(0x0C, SeekOrigin.Current);
 
@@ -105,6 +113,7 @@ namespace V3Lib.Spc
         /// <param name="filename">The name of the subfile to extract.</param>
         /// <param name="outputLocation">The directory to save the file into.</param>
         /// <param name="decompress">Whether the subfile should be decompressed before extracting. Unless you know what you're doing, leave this set to "true".</param>
+        /// <exception cref="FileNotFoundException">Occurs when the subfile you're trying to extract does not exist within the archive.</exception>
         public void ExtractSubfile(string filename, string outputLocation, bool decompress = true)
         {
             foreach (SpcSubfile subfile in Subfiles)
@@ -127,7 +136,8 @@ namespace V3Lib.Spc
                 }
             }
 
-            Console.WriteLine($"ERROR: Unable to find a subfile called \"{filename}\".");
+            //Console.WriteLine($"ERROR: Unable to find a subfile called \"{filename}\".");
+            throw new FileNotFoundException($"Unable to find a subfile called \"{filename}\".");
         }
 
         /// <summary>
@@ -135,21 +145,23 @@ namespace V3Lib.Spc
         /// </summary>
         /// <param name="filename">The path of the file to be inserted into the SPC archive.</param>
         /// <param name="compress">Whether the subfile should be compressed before inserting. Unless you know what you're doing, leave this set to "true".</param>
+        /// <exception cref="FileNotFoundException">Occurs when the file you're trying to insert does not exist.</exception>
         public void InsertSubfile(string filename, bool compress = true)
         {
-            FileInfo info = new FileInfo(filename);
+            FileInfo insertInfo = new FileInfo(filename);
 
-            if (!info.Exists)
+            if (!insertInfo.Exists)
             {
-                Console.WriteLine($"ERROR: Source file\"{info.FullName}\" does not exist.");
-                return;
+                //Console.WriteLine($"ERROR: Source file \"{insertInfo.FullName}\" does not exist.");
+                //return;
+                throw new FileNotFoundException($"Source file \"{insertInfo.FullName}\" does not exist.");
             }
 
             // Check if a subfile already exists with the specified name
             int existingIndex = -1;
             for (int s = 0; s < Subfiles.Count; ++s)
             {
-                if (info.Name == Subfiles[s].Name)
+                if (insertInfo.Name == Subfiles[s].Name)
                 {
                     existingIndex = s;
                     break;
@@ -164,7 +176,7 @@ namespace V3Lib.Spc
                 UnknownFlag = (short)(subfileSize > ushort.MaxValue ? 8 : 4),   // seems like this flag might relate to size? This is a BIG guess though.
                 CurrentSize = subfileSize,
                 OriginalSize = subfileSize,
-                Name = info.Name,
+                Name = insertInfo.Name,
                 Data = reader.ReadBytes(subfileSize)
             };
             reader.Close();
