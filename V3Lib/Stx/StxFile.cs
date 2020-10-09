@@ -5,9 +5,21 @@ using System.Text;
 
 namespace V3Lib.Stx
 {
+    public class StringTable
+    {
+        public List<string> Strings;
+        public uint Unknown;
+
+        public StringTable(List<string> strings, uint unknown)
+        {
+            Strings = strings;
+            Unknown = unknown;
+        }
+    }
+
     public class StxFile
     {
-        public List<(List<string> Strings, uint Unknown)> StringTables = new List<(List<string> Strings, uint Unknown)>();
+        public List<StringTable> StringTables = new List<StringTable>();
         
         public void Load(string stxPath)
         {
@@ -69,7 +81,7 @@ namespace V3Lib.Stx
                     reader.BaseStream.Seek(returnPos, SeekOrigin.Begin);
                 }
 
-                StringTables.Add((strings, Unknown));
+                StringTables.Add(new StringTable(strings, Unknown));
             }
 
             reader.Close();
@@ -85,10 +97,10 @@ namespace V3Lib.Stx
             writer.Write((int)0);   // tableOffset, to be written later
 
             // Write table info
-            foreach (var (Strings, Unknown) in StringTables)
+            foreach (var table in StringTables)
             {
-                writer.Write(Unknown);
-                writer.Write(Strings.Count);
+                writer.Write(table.Unknown);
+                writer.Write(table.Strings.Count);
                 writer.Write((ulong)0); // Pad to nearest 16-byte boundary
             }
 
@@ -99,17 +111,17 @@ namespace V3Lib.Stx
             writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
 
             // Write temporary padding for string IDs/offset
-            foreach (var (Strings, Unknown) in StringTables)
+            foreach (var table in StringTables)
             {
-                writer.Write(new byte[(8 * Strings.Count)]);
+                writer.Write(new byte[(8 * table.Strings.Count)]);
             }
 
             // Write string data & corresponding ID/offset pair
             long infoPairPos = lastPos;
-            foreach (var (Strings, Unknown) in StringTables)
+            foreach (var table in StringTables)
             {
                 uint strId = 0;
-                foreach (string str in Strings)
+                foreach (string str in table.Strings)
                 {
                     // Write ID/offset pair
                     long strPos = writer.BaseStream.Position;

@@ -10,7 +10,7 @@ namespace StxTool
         static void Main(string[] args)
         {
             Console.WriteLine("STX Tool by CaptainSwag101\n" +
-                "Version 1.0.0, built on 2020-08-03\n");
+                "Version 1.0.1, built on 2020-10-08\n");
 
             if (args.Length == 0)
             {
@@ -34,11 +34,11 @@ namespace StxTool
                     stx.Load(info.FullName);
 
                     using StreamWriter writer = new StreamWriter(info.FullName.Replace(info.Extension, "") + ".txt", false);
-                    foreach (var (Strings, Unknown) in stx.StringTables)
+                    foreach (var table in stx.StringTables)
                     {
                         writer.WriteLine("{");
 
-                        foreach (string str in Strings)
+                        foreach (string str in table.Strings)
                         {
                             writer.WriteLine(str.Replace("\r", @"\r").Replace("\n", @"\n"));
                         }
@@ -74,7 +74,7 @@ namespace StxTool
                                 table.Add(line.Replace(@"\n", "\n").Replace(@"\r", "\r"));
                             }
 
-                            stx.StringTables.Add((table, 8));
+                            stx.StringTables.Add(new StringTable(table, 8));
                         }
                     }
 
