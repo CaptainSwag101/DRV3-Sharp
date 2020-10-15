@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,8 +7,6 @@ using V3Lib;
 using V3Lib.Srd;
 using V3Lib.Srd.BlockTypes;
 using CommandParser_Alpha;
-using glTFLoader;
-using glTFLoader.Schema;
 using Scarlet.Drawing;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -260,11 +258,8 @@ namespace SrdTool
 
         private static void ExtractModels()
         {
-            //FileInfo info = new FileInfo(SrdName);
-            //string modelExportPath = info.DirectoryName + Path.DirectorySeparatorChar + "model" + Path.DirectorySeparatorChar + info.Name;
             string modelExportPath = SrdName;
-            Gltf model = ImportExportHelper.SrdModelToGltf(Srd, modelExportPath);
-            model.SaveModel(modelExportPath + ".gltf");
+            ImportExportHelper.ExportModel(Srd, modelExportPath);
         }
 
         private static void ExtractTextures()
@@ -319,9 +314,7 @@ namespace SrdTool
                 if (b is TxrBlock txr && b.Children[0] is RsiBlock rsi)
                 {
                     int textureIndex = Srd.Blocks.Where(b => b is TxrBlock).ToList().IndexOf(txr);
-                    // This check is needed because otherwise it crashes if the TXR doesn't map to a TXI for some strange reason (UNUSUAL BEHAVIOR)
-                    if (textureIndex < Srd.Blocks.Where(b => b is TxiBlock).Count())
-                        Console.WriteLine($"Extracting {(Srd.Blocks.Where(b => b is TxiBlock).ElementAt(textureIndex) as TxiBlock).TextureFilename}");
+                    Console.WriteLine($"Extracting {rsi.ResourceStringList[0]}");
 
                     // Separate the palette ResourceInfo from the list beforehand if it exists
                     byte[] paletteData = Array.Empty<byte>();

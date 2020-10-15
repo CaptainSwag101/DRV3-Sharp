@@ -15,7 +15,7 @@ namespace V3Lib.Srd.BlockTypes
         public byte Unknown21;
         public byte Unknown22;
         public byte Unknown23;
-        public string MeshName;
+        public string VertexBlockName;
         public string MaterialName;
         public string UnknownString;
         public List<string> MappedStrings = new List<string>();
@@ -25,7 +25,7 @@ namespace V3Lib.Srd.BlockTypes
             using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadUInt32();
-            ushort meshNameOffset = reader.ReadUInt16();
+            ushort vertexBlockNameOffset = reader.ReadUInt16();
             ushort materialNameOffset = reader.ReadUInt16();
             ushort unknownStringOffset = reader.ReadUInt16();
             Unknown1A = reader.ReadUInt16();
@@ -47,8 +47,8 @@ namespace V3Lib.Srd.BlockTypes
             }
 
             // Read other strings
-            reader.BaseStream.Seek(meshNameOffset, SeekOrigin.Begin);
-            MeshName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            reader.BaseStream.Seek(vertexBlockNameOffset, SeekOrigin.Begin);
+            VertexBlockName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
             reader.BaseStream.Seek(materialNameOffset, SeekOrigin.Begin);
             MaterialName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
             reader.BaseStream.Seek(unknownStringOffset, SeekOrigin.Begin);
@@ -65,7 +65,7 @@ namespace V3Lib.Srd.BlockTypes
             StringBuilder sb = new StringBuilder();
 
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
-            sb.Append($"{nameof(MeshName)}: {MeshName}\n");
+            sb.Append($"{nameof(VertexBlockName)}: {VertexBlockName}\n");
             sb.Append($"{nameof(MaterialName)}: {MaterialName}\n");
             sb.Append($"{nameof(UnknownString)}: {UnknownString}\n");
             sb.Append($"{nameof(Unknown1A)}: {Unknown1A}\n");

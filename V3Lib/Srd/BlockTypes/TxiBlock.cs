@@ -9,8 +9,11 @@ namespace V3Lib.Srd.BlockTypes
     {
         public int Unknown10;
         public int Unknown14;
-        public int Unknown18;
-        public int Unknown1C;
+        public float Unknown18;
+        public byte Unknown1C;
+        public byte Unknown1D;
+        public byte Unknown1E;
+        public byte Unknown1F;
         public int Unknown20;
         public string TextureFilename;
 
@@ -20,8 +23,11 @@ namespace V3Lib.Srd.BlockTypes
 
             Unknown10 = reader.ReadInt32();
             Unknown14 = reader.ReadInt32();
-            Unknown18 = reader.ReadInt32();
-            Unknown1C = reader.ReadInt32();
+            Unknown18 = reader.ReadSingle();
+            Unknown1C = reader.ReadByte();
+            Unknown1D = reader.ReadByte();
+            Unknown1E = reader.ReadByte();
+            Unknown1F = reader.ReadByte();
             Unknown20 = reader.ReadInt32();
             TextureFilename = Utils.ReadNullTerminatedString(reader, Encoding.GetEncoding("shift-jis"));
         }
@@ -35,6 +41,9 @@ namespace V3Lib.Srd.BlockTypes
             writer.Write(Unknown14);
             writer.Write(Unknown18);
             writer.Write(Unknown1C);
+            writer.Write(Unknown1D);
+            writer.Write(Unknown1E);
+            writer.Write(Unknown1F);
             writer.Write(Unknown20);
             writer.Write(Encoding.GetEncoding("shift-jis").GetBytes(TextureFilename));
             writer.Write((byte)0);  // Null terminator
@@ -51,6 +60,9 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
             sb.Append($"{nameof(Unknown18)}: {Unknown18}\n");
             sb.Append($"{nameof(Unknown1C)}: {Unknown1C}\n");
+            sb.Append($"{nameof(Unknown1D)}: {Unknown1D}\n");
+            sb.Append($"{nameof(Unknown1E)}: {Unknown1E}\n");
+            sb.Append($"{nameof(Unknown1F)}: {Unknown1F}\n");
             sb.Append($"{nameof(Unknown20)}: {Unknown20}\n");
             sb.Append($"Texture Filename: {TextureFilename}");
 

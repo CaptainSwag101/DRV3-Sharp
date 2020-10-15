@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 
 namespace V3Lib.Srd.BlockTypes
@@ -50,7 +51,7 @@ namespace V3Lib.Srd.BlockTypes
         public ushort Unknown14;
         public ushort Unknown18;
         public TreeNode RootNode;
-        public List<float> UnknownFloatList;
+        public Matrix4x4 UnknownMatrix;
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
@@ -124,12 +125,26 @@ namespace V3Lib.Srd.BlockTypes
                 }
             }
 
-            // Read the unknown float list (what the heck is this?)
-            UnknownFloatList = new List<float>();
+            // Read the unknown 4x4 matrix
             reader.BaseStream.Seek(unknownFloatListOffset, SeekOrigin.Begin);
             while (reader.BaseStream.Position < stringDataStart)
             {
-                UnknownFloatList.Add(reader.ReadSingle());
+                UnknownMatrix.M11 = reader.ReadSingle();
+                UnknownMatrix.M12 = reader.ReadSingle();
+                UnknownMatrix.M13 = reader.ReadSingle();
+                UnknownMatrix.M14 = reader.ReadSingle();
+                UnknownMatrix.M21 = reader.ReadSingle();
+                UnknownMatrix.M22 = reader.ReadSingle();
+                UnknownMatrix.M23 = reader.ReadSingle();
+                UnknownMatrix.M24 = reader.ReadSingle();
+                UnknownMatrix.M31 = reader.ReadSingle();
+                UnknownMatrix.M32 = reader.ReadSingle();
+                UnknownMatrix.M33 = reader.ReadSingle();
+                UnknownMatrix.M34 = reader.ReadSingle();
+                UnknownMatrix.M41 = reader.ReadSingle();
+                UnknownMatrix.M42 = reader.ReadSingle();
+                UnknownMatrix.M43 = reader.ReadSingle();
+                UnknownMatrix.M44 = reader.ReadSingle();
             }
         }
 
@@ -145,7 +160,7 @@ namespace V3Lib.Srd.BlockTypes
             int totalEndpointCount = RootNode.Flatten().Where(node => node.Count() == 0).Count();
             int unknownFloatOffset = endpointOffset + (totalEndpointCount * 8);
             unknownFloatOffset += (16 - (unknownFloatOffset % 16));
-            int stringOffset = unknownFloatOffset + (UnknownFloatList.Count * sizeof(float));
+            int stringOffset = unknownFloatOffset + (16 * sizeof(float));
 
             int maxDepth = 0;
             using BinaryWriter entryWriter = new BinaryWriter(new MemoryStream());
@@ -167,10 +182,25 @@ namespace V3Lib.Srd.BlockTypes
             Utils.WritePadding(writer, 16);
             writer.Write(endpointData);
             Utils.WritePadding(writer, 16);
-            foreach (float f in UnknownFloatList)
-            {
-                writer.Write(f);
-            }
+
+            // Write matrix
+            writer.Write(UnknownMatrix.M11);
+            writer.Write(UnknownMatrix.M12);
+            writer.Write(UnknownMatrix.M13);
+            writer.Write(UnknownMatrix.M14);
+            writer.Write(UnknownMatrix.M21);
+            writer.Write(UnknownMatrix.M22);
+            writer.Write(UnknownMatrix.M23);
+            writer.Write(UnknownMatrix.M24);
+            writer.Write(UnknownMatrix.M31);
+            writer.Write(UnknownMatrix.M32);
+            writer.Write(UnknownMatrix.M33);
+            writer.Write(UnknownMatrix.M34);
+            writer.Write(UnknownMatrix.M41);
+            writer.Write(UnknownMatrix.M42);
+            writer.Write(UnknownMatrix.M43);
+            writer.Write(UnknownMatrix.M44);
+
             // TODO: In official $TRE blocks, the strings seem to be sorted alphabetically
             // within each tree depth layer, but not globally. The nodes are nevertheless
             // saved in the normal (arbitrary?) order.
@@ -188,8 +218,25 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append(PrintTreeNodeInfo(RootNode));
             sb.Append('\n');
 
-            sb.Append($"{nameof(UnknownFloatList)}: ");
-            sb.AppendJoin(", ", UnknownFloatList);
+            sb.Append($"{nameof(UnknownMatrix)}:\n");
+            sb.Append("{\n");
+            sb.Append($"{UnknownMatrix.M11} ");
+            sb.Append($"{UnknownMatrix.M12} ");
+            sb.Append($"{UnknownMatrix.M13} ");
+            sb.Append($"{UnknownMatrix.M14}\n");
+            sb.Append($"{UnknownMatrix.M21} ");
+            sb.Append($"{UnknownMatrix.M22} ");
+            sb.Append($"{UnknownMatrix.M23} ");
+            sb.Append($"{UnknownMatrix.M24}\n");
+            sb.Append($"{UnknownMatrix.M31} ");
+            sb.Append($"{UnknownMatrix.M32} ");
+            sb.Append($"{UnknownMatrix.M33} ");
+            sb.Append($"{UnknownMatrix.M34}\n");
+            sb.Append($"{UnknownMatrix.M41} ");
+            sb.Append($"{UnknownMatrix.M42} ");
+            sb.Append($"{UnknownMatrix.M43} ");
+            sb.Append($"{UnknownMatrix.M44}\n");
+            sb.Append("}");
 
             return sb.ToString();
         }
