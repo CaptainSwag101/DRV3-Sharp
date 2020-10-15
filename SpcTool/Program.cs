@@ -16,7 +16,7 @@ namespace SpcTool
         static void Main(string[] args)
         {
             Console.WriteLine("SPC Tool by CaptainSwag101\n" +
-                "Version 1.0.0, built on 2020-08-03\n");
+                "Version 1.1.0, built on 2020-10-15\n");
 
             // Setup text encoding so we can use Shift-JIS text later on
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -24,14 +24,14 @@ namespace SpcTool
             // Ensure we actually have some arguments, if not, print usage string
             if (args.Length == 0)
             {
-                Console.WriteLine("Usage: SpcTool.exe <SPC file>");
+                Console.WriteLine("Usage: SpcTool.exe <SPC file> (optional auto-execute commands and parameters, encapsulated in {})");
+                Console.WriteLine("Example: SpcTool.exe test.spc {extract} {file1.srd *.txt} {insert} {file4.dat} {exit}");
                 return;
             }
 
+            // Parse input arguments
             // If the first argument is a valid SPC file (and if we reach this point it probably is), load it.
             string loadedSpcName = args[0];
-
-            // Parse input argument
             FileInfo loadedSpcInfo = new FileInfo(loadedSpcName);
             if (!loadedSpcInfo.Exists)
             {
@@ -47,16 +47,45 @@ namespace SpcTool
             SpcFile loadedSpc = new SpcFile();
             loadedSpc.Load(loadedSpcName);
 
+            // Combine any remaining args into a single long string to be broken down by our regex
+            Queue<string>? autoExecQueue = null;
+            if (args.Length > 1)
+            {
+                autoExecQueue = new Queue<string>();
+
+                StringBuilder remainingArgsBuilder = new StringBuilder();
+                remainingArgsBuilder.AppendJoin(" ", args[1..args.Length]);
+                string remainingArgsCombined = remainingArgsBuilder.ToString();
+
+                // Identify and capture any string groups, contained in curly brackets {like this}, and add them to the auto-exec queue
+                Regex stringGroupRegex = new Regex(@"(?<=\{).+?(?=\})");
+                MatchCollection matches = stringGroupRegex.Matches(remainingArgsCombined);
+                foreach (Match? m in matches)
+                {
+                    if (m == null) continue;
+
+                    autoExecQueue.Enqueue(m.Value);
+                }
+            }
+
             // Setup command dictionary
-            var commandDict = new Dictionary<string, Action>
+            var commandDict = new Dictionary<string, Func<Queue<string>?, object?>>
             {
                 {
                     @"extract",
-                    delegate
+                    delegate(Queue<string>? autoExecQueue)
                     {
                         // Parse target arguments
-                        Console.WriteLine("Type the files you want to extract, separated by spaces (wildcard * supported): ");
-                        string targetsRaw = Console.ReadLine();
+                        string targetsRaw = "";
+                        if (autoExecQueue?.Count > 0)
+                        {
+                            targetsRaw = autoExecQueue.Dequeue();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Type the files you want to extract, separated by spaces (wildcard * supported): ");
+                            targetsRaw = Console.ReadLine();
+                        }
 
                         // Implemented based on https://stackoverflow.com/a/5227134/
                         Regex regex = new Regex("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
@@ -65,15 +94,25 @@ namespace SpcTool
                                         select m.Groups["match"].Value).ToList();
 
                         ExtractSubfiles(loadedSpc, loadedSpcInfo, targets);
+
+                        return null;
                     }
                 },
                 {
                     @"insert",
-                    delegate
+                    delegate(Queue<string>? autoExecStack)
                     {
                         // Parse target arguments
-                        Console.WriteLine("Type the files you want to insert, separated by spaces (or drag and drop): ");
-                        string targetsRaw = Console.ReadLine();
+                        string targetsRaw = "";
+                        if (autoExecStack?.Count > 0)
+                        {
+                            targetsRaw = autoExecStack.Dequeue();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Type the files you want to insert, separated by spaces (or drag and drop): ");
+                            targetsRaw = Console.ReadLine();
+                        }
 
                         // Implemented based on https://stackoverflow.com/a/5227134
                         Regex regex = new Regex("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
@@ -82,34 +121,40 @@ namespace SpcTool
                                         select m.Groups["match"].Value).ToList();
 
                         InsertSubfiles(loadedSpc, loadedSpcInfo, targets);
+
+                        return null;
                     }
                 },
                 {
                     @"list",
-                    delegate
+                    delegate(Queue<string>? autoExecStack)
                     {
                         ListSubfiles(loadedSpc, loadedSpcInfo);
+
+                        return null;
                     }
                 },
                 {
                     @"bench",
-                    delegate
+                    delegate(Queue<string>? autoExecStack)
                     {
                         BenchmarkCompression(loadedSpc, loadedSpcInfo);
+
+                        return null;
                     }
                 }
             };
 
-            // Setup command parser
-            CommandParser parser = new CommandParser(commandDict);
-
-            // Process commands
+            // Show initial prompt
             StringBuilder promptBuilder = new StringBuilder();
             promptBuilder.Append($"Loaded SPC archive: {loadedSpcName}\n");
             promptBuilder.Append($"Valid commands to perform on this archive:\n");
             promptBuilder.AppendJoin(", ", commandDict.Keys);
-            promptBuilder.Append("\nPlease enter your command, or \"exit\" to quit: ");
-            parser.Prompt(promptBuilder.ToString(), @"exit");
+            Console.WriteLine(promptBuilder.ToString());
+
+            // Process any commands, then prompt the user
+            CommandParser parser = new CommandParser(commandDict);
+            parser.Prompt("Please enter your command, or \"exit\" to quit: ", @"exit", autoExecQueue);
         }
 
         private static void ExtractSubfiles(SpcFile loadedSpc, FileInfo loadedSpcInfo, List<string> targets)

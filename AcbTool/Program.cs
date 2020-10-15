@@ -10,6 +10,9 @@ namespace AcbTool
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("ACB Tool by CaptainSwag101\n" +
+                "Version 1.0.0, built on 2020-08-03\n");
+
             if (args.Length != 2)
             {
                 Console.WriteLine("ERROR: Invalid number of parameters. Please provide only an ACB and AWB path, respectively.");

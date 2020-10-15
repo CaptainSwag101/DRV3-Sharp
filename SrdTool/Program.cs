@@ -12,6 +12,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.Drawing.Processing;
+using System.Text.RegularExpressions;
 
 namespace SrdTool
 {
@@ -25,14 +26,15 @@ namespace SrdTool
         static void Main(string[] args)
         {
             Console.WriteLine("SRD Tool by CaptainSwag101\n" +
-                "Version 1.0.0, built on 2020-08-03\n");
+                "Version 1.1.0, built on 2020-10-15\n");
 
             // Setup text encoding so we can use Shift-JIS text later on
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            if (args.Length != 1)
+            if (args.Length == 0)
             {
-                Console.WriteLine("Usage: SrdTool.exe <SRD file to analyze>");
+                Console.WriteLine("Usage: SrdTool.exe <SRD file> (optional auto-execute commands and parameters, encapsulated in {})");
+                Console.WriteLine("Example: SrdTool.exe test.srd {extract_textures} {n} {print_blocks} {exit}");
                 return;
             }
 
@@ -62,56 +64,137 @@ namespace SrdTool
 
             Srd.Load(SrdName, SrdiName, SrdvName);
 
+
+            // Combine any remaining args into a single long string to be broken down by our regex
+            Queue<string>? autoExecQueue = null;
+            if (args.Length > 1)
+            {
+                autoExecQueue = new Queue<string>();
+
+                StringBuilder remainingArgsBuilder = new StringBuilder();
+                remainingArgsBuilder.AppendJoin(" ", args[1..args.Length]);
+                string remainingArgsCombined = remainingArgsBuilder.ToString();
+
+                // Identify and capture any string groups, contained in curly brackets {like this}, and add them to the auto-exec queue
+                Regex stringGroupRegex = new Regex(@"(?<=\{).+?(?=\})");
+                MatchCollection matches = stringGroupRegex.Matches(remainingArgsCombined);
+                foreach (Match? m in matches)
+                {
+                    if (m == null) continue;
+
+                    autoExecQueue.Enqueue(m.Value);
+                }
+            }
+
+
             // Setup command dictionary
-            var commandDict = new Dictionary<string, Action>
+            var commandDict = new Dictionary<string, Func<Queue<string>?, object?>>
             {
                 {
                     @"print_blocks",
-                    delegate
+                    delegate(Queue<string>? autoExecQueue)
                     {
                         Console.WriteLine($"\"{info.FullName}\" contains the following blocks:\n");
                         PrintBlocks(Srd.Blocks, 0);
+
+                        return null;
                     }
                 },
                 {
                     @"extract_fonts",
-                    delegate
+                    delegate(Queue<string>? autoExecQueue)
                     {
                         ExtractFonts();
+
+                        return null;
                     }
                 },
                 {
                     @"extract_models",
-                    delegate
+                    delegate(Queue<string>? autoExecQueue)
                     {
                         ExtractModels();
+
+                        return null;
                     }
                 },
                 {
                     @"extract_textures",
-                    delegate
+                    delegate(Queue<string>? autoExecQueue)
                     {
-                        ExtractTextures();
+                        string answer = "";
+                        if (autoExecQueue?.Count > 0)
+                        {
+                            answer = autoExecQueue.Dequeue();
+                        }
+                        else
+                        {
+                            while (answer != "y" && answer != "n")
+                            {
+                                Console.Write("Would you like to extract mipmaps (Y/N)? ");
+                                answer = Console.Read().ToString().ToLowerInvariant();
+                            }
+                        }
+                        bool extractMipmaps = (answer == "y");
+
+                        ExtractTextures(extractMipmaps);
+
+                        return null;
                     }
                 },
                 {
                     @"replace_textures",
-                    delegate
+                    delegate(Queue<string>? autoExecQueue)
                     {
-                        ReplaceTextures();
+                        // First, load the texture the user wants to insert
+                        string texturePath = "";
+                        if (autoExecQueue?.Count > 0)
+                        {
+                            texturePath = autoExecQueue.Dequeue();
+                        }
+                        else
+                        {
+                            while (string.IsNullOrWhiteSpace(texturePath) || !File.Exists(texturePath))
+                            {
+                                Console.WriteLine("Please type the path or drag and drop the texture file you want to insert, then press ENTER: ");
+                                texturePath = Console.ReadLine();
+                            }
+                        }
+
+                        // Then, should we generate mipmaps?
+                        string answer = "";
+                        if (autoExecQueue?.Count > 0)
+                        {
+                            answer = autoExecQueue.Dequeue();
+                        }
+                        else
+                        {
+                            while (answer != "y" && answer != "n")
+                            {
+                                Console.Write("Would you like to generate mipmaps (Y/N)? ");
+                                answer = Console.Read().ToString().ToLowerInvariant();
+                            }
+                        }
+                        bool generateMipmaps = (answer == "y");
+
+                        ReplaceTextures(texturePath, generateMipmaps);
+
+                        return null;
                     }
                 },
                 {
                     @"save",
-                    delegate
+                    delegate(Queue<string>? autoExecQueue)
                     {
                         Srd.Save(SrdName, SrdiName, SrdvName);
                         //Console.WriteLine("Save complete.");
+
+                        return null;
                     }
                 }
             };
 
-            // Process commands
+            // Show initial prompt
             StringBuilder promptBuilder = new StringBuilder();
             promptBuilder.Append($"Loaded SRD file: {SrdName}\n");
             if (info.Extension.ToLower() != ".srd")
@@ -122,8 +205,9 @@ namespace SrdTool
             promptBuilder.AppendJoin(", ", commandDict.Keys);
             Console.WriteLine(promptBuilder.ToString());
 
+            // Process any commands, then prompt the user
             CommandParser parser = new CommandParser(commandDict);
-            parser.Prompt("Please enter your command, or \"exit\" to quit: ", @"exit");
+            parser.Prompt("Please enter your command, or \"exit\" to quit: ", @"exit", autoExecQueue);
         }
 
         private static void PrintBlocks(List<Block> blockList, int tabLevel)
@@ -262,7 +346,7 @@ namespace SrdTool
             ImportExportHelper.ExportModel(Srd, modelExportPath);
         }
 
-        private static void ExtractTextures()
+        private static void ExtractTextures(bool extractMipmaps)
         {
             /*
             SrdFile textureSrd;
@@ -297,15 +381,6 @@ namespace SrdTool
                 textureSrd.Load(textureSrdName, SrdiName, textureSrdvName);
             }
             */
-
-            Console.Write("Would you like to extract mipmaps (Y/N)? ");
-            string answer = Console.Read().ToString().ToLowerInvariant();
-            while (answer == "y" || answer == "n")
-            {
-                Console.Write("Would you like to extract mipmaps (Y/N)? ");
-                answer = Console.Read().ToString().ToLowerInvariant();
-            }
-            bool extractMipmaps = (answer == "y");
 
             SrdFile textureSrd = Srd;
             string textureSrdName = SrdName;
@@ -475,24 +550,12 @@ namespace SrdTool
             }
         }
 
-        private static void ReplaceTextures()
+        private static void ReplaceTextures(string texturePath, bool generateMipmaps)
         {
-            //bool generateMipmaps = false;
-
-            // First, load the texture the user wants to insert
-            Console.WriteLine("Please type the path or drag and drop the texture file you want to insert, then press ENTER: ");
-            string texturePath = Console.ReadLine().Trim('\"');
-
-            while (string.IsNullOrWhiteSpace(texturePath) || !File.Exists(texturePath))
-            {
-                Console.WriteLine("ERROR: That is not a valid path, please try again.");
-                texturePath = Console.ReadLine();
-            }
-
             string textureName = new FileInfo(texturePath).Name;
 
             using FileStream textureStream = new FileStream(texturePath, FileMode.Open, FileAccess.Read, FileShare.Read);
-            Image<Rgba32> texture = SixLabors.ImageSharp.Image.Load<Rgba32>(textureStream);
+            Image<Rgba32> texture = Image.Load<Rgba32>(textureStream);
             if (texture == null)
             {
                 Console.WriteLine("ERROR: Texture is null.");
