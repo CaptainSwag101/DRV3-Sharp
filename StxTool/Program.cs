@@ -10,7 +10,7 @@ namespace StxTool
         static void Main(string[] args)
         {
             Console.WriteLine("STX Tool by CaptainSwag101\n" +
-                "Version 1.0.1, built on 2020-10-08\n");
+                "Version 1.0.1, built on 2020-10-15\n");
 
             if (args.Length == 0)
             {
@@ -52,7 +52,7 @@ namespace StxTool
                     StxFile stx = new StxFile();
 
                     using StreamReader reader = new StreamReader(info.FullName);
-                    while (!reader.EndOfStream)
+                    while (reader != null && !reader.EndOfStream)
                     {
                         if (reader.ReadLine().StartsWith('{'))
                         {
@@ -61,10 +61,6 @@ namespace StxTool
                             while (true)
                             {
                                 string line = reader.ReadLine();
-                                if (string.IsNullOrEmpty(line))
-                                {
-                                    continue;
-                                }
 
                                 if (line.StartsWith('}'))
                                 {
