@@ -132,7 +132,7 @@ namespace SrdTool
                             while (answer != "y" && answer != "n")
                             {
                                 Console.Write("Would you like to extract mipmaps (Y/N)? ");
-                                answer = Console.Read().ToString().ToLowerInvariant();
+                                answer = Console.ReadLine().ToString().ToLowerInvariant();
                             }
                         }
                         bool extractMipmaps = (answer == "y");
@@ -454,12 +454,29 @@ namespace SrdTool
                                 pixelFormat = PixelDataFormat.FormatBPTC;
                                 break;
                         }
+                        
+                        switch (txr.Swizzle)
+                        {
+                            case 0:
+                            case 2:
+                                Console.WriteLine("WARNING: This texture is swizzled, meaning it likely came from a console version of the game. These are not supported.");
 
-                        bool swizzled = ((txr.Swizzle & 1) == 0);
+                                if (txr.Swizzle == 0)   // PS4
+                                {
+                                    inputImageData = ImportExportHelper.PS4UnSwizzle(inputImageData, dispWidth, dispHeight, 8);
+                                }
+                                else if (txr.Swizzle == 2)
+                                    pixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
 
-                        // TODO: Unswizzle the image
-                        if (swizzled)
-                            Console.WriteLine("WARNING: This texture is swizzled, meaning it likely came from a console version of the game. These are not supported.");
+                                break;
+
+                            case 1:
+                                break;
+
+                            default:
+                                Console.WriteLine($"WARNING: Unknown swizzle type {txr.Swizzle}");
+                                break;
+                        }
 
                         // Calculate mipmap dimensions
                         int mipWidth = (int)Math.Max(1, dispWidth / Math.Pow(2, m));
