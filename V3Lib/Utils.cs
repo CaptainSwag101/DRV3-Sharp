@@ -61,13 +61,7 @@ namespace V3Lib
 
         public static int NearestMultipleOf(int x, int multipleOf)
         {
-            int add = 0;
-            while (((x + add) % multipleOf) != 0)
-            {
-                ++add;
-            }
-
-            return (x + add);
+            return x + (x % multipleOf);
         }
 
         public static byte[] SwapEndian(byte[] bytes)
