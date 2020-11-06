@@ -6,11 +6,13 @@ using System.Numerics;
 using V3Lib.Srd;
 using V3Lib.Srd.BlockTypes;
 using Assimp;
+using V3Lib;
 
 namespace SrdTool
 {
     static class ImportExportHelper
     {
+        #region 3D_Models
         private struct MeshData
         {
             public readonly List<Vector3> Vertices;
@@ -450,6 +452,11 @@ namespace SrdTool
 
         private static byte[] DoSwizzle(byte[] data, int width, int height, int blockSize, bool unswizzle)
         {
+            // This corrects the dimensions in the case of textures whose size isn't a power of two
+            // (or more precisely, an even multiple of 4).
+            width = Utils.NearestMultipleOf(width, 4);
+            height = Utils.NearestMultipleOf(height, 4);
+
             var processed = new byte[data.Length];
             var heightTexels = height / 4;
             var heightTexelsAligned = (heightTexels + 7) / 8;

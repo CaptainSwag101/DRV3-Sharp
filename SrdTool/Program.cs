@@ -459,14 +459,29 @@ namespace SrdTool
                         {
                             case 0:
                             case 2:
+                            case 6:
                                 Console.WriteLine("WARNING: This texture is swizzled, meaning it likely came from a console version of the game. These are not supported.");
 
-                                if (txr.Swizzle == 0)   // PS4
+                                /*
+                                if (txr.Swizzle == 0 || txr.Swizzle == 6)   // PS4
+                                {
+                                    
+                                }
+                                else
+                                {
+                                    pixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
+                                }
+                                */
+
+                                try
                                 {
                                     inputImageData = ImportExportHelper.PS4UnSwizzle(inputImageData, dispWidth, dispHeight, 8);
                                 }
-                                else if (txr.Swizzle == 2)
-                                    pixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
+                                catch (Exception ex)
+                                {
+                                    Console.WriteLine("Error de-swizzling texture, block size is probably wrong!");
+                                }
+                                //pixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
 
                                 break;
 

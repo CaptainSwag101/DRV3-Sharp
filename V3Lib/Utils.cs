@@ -59,6 +59,17 @@ namespace V3Lib
             return x + 1;
         }
 
+        public static int NearestMultipleOf(int x, int multipleOf)
+        {
+            int add = 0;
+            while (((x + add) % multipleOf) != 0)
+            {
+                ++add;
+            }
+
+            return (x + add);
+        }
+
         public static byte[] SwapEndian(byte[] bytes)
         {
             Array.Reverse(bytes);
