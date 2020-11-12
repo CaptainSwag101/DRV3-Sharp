@@ -26,16 +26,19 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Script\WRD\" />
-    <Folder Include="Text\RSCT\" />
-    <Folder Include="Text\STX\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <None Include="..\LICENSE.md">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Resource\DAT\" />
+    <Folder Include="Resource\SRD\" />
+    <Folder Include="Resource\SFL\" />
+    <Folder Include="Text\RSCT\" />
+    <Folder Include="Text\STX\" />
   </ItemGroup>
 
 

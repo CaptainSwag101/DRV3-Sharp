@@ -59,7 +59,7 @@ namespace V3Lib.Archives.SPC
         }
 
         /// <summary>
-        /// Reads an SPC archive from an arbitrary data stream.
+        /// Reads an SPC archive from a data stream.
         /// </summary>
         /// <param name="stream">The stream to read data from.</param>
         /// <exception cref="EndOfStreamException">Occurs when the end of the data stream is reached before the archive has been fully read.</exception>

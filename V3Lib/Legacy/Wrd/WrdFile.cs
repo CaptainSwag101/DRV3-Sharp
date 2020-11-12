@@ -2,8 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using V3Lib.Script.WRD;
 
-namespace V3Lib.Wrd
+namespace V3Lib.Legacy.Wrd
 {
     public struct WrdCommand
     {
@@ -88,7 +89,7 @@ namespace V3Lib.Wrd
                 }
 
                 byte op = reader.ReadByte();
-                string opcodeName = WrdCommandHelper.OpcodeNames[op];
+                string opcodeName = ScriptCommandHelper.OpcodeNames[op];
 
                 // We need 2 bytes per argument
                 int argNumber = 0;
@@ -105,7 +106,7 @@ namespace V3Lib.Wrd
                     byte b2 = reader.ReadByte();
                     ushort arg = BitConverter.ToUInt16(new byte[] { b2, b1 });
 
-                    byte argType = WrdCommandHelper.ArgTypeLists[op][argNumber % WrdCommandHelper.ArgTypeLists[op].Count];
+                    byte argType = ScriptCommandHelper.ArgTypeLists[op][argNumber % ScriptCommandHelper.ArgTypeLists[op].Count];
                     switch (argType)
                     {
                         case 0: // Plaintext parameter
@@ -165,13 +166,13 @@ namespace V3Lib.Wrd
 
                 // Next, encode the opcode into commandData
                 commandWriter.Write((byte)0x70);
-                byte opcodeId = (byte)Array.IndexOf(WrdCommandHelper.OpcodeNames, command.Opcode);
+                byte opcodeId = (byte)Array.IndexOf(ScriptCommandHelper.OpcodeNames, command.Opcode);
                 commandWriter.Write(opcodeId);
 
                 // Then, iterate through each argument and process/save it according to its type
                 for (int argNum = 0; argNum < command.Arguments.Count; ++argNum)
                 {
-                    switch (WrdCommandHelper.ArgTypeLists[opcodeId][argNum])
+                    switch (ScriptCommandHelper.ArgTypeLists[opcodeId][argNum])
                     {
                         case 0: // Plaintext parameter
                             {
