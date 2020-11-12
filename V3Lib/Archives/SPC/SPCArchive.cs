@@ -1,6 +1,6 @@
 ﻿/*
     V3Lib, an open-source library for reading/writing data from Danganronpa V3
-    Copyright (C) 2020  James Pelster
+    Copyright (C) 2017-2020  James Pelster
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -97,6 +97,10 @@ namespace V3Lib.Archives.SPC
 
                 // Read file count
                 int fileCount = reader.ReadInt32();
+                if (fileCount < 0)
+                {
+                    throw new InvalidDataException($"This archive appears to have {fileCount} files, which is invalid.");
+                }
 
                 // Read unknown data 2
                 int unkData2 = reader.ReadInt32();
@@ -205,6 +209,12 @@ namespace V3Lib.Archives.SPC
             return foundEntry;
         }
 
+        /// <summary>
+        /// Inserts a file into the archive, potentially replacing one that has the same filename.
+        /// </summary>
+        /// <param name="entry">The file entry to insert.</param>
+        /// <param name="clobber">If true, existing files with matching names will be replaced.</param>
+        /// <returns>True if the insertion succeeded, false if clobbering is disalbed and a file with the same name already exists.</returns>
         public bool InsertFile(FileEntry entry, bool clobber = false)
         {
             // First, check if there's an entry with the same filename already,
@@ -241,6 +251,11 @@ namespace V3Lib.Archives.SPC
             return true;
         }
 
+        /// <summary>
+        /// Compresses the data in a <see cref="FileEntry"/> if the compressed size would be smaller.
+        /// </summary>
+        /// <param name="input">The <see cref="FileEntry"/> to try to compress.</param>
+        /// <returns>Either a compressed or uncompressed <see cref="FileEntry"/>, whichever is smaller.</returns>
         private static FileEntry CompressFile(FileEntry input)
         {
             // If the file is already compressed, return immediately
@@ -363,6 +378,11 @@ namespace V3Lib.Archives.SPC
             return compressedData.ToArray();
         }
 
+        /// <summary>
+        /// Decompresses the data of a <see cref="FileEntry"/>, if it isn't already.
+        /// </summary>
+        /// <param name="input">The <see cref="FileEntry"/> to decompress.</param>
+        /// <returns></returns>
         private static FileEntry DecompressFile(FileEntry input)
         {
             // If the file is already uncompressed, return immediately
@@ -429,6 +449,10 @@ namespace V3Lib.Archives.SPC
             return decompressedData.ToArray();
         }
 
+        /// <summary>
+        /// Serializes the whole SRD archive to a byte array, ready to be written to a file or stream.
+        /// </summary>
+        /// <returns>A byte array containing the full archive file.</returns>
         public byte[] GetBytes()
         {
             using MemoryStream ms = new();
@@ -477,9 +501,12 @@ namespace V3Lib.Archives.SPC
         #endregion
     }
 
+    /// <summary>
+    /// Associated data for any files stored in an SPC archive.
+    /// </summary>
     public class FileEntry
     {
-        public enum CompressionState : int
+        public enum CompressionState : short
         {
             Undefined = 0,
             Uncompressed = 1,
