@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using V3Lib.Stx;
+using V3Lib.Text.STX;
 
 namespace StxTool
 {
@@ -10,7 +10,7 @@ namespace StxTool
         static void Main(string[] args)
         {
             Console.WriteLine("STX Tool by CaptainSwag101\n" +
-                "Version 1.0.1, built on 2020-10-15\n");
+                "Version 1.1.0, built on 2020-11-11\n");
 
             if (args.Length == 0)
             {
@@ -20,7 +20,7 @@ namespace StxTool
 
             foreach (string arg in args)
             {
-                FileInfo info = new FileInfo(arg);
+                FileInfo info = new(arg);
                 if (!info.Exists)
                 {
                     Console.WriteLine($"ERROR: File \"{arg}\" does not exist, skipping.");
@@ -30,10 +30,10 @@ namespace StxTool
                 if (info.Extension.ToLowerInvariant() == ".stx")
                 {
                     // Convert STX to TXT
-                    StxFile stx = new StxFile();
-                    stx.Load(info.FullName);
+                    using FileStream fs = new(info.FullName, FileMode.Open);
+                    STXText stx = new(fs);
 
-                    using StreamWriter writer = new StreamWriter(info.FullName.Replace(info.Extension, "") + ".txt", false);
+                    using StreamWriter writer = new(info.FullName.Replace(info.Extension, "") + ".txt", false);
                     foreach (var table in stx.StringTables)
                     {
                         writer.WriteLine("{");
@@ -49,18 +49,19 @@ namespace StxTool
                 else if (info.Extension.ToLowerInvariant() == ".txt")
                 {
                     // Convert TXT to STX
-                    StxFile stx = new StxFile();
+                    STXText stx = new();
 
-                    using StreamReader reader = new StreamReader(info.FullName);
-                    while (reader != null && !reader.EndOfStream)
+                    using StreamReader reader = new(info.FullName);
+                    while (reader.EndOfStream)
                     {
-                        if (reader.ReadLine().StartsWith('{'))
+                        string outside = reader.ReadLine() ?? "";
+                        if (outside.StartsWith('{'))
                         {
-                            List<string> table = new List<string>();
+                            List<string> table = new();
 
                             while (true)
                             {
-                                string line = reader.ReadLine();
+                                string line = reader.ReadLine() ?? "";
 
                                 if (line.StartsWith('}'))
                                 {
@@ -74,7 +75,8 @@ namespace StxTool
                         }
                     }
 
-                    stx.Save(info.FullName.Replace(info.Extension, "") + ".stx");
+                    using FileStream fs = new(info.FullName.Replace(info.Extension, "") + ".stx", FileMode.Create);
+                    fs.Write(stx.GetBytes());
                 }
                 else
                 {

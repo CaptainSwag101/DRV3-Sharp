@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace V3Lib.Stx
+namespace V3Lib.Legacy.Stx
 {
     public class StringTable
     {

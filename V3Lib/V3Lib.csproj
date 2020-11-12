@@ -38,7 +38,6 @@
     <Folder Include="Resource\SRD\" />
     <Folder Include="Resource\SFL\" />
     <Folder Include="Text\RSCT\" />
-    <Folder Include="Text\STX\" />
   </ItemGroup>
 
 
