@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace V3Lib.Spc
+namespace V3Lib.Legacy.Spc
 {
+    [Obsolete("This SPC API is obsolete, use V3Lib.Archives.SPC")]
     public class SpcSubfile
     {
         public string Name;
@@ -18,6 +19,7 @@ namespace V3Lib.Spc
         private const int SPC_WINDOW_MAX_SIZE = 1024;
         private const int SPC_SEQUENCE_MAX_SIZE = 65;
 
+        [Obsolete("This API is obsolete, use V3Lib.Archives.SPC")]
         public void CompressOld()
         {
             // Don't compress the data if it is already compressed
@@ -138,6 +140,7 @@ namespace V3Lib.Spc
         // If we did find a duplicate sequence, and it is adjacent to the readahead area,
         // see how many bytes of that sequence can be repeated until we encounter
         // a non-duplicate byte or reach the end of the readahead area.
+        [Obsolete("This API is obsolete, use V3Lib.Archives.SPC")]
         public void Compress()
         {
             // Don't compress the data if it is already compressed
@@ -248,6 +251,7 @@ namespace V3Lib.Spc
             CompressionFlag = 2;
         }
 
+        [Obsolete("This API is obsolete, use V3Lib.Archives.SPC")]
         public void Decompress()
         {
             // Don't decompress the data if it is already decompressed
@@ -312,6 +316,7 @@ namespace V3Lib.Spc
 
         // The 4-step method seems to be faster than the 3-step method slightly
         // taken from: https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64Bits
+        [Obsolete("This API is obsolete, use V3Lib.Archives.SPC")]
         private byte reverseBits(byte b)
         {
             return (byte)((((b * (ulong)0x80200802) & (ulong)0x0884422110) * (ulong)0x0101010101) >> 32);

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace V3Lib.Spc
+namespace V3Lib.Legacy.Spc
 {
+    [Obsolete("This SPC API is obsolete, use V3Lib.Archives.SPC")]
     public class SpcFile
     {
         public List<SpcSubfile> Subfiles = new List<SpcSubfile>();

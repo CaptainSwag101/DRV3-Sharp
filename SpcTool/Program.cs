@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using V3Lib.Spc;
+using V3Lib.Archives.SPC;
 using CommandParser_Alpha;
 using System.Linq;
 
@@ -16,7 +16,7 @@ namespace SpcTool
         static void Main(string[] args)
         {
             Console.WriteLine("SPC Tool by CaptainSwag101\n" +
-                "Version 1.1.0, built on 2020-10-15\n");
+                "Version 1.2.0, built on 2020-11-11\n");
 
             // Setup text encoding so we can use Shift-JIS text later on
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -32,7 +32,7 @@ namespace SpcTool
             // Parse input arguments
             // If the first argument is a valid SPC file (and if we reach this point it probably is), load it.
             string loadedSpcName = args[0];
-            FileInfo loadedSpcInfo = new FileInfo(loadedSpcName);
+            FileInfo loadedSpcInfo = new(loadedSpcName);
             if (!loadedSpcInfo.Exists)
             {
                 Console.WriteLine($"ERROR: \"{loadedSpcName}\" does not exist.");
@@ -44,8 +44,9 @@ namespace SpcTool
                 Console.WriteLine("WARNING: Input file does not have the \".spc\" extension.\nIf you experience any issues, it means this file probably isn't an SPC archive.");
             }
 
-            SpcFile loadedSpc = new SpcFile();
-            loadedSpc.Load(loadedSpcName);
+            // Setup a filestream to read the archive
+            using FileStream fs = new(loadedSpcName, FileMode.Open);
+            SPCArchive loadedSpc = new(fs);
 
             // Combine any remaining args into a single long string to be broken down by our regex
             Queue<string>? autoExecQueue = null;
@@ -53,12 +54,12 @@ namespace SpcTool
             {
                 autoExecQueue = new Queue<string>();
 
-                StringBuilder remainingArgsBuilder = new StringBuilder();
+                StringBuilder remainingArgsBuilder = new();
                 remainingArgsBuilder.AppendJoin(" ", args[1..args.Length]);
                 string remainingArgsCombined = remainingArgsBuilder.ToString();
 
                 // Identify and capture any string groups, contained in curly brackets {like this}, and add them to the auto-exec queue
-                Regex stringGroupRegex = new Regex(@"(?<=\{).+?(?=\})");
+                Regex stringGroupRegex = new(@"(?<=\{).+?(?=\})");
                 MatchCollection matches = stringGroupRegex.Matches(remainingArgsCombined);
                 foreach (Match? m in matches)
                 {
@@ -79,16 +80,16 @@ namespace SpcTool
                         string targetsRaw = "";
                         if (autoExecQueue?.Count > 0)
                         {
-                            targetsRaw = autoExecQueue.Dequeue();
+                            targetsRaw += autoExecQueue.Dequeue();
                         }
                         else
                         {
                             Console.WriteLine("Type the files you want to extract, separated by spaces (wildcard * supported): ");
-                            targetsRaw = Console.ReadLine();
+                            targetsRaw += Console.ReadLine();
                         }
 
                         // Implemented based on https://stackoverflow.com/a/5227134/
-                        Regex regex = new Regex("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
+                        Regex regex = new("(?<match>[^\\s\"]+)|(?<match>\"[^\"]*\")", RegexOptions.None);
                         var targets = (from Match m in regex.Matches(targetsRaw)
                                         where m.Groups["match"].Success
                                         select m.Groups["match"].Value).ToList();
@@ -100,34 +101,28 @@ namespace SpcTool
                 },
                 {
                     @"insert",
-                    delegate(Queue<string>? autoExecStack)
+                    delegate(Queue<string>? autoExecQueue)
                     {
                         // Parse target arguments
-                        string targetsRaw = "";
-                        if (autoExecStack?.Count > 0)
+                        string target = "";
+                        if (autoExecQueue?.Count > 0)
                         {
-                            targetsRaw = autoExecStack.Dequeue();
+                            target += autoExecQueue.Dequeue();
                         }
                         else
                         {
-                            Console.WriteLine("Type the files you want to insert, separated by spaces (or drag and drop): ");
-                            targetsRaw = Console.ReadLine();
+                            Console.WriteLine("Type the file you want to insert (or drag and drop): ");
+                            target += Console.ReadLine();
                         }
 
-                        // Implemented based on https://stackoverflow.com/a/5227134
-                        Regex regex = new Regex("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
-                        var targets = (from Match m in regex.Matches(targetsRaw)
-                                        where m.Groups["match"].Success
-                                        select m.Groups["match"].Value).ToList();
-
-                        InsertSubfiles(loadedSpc, loadedSpcInfo, targets);
+                        InsertSubfiles(loadedSpc, loadedSpcInfo, target, autoExecQueue);
 
                         return null;
                     }
                 },
                 {
                     @"list",
-                    delegate(Queue<string>? autoExecStack)
+                    delegate(Queue<string>? autoExecQueue)
                     {
                         ListSubfiles(loadedSpc, loadedSpcInfo);
 
@@ -136,9 +131,19 @@ namespace SpcTool
                 },
                 {
                     @"bench",
-                    delegate(Queue<string>? autoExecStack)
+                    delegate(Queue<string>? autoExecQueue)
                     {
                         BenchmarkCompression(loadedSpc, loadedSpcInfo);
+
+                        return null;
+                    }
+                },
+                {
+                    @"save",
+                    delegate(Queue<string>? autoExecQueue)
+                    {
+                        using FileStream fs = new(loadedSpcName, FileMode.Create);
+                        fs.Write(loadedSpc.GetBytes());
 
                         return null;
                     }
@@ -146,110 +151,115 @@ namespace SpcTool
             };
 
             // Show initial prompt
-            StringBuilder promptBuilder = new StringBuilder();
+            StringBuilder promptBuilder = new();
             promptBuilder.Append($"Loaded SPC archive: {loadedSpcName}\n");
             promptBuilder.Append($"Valid commands to perform on this archive:\n");
             promptBuilder.AppendJoin(", ", commandDict.Keys);
             Console.WriteLine(promptBuilder.ToString());
 
             // Process any commands, then prompt the user
-            CommandParser parser = new CommandParser(commandDict);
+            CommandParser parser = new(commandDict);
             parser.Prompt("Please enter your command, or \"exit\" to quit: ", @"exit", autoExecQueue);
         }
 
-        private static void ExtractSubfiles(SpcFile loadedSpc, FileInfo loadedSpcInfo, List<string> targets)
+        private static void ExtractSubfiles(SPCArchive loadedSpc, FileInfo loadedSpcInfo, List<string> targets)
         {
             // Setup an output directory for extracted files
             string outputDir = loadedSpcInfo.DirectoryName + Path.DirectorySeparatorChar + loadedSpcInfo.Name.Substring(0, loadedSpcInfo.Name.Length - loadedSpcInfo.Extension.Length);
             Directory.CreateDirectory(outputDir);
 
-            // Generate list of subfiles to be extracted that match the target regex
-            List<string> subfilesToExtract = new List<string>();
+            // Generate list of files to be extracted that match the target regex
+            List<string> filesToExtract = new();
             foreach (string target in targets)
             {
                 string regexTarget = "^" + Regex.Escape(target).Replace("\\?", ".?").Replace("\\*", ".*") + "$";
 
-                foreach (SpcSubfile subfile in loadedSpc.Subfiles)
+                foreach (FileEntry file in loadedSpc.Entries)
                 {
-                    if (Regex.IsMatch(subfile.Name, regexTarget))
+                    if (Regex.IsMatch(file.Name, regexTarget))
                     {
-                        subfilesToExtract.Add(subfile.Name);
+                        filesToExtract.Add(file.Name);
                     }
                 }
             }
 
-            // Extract the subfiles using Tasks
-            Task[] extractTasks = new Task[subfilesToExtract.Count];
-
-            // IMPORTANT: If we ever switch to a for loop instead of foreach,
-            // make sure to make a local scoped copy of the subfile name in order to prevent
-            // threading weirdness from passing the wrong string value and causing random issues.
-            foreach (string subfileName in subfilesToExtract)
+            // Extract the files in order
+            foreach (string name in filesToExtract)
             {
-                Console.WriteLine($"Extracting \"{subfileName}\"...");
-
-                extractTasks[subfilesToExtract.IndexOf(subfileName)] = Task.Factory.StartNew(() => loadedSpc.ExtractSubfile(subfileName, outputDir));
+                FileEntry file = loadedSpc.ExtractFileByName(name);
+                using FileStream outFs = new(Path.Combine(outputDir, name), FileMode.Create);
+                outFs.Write(file.Data);
             }
-
-            // Wait until all target subfiles have been extracted
-            Task.WaitAll(extractTasks);
         }
 
-        private static void InsertSubfiles(SpcFile loadedSpc, FileInfo loadedSpcInfo, List<string> targets)
+        private static void InsertSubfiles(SPCArchive loadedSpc, FileInfo loadedSpcInfo, string target, Queue<string>? autoExecQueue)
         {
-            // Insert the subfiles using Tasks
-            Task[] insertTasks = new Task[targets.Count];
+            // Insert the file
+            Console.WriteLine($"Inserting \"{target}\"...");
 
-            // IMPORTANT: If we ever switch to a for loop instead of foreach,
-            // make sure to make a local scoped copy of the subfile name in order to prevent
-            // threading weirdness from passing the wrong string value and causing random issues.
-            foreach (string subfileName in targets)
+            // Read in the file data to insert
+            byte[] fileData = File.ReadAllBytes(target);
+
+            // Generate a FileEntry to be inserted
+            FileEntry entry = new(target, fileData, fileData.Length, FileEntry.CompressionState.Uncompressed, 4);
+
+            // Try to insert the file. If it returns false, it means there's already
+            // a file in the archive with a matching name, and we must
+            // ask the user to explicitly clobber the matching file.
+            if (!loadedSpc.InsertFile(entry))
             {
-                Console.WriteLine($"Inserting \"{subfileName}\"...");
-
-                // Check if the file already exists and prompt to overwrite
-                if (loadedSpc.Subfiles.Where(subfile => (subfile.Name == subfileName)).Count() > 0)
+                while (true)
                 {
-                    Console.WriteLine("The specified file already exists within the SPC archive. Overwrite? (y/N)");
-                    string yesNo = Console.ReadLine().ToLowerInvariant();
-                    if (!yesNo.StartsWith("y"))
+                    string? yesNo;
+
+                    if (autoExecQueue?.Count > 0)
                     {
-                        continue;   // Skip this file
+                        yesNo = autoExecQueue.Dequeue();
+                    }
+                    else
+                    {
+                        Console.Write("A file with the name \"{fileName}\" already exists in the archive. Overwrite? (y/n) "); ;
+                        yesNo = Console.ReadLine()?.ToLowerInvariant();
+                    }
+
+                    if (!string.IsNullOrEmpty(yesNo))
+                    {
+                        if (yesNo == "y")
+                        {
+                            loadedSpc.InsertFile(entry, true);
+                        }
+                        else if (yesNo == "n")
+                        {
+                            break;
+                        }
                     }
                 }
-
-                insertTasks[targets.IndexOf(subfileName)] = Task.Factory.StartNew(() => loadedSpc.InsertSubfile(subfileName));
             }
-
-            // Wait until all target subfiles have been inserted
-            Task.WaitAll(insertTasks);
-
-            // Save the spc file
-            loadedSpc.Save(loadedSpcInfo.FullName);
         }
 
-        private static void ListSubfiles(SpcFile loadedSpc, FileInfo loadedSpcInfo)
+        private static void ListSubfiles(SPCArchive loadedSpc, FileInfo loadedSpcInfo)
         {
-            foreach (SpcSubfile subfile in loadedSpc.Subfiles)
+            foreach (FileEntry subfile in loadedSpc.Entries)
             {
                 Console.WriteLine($"Subfile name: \"{subfile.Name}\"");
                 Console.WriteLine($"\tCompression flag: {subfile.CompressionFlag}");
                 Console.WriteLine($"\tUnknown flag: {subfile.UnknownFlag}");
                 Console.WriteLine($"\tCurrent size: {subfile.CurrentSize:n0} bytes");
-                Console.WriteLine($"\tOriginal size: {subfile.OriginalSize:n0} bytes");
+                Console.WriteLine($"\tUncompressed size: {subfile.UncompressedSize:n0} bytes");
                 Console.WriteLine();
             }
         }
 
-        private static void BenchmarkCompression(SpcFile loadedSpc, FileInfo loadedSpcInfo)
+        private static void BenchmarkCompression(SPCArchive loadedSpc, FileInfo loadedSpcInfo)
         {
-            foreach (SpcSubfile subfile in loadedSpc.Subfiles)
+            /*
+            foreach (FileEntry subfile in loadedSpc.Entries)
             {
                 Console.WriteLine($"Subfile name: \"{subfile.Name}\"");
                 Console.WriteLine($"\tCompression flag: {subfile.CompressionFlag}");
                 Console.WriteLine($"\tUnknown flag: {subfile.UnknownFlag}");
                 Console.WriteLine($"\tCurrent size: {subfile.CurrentSize:n0} bytes");
-                Console.WriteLine($"\tOriginal size: {subfile.OriginalSize:n0} bytes");
+                Console.WriteLine($"\tOriginal size: {subfile.UncompressedSize:n0} bytes");
 
                 // Benchmark decompression and compression
                 Stopwatch stopwatch = new Stopwatch();
@@ -301,6 +311,7 @@ namespace SpcTool
 
                 Console.WriteLine();
             }
+            */
         }
     }
 }

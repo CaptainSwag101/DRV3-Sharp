@@ -69,5 +69,12 @@ namespace V3Lib
             Array.Reverse(bytes);
             return bytes;
         }
+
+        // The 4-step method seems to be faster than the 3-step method slightly
+        // taken from: https://graphics.stanford.edu/~seander/bithacks.html#ReverseByteWith64Bits
+        public static byte ReverseBits(byte b)
+        {
+            return (byte)((((b * (ulong)0x80200802) & (ulong)0x0884422110) * (ulong)0x0101010101) >> 32);
+        }
     }
 }
