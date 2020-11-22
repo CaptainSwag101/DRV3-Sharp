@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace V3Lib.Dat
+namespace V3Lib.Legacy.Dat
 {
     public class DatFile
     {

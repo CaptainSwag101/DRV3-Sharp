@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using V3Lib.Sfl.EntryTypes;
+using V3Lib.Legacy.Sfl.EntryTypes;
 
-namespace V3Lib.Sfl
+namespace V3Lib.Legacy.Sfl
 {
     public class SflFile
     {

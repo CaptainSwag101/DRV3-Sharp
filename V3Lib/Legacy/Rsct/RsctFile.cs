@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
-namespace V3Lib.Rsct
+namespace V3Lib.Legacy.Rsct
 {
     public class RsctFile
     {

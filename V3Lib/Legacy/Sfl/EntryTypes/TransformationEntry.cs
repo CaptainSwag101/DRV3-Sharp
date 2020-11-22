@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
 
-namespace V3Lib.Sfl.EntryTypes
+namespace V3Lib.Legacy.Sfl.EntryTypes
 {
     public struct TransformationCommand
     {

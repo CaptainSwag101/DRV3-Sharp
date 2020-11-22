@@ -34,10 +34,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Resource\DAT\" />
     <Folder Include="Resource\SRD\" />
-    <Folder Include="Resource\SFL\" />
-    <Folder Include="Text\RSCT\" />
   </ItemGroup>
 
 

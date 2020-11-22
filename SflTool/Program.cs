@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using Newtonsoft.Json;
-using V3Lib.Sfl;
+using V3Lib.Resource.SFL;
 
 namespace SflTool
 {
@@ -10,7 +10,7 @@ namespace SflTool
         static void Main(string[] args)
         {
             Console.WriteLine("SFL Tool by CaptainSwag101\n" +
-                "Version 1.0.0, built on 2020-08-03\n");
+                "Version 1.1.0, built on 2020-11-22\n");
 
             if (args.Length == 0)
             {
@@ -30,12 +30,8 @@ namespace SflTool
                 if (info.Extension.ToLowerInvariant() == ".sfl")
                 {
                     // Convert SFL to JSON
-                    SflFile sfl = new SflFile();
-                    if (!sfl.Load(info.FullName, out string errorMessage))
-                    {
-                        Console.WriteLine($"ERROR: {errorMessage}");
-                        return;
-                    }
+                    using FileStream fs = new(info.FullName, FileMode.Open);
+                    SFLScene sfl = new(fs);
 
                     string output = JsonConvert.SerializeObject(sfl, Formatting.Indented);
                     File.WriteAllText(info.FullName.Remove(info.FullName.Length - info.Extension.Length) + ".json", output);

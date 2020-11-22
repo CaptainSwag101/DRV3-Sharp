@@ -58,7 +58,7 @@ namespace V3Lib.Text.STX
         /// <param name="stream">The stream to read data from.</param>
         /// <exception cref="EndOfStreamException">Occurs when the end of the data stream is reached before the text has been fully read.</exception>
         /// <exception cref="InvalidDataException">Occurs when the file you're trying to read does not conform to the STX specification, and is likely invalid.</exception>
-        /// <exception cref="NotImplementedException"
+        /// <exception cref="NotImplementedException"></exception>
         public STXText(Stream stream)
         {
             // Initialize properties to default values

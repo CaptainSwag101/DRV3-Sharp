@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace V3Lib.Sfl
+namespace V3Lib.Legacy.Sfl
 {
     public class Table
     {
