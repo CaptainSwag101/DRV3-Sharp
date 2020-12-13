@@ -227,6 +227,7 @@ namespace SpcTool
                         if (yesNo == "y")
                         {
                             loadedSpc.InsertFile(entry, true);
+                            break;
                         }
                         else if (yesNo == "n")
                         {
