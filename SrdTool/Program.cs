@@ -132,7 +132,7 @@ namespace SrdTool
                             while (answer != "y" && answer != "n")
                             {
                                 Console.Write("Would you like to extract mipmaps (Y/N)? ");
-                                answer = Console.ReadLine().ToString().ToLowerInvariant();
+                                answer = Console.ReadLine().ToLowerInvariant();
                             }
                         }
                         bool extractMipmaps = (answer == "y");
@@ -172,7 +172,7 @@ namespace SrdTool
                             while (answer != "y" && answer != "n")
                             {
                                 Console.Write("Would you like to generate mipmaps (Y/N)? ");
-                                answer = Console.Read().ToString().ToLowerInvariant();
+                                answer = Console.ReadLine().ToLowerInvariant();
                             }
                         }
                         bool generateMipmaps = (answer == "y");
