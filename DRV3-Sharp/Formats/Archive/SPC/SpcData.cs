@@ -51,7 +51,7 @@ namespace DRV3_Sharp.Formats.Archive.SPC
 
             byte[] compressedData;
             if (!preCompressed)
-                compressedData = Compress(data);
+                compressedData = SpcCompressor.Compress(data);
             else
                 compressedData = data;
 
@@ -91,7 +91,7 @@ namespace DRV3_Sharp.Formats.Archive.SPC
             {
                 ArchivedFile f = Files[filename];
                 if (f.IsCompressed)
-                    return Decompress(f.Data);
+                    return SpcCompressor.Decompress(f.Data);
                 else
                     return f.Data;
             }
@@ -102,24 +102,6 @@ namespace DRV3_Sharp.Formats.Archive.SPC
         public (string Name, ArchivedFile File) GetFileEntry(int index)
         {
             return (Files.Keys.ElementAt(index), Files.Values.ElementAt(index));
-        }
-
-        private static byte[] Decompress(byte[] compressedData)
-        {
-            List<byte> decompressedData = new();
-
-            // Decompress data here
-
-            return decompressedData.ToArray();
-        }
-
-        private static byte[] Compress(byte[] uncompressedData)
-        {
-            List<byte> compressedData = new();
-
-            // Compress data here
-
-            return compressedData.ToArray();
         }
     }
 }
