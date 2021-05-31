@@ -18,8 +18,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DRV3_Sharp.Formats.Archive.SPC
 {
@@ -29,7 +27,7 @@ namespace DRV3_Sharp.Formats.Archive.SPC
     {
         public readonly byte[] UnknownData1 = new byte[0x24];
         public readonly int UnknownData2;
-        public int FileCount { get { return Files.Values.Count; } }
+        public int FileCount { get { return Files.Count; } }
         public IEnumerable<string> FileNames { get { return Files.Keys; } }
         private readonly Dictionary<string, ArchivedFile> Files = new();    // Name, File
 
@@ -85,7 +83,7 @@ namespace DRV3_Sharp.Formats.Archive.SPC
             return true;
         }
 
-        public byte[]? GetFileData(string filename)
+        public byte[]? GetUncompressedFileData(string filename)
         {
             if (Files.ContainsKey(filename))
             {
@@ -99,9 +97,20 @@ namespace DRV3_Sharp.Formats.Archive.SPC
                 return null;
         }
 
-        public (string Name, ArchivedFile File) GetFileEntry(int index)
+        public (string Name, ArchivedFile File)? GetFileEntry(int index)
         {
-            return (Files.Keys.ElementAt(index), Files.Values.ElementAt(index));
+            if (index >= 0 && index < FileCount)
+                return (Files.Keys.ElementAt(index), Files.Values.ElementAt(index));
+            else
+                return null;
+        }
+
+        public (string Name, ArchivedFile File)? GetFileEntry(string name)
+        {
+            if (Files.ContainsKey(name))
+                return (name, Files[name]);
+            else
+                return null;
         }
     }
 }

@@ -17,14 +17,12 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace DRV3_Sharp.Formats.Archive.SPC
 {
     static class SpcCompressor
     {
+        // WARNING: Changing these constants will likely break the compression or reduce efficiency!
         private const int SPC_BLOCK_SIZE = 16;
         private const int SPC_WINDOW_MAX_SIZE = 1024;
         private const int SPC_SEQUENCE_MAX_SIZE = 65;

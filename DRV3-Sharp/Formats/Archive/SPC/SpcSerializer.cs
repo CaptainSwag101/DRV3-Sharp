@@ -16,23 +16,20 @@
 */
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DRV3_Sharp.Formats.Archive.SPC
 {
     static class SpcSerializer
     {
-        const string CONST_FILE_MAGIC = "CPS.";
-        const string CONST_VITA_COMPRESSED_MAGIC = "$CMP";
-        const string CONST_TABLE_HEADER = "Root";
+        private const string CONST_FILE_MAGIC = "CPS.";
+        private const string CONST_VITA_COMPRESSED_MAGIC = "$CMP";
+        private const string CONST_TABLE_HEADER = "Root";
 
         public static void Deserialize(Stream inputStream, out SpcData outputData)
         {
-            BinaryReader reader = new(inputStream);
+            using BinaryReader reader = new(inputStream, Encoding.ASCII, true);
 
             string fileMagic = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (fileMagic == CONST_VITA_COMPRESSED_MAGIC) throw new NotImplementedException("Files from the PS Vita version are not currently supported.");
@@ -74,7 +71,7 @@ namespace DRV3_Sharp.Formats.Archive.SPC
 
         public static void Serialize(SpcData inputData, Stream outputStream)
         {
-            using BinaryWriter writer = new(outputStream);
+            using BinaryWriter writer = new(outputStream, Encoding.ASCII, true);
 
             writer.Write(Encoding.ASCII.GetBytes(CONST_FILE_MAGIC));
             writer.Write(inputData.UnknownData1);
@@ -87,8 +84,9 @@ namespace DRV3_Sharp.Formats.Archive.SPC
             for (int i = 0; i < inputData.FileCount; ++i)
             {
                 var entry = inputData.GetFileEntry(i);
-                string name = entry.Name;
-                ArchivedFile subfile = entry.File;
+                // We can use null forgiveness because we know we're iterating in-bounds.
+                string name = entry?.Name!;
+                ArchivedFile subfile = entry?.File!;
 
                 writer.Write(subfile.IsCompressed ? 2 : 1);
                 writer.Write(subfile.UnknownFlag);
