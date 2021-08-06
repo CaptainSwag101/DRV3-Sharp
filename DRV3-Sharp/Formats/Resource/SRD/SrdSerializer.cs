@@ -45,7 +45,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD
             List<ISrdBlock> rsfBlocks = blocks.Where(block => block is RsfBlock).ToList();
             List<ISrdBlock> txrBlocks = blocks.Where(block => block is TxrBlock).ToList();
             List<ISrdBlock> txiBlocks = blocks.Where(block => block is TxiBlock).ToList();
-            //List<ISrdBlock> vtxBlocks = blocks.Where(block => block is VtxBlock).ToList();
+            List<ISrdBlock> vtxBlocks = blocks.Where(block => block is VtxBlock).ToList();
             //List<ISrdBlock> matBlocks = blocks.Where(block => block is MatBlock).ToList();
             //List<ISrdBlock> mshBlocks = blocks.Where(block => block is MshBlock).ToList();
             //List<ISrdBlock> scnBlocks = blocks.Where(block => block is ScnBlock).ToList();
@@ -53,10 +53,10 @@ namespace DRV3_Sharp.Formats.Resource.SRD
             //List<ISrdBlock> sklBlocks = blocks.Where(block => block is SklBlock).ToList();
 
             //// Parse texture resources
-            //foreach (SrdBlock txr in blocks)
-            //{
+            foreach (TxrBlock txr in txrBlocks)
+            {
 
-            //}
+            }
 
             return;
         }

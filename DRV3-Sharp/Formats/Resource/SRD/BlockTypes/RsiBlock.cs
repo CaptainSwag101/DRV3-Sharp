@@ -76,7 +76,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
 
                 if (location == ResourceDataLocation.Srdi)
                 {
-                    if (inputSrdiStream == null) throw new ArgumentNullException(nameof(inputSrdiStream), "Unable to read resource data from the SRDI stream because it is null.");
+                    if (inputSrdiStream == null) throw new ArgumentNullException(nameof(inputSrdiStream), "Tried to read resource data from the SRDI stream but it was null.");
 
                     inputSrdiStream.Seek(address, SeekOrigin.Begin);
 
@@ -86,7 +86,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
                 }
                 else if (location == ResourceDataLocation.Srdv)
                 {
-                    if (inputSrdvStream == null) throw new ArgumentNullException(nameof(inputSrdvStream), "Unable to read resource data from the SRDV stream because it is null.");
+                    if (inputSrdvStream == null) throw new ArgumentNullException(nameof(inputSrdvStream), "Tried to read resource data from the SRDV stream but it was null.");
 
                     inputSrdvStream.Seek(address, SeekOrigin.Begin);
 

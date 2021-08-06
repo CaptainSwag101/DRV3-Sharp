@@ -37,7 +37,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
         public string TextureFilenameReference;
         public string MaterialNameReference;
 
-        public TxiBlock(byte[] mainData, byte[] subData, Stream? inputSrdvStream, Stream? inputSrdiStream)
+        public TxiBlock(byte[] mainData, byte[] subData)
         {
             using BinaryReader reader = new(new MemoryStream(mainData));
 
@@ -51,7 +51,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             // Decode the RSI sub-block for later use
             RsiBlock rsi;
             using MemoryStream subBlockStream = new(subData);
-            BlockSerializer.Deserialize(subBlockStream, inputSrdvStream, inputSrdiStream, out ISrdBlock block);
+            BlockSerializer.Deserialize(subBlockStream, null, null, out ISrdBlock block);
             if (block is RsiBlock) rsi = (RsiBlock)block;
             else throw new InvalidDataException("The first sub-block was not an RSI block.");
 
@@ -59,8 +59,6 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
                 MaterialNameReference = rsi.ResourceStrings[0];
             else
                 throw new InvalidDataException("The TXI's resource sub-block did not contain a material name reference.");
-
-            return;
         }
     }
 }

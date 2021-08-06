@@ -37,13 +37,13 @@ namespace DRV3_Sharp
             using FileStream srdStream = new(srdPath, FileMode.Open);
 
             // If the file doesn't end in .srd, make a secondary path that does so we can compute the accompanying file names correctly
-            string srdPath2 = Path.ChangeExtension(srdPath!, "srd")!;
+            string srdPathCorrectedExt = Path.ChangeExtension(srdPath!, "srd")!;
 
             // Try and open the accompanying resource data files if they are present (not always)
             FileStream? srdvStream = null;
             try
             {
-                srdvStream = new(srdPath2 + 'v', FileMode.Open);
+                srdvStream = new(srdPathCorrectedExt + 'v', FileMode.Open);
             }
             catch (FileNotFoundException ex)
             { }
@@ -51,7 +51,7 @@ namespace DRV3_Sharp
             FileStream? srdiStream = null;
             try
             {
-                srdiStream = new(srdPath2 + 'i', FileMode.Open);
+                srdiStream = new(srdPathCorrectedExt + 'i', FileMode.Open);
             }
             catch (FileNotFoundException ex)
             { }
