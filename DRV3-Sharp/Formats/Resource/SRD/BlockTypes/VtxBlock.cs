@@ -41,7 +41,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
         public List<Vector3> Normals = new();
         public List<Vector2> TextureCoords = new();
         public List<float> Weights = new();
-        public List<ushort[]> Indices = new();
+        public List<(ushort, ushort, ushort)> Indices = new();
 
         public VtxBlock(byte[] mainData, byte[] subData, Stream? inputSrdiStream)
         {
@@ -204,7 +204,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
                     // order of the indices determining the face's direction
                     indices[3 - (i + 1)] = index;
                 }
-                Indices.Add(indices);
+                Indices.Add((indices[0], indices[1], indices[2]));
             }
         }
     }
