@@ -193,7 +193,6 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
 
             // Extract index data
             using BinaryReader indexReader = new(new MemoryStream(rsi.ExternalResourceData[1].Data));
-            var curIndexList = new List<ushort[]>();
             while (indexReader.BaseStream.Position < indexReader.BaseStream.Length)
             {
                 ushort[] indices = new ushort[3];
@@ -205,7 +204,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
                     // order of the indices determining the face's direction
                     indices[3 - (i + 1)] = index;
                 }
-                curIndexList.Add(indices);
+                Indices.Add(indices);
             }
         }
     }
