@@ -25,7 +25,7 @@ namespace DRV3_Sharp.Formats.Archive.SPC
 
     class SpcData
     {
-        public readonly byte[] UnknownData1 = new byte[0x24];
+        public readonly byte[] UnknownData1 = new byte[0x24];   // TODO: This is not how real SPC files are, see if this breaks things!
         public readonly int UnknownData2;
         public int FileCount { get { return Files.Count; } }
         public IEnumerable<string> FileNames { get { return Files.Keys; } }

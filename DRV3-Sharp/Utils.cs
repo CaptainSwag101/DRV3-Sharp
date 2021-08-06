@@ -27,12 +27,14 @@ namespace DRV3_Sharp
         // (or maybe I'm just a moron), so we have to do it manually.
         public static string ReadNullTerminatedString(BinaryReader reader, Encoding encoding)
         {
+            
             using BinaryReader stringReader = new(reader.BaseStream, encoding, true);
             StringBuilder sb = new();
             while (stringReader.BaseStream.Position < stringReader.BaseStream.Length)
             {
                 char c = stringReader.ReadChar();
 
+                // Break on null terminator
                 if (c == 0)
                     break;
 
@@ -42,19 +44,19 @@ namespace DRV3_Sharp
             return sb.ToString();
         }
 
-        public static void ReadPadding(BinaryReader reader, int padTo)
+        public static void SkipToNearest(BinaryReader reader, int multipleOf)
         {
-            int padLength = padTo - (int)(reader.BaseStream.Position % padTo);
-            if (padLength != padTo)
+            int padLength = multipleOf - (int)(reader.BaseStream.Position % multipleOf);
+            if (padLength != multipleOf)
             {
                 reader.BaseStream.Seek(padLength, SeekOrigin.Current);
             }
         }
 
-        public static void WritePadding(BinaryWriter writer, int padTo, byte padValue = 0)
+        public static void PadToNearest(BinaryWriter writer, int multipleOf, byte padValue = 0)
         {
-            int padLength = padTo - (int)(writer.BaseStream.Position % padTo);
-            if (padLength != padTo)
+            int padLength = multipleOf - (int)(writer.BaseStream.Position % multipleOf);
+            if (padLength != multipleOf)
             {
                 Span<byte> padding = new byte[padLength];
                 padding.Fill(padValue);

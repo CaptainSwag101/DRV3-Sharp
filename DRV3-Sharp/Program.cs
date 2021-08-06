@@ -15,7 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using DRV3_Sharp.Formats.Archive.SPC;
+using DRV3_Sharp.Formats.Resource.SRD;
 using System;
+using System.IO;
 using System.Text;
 
 namespace DRV3_Sharp
@@ -28,6 +31,40 @@ namespace DRV3_Sharp
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             Console.WriteLine("Hello World!");
+
+            string srdPath = @"C:\Users\James\Desktop\Games\DRV3 Tests\Windows\SRD Tests\ID001_sch_1F\model.srd";
+            //string srdPath = @"C:\Users\James\Desktop\Games\DRV3 Tests\Windows\SRD Tests\v3_font00_JP\v3_font00.stx";
+            using FileStream srdStream = new(srdPath, FileMode.Open);
+
+            // If the file doesn't end in .srd, make a secondary path that does so we can compute the accompanying file names correctly
+            string srdPath2 = Path.ChangeExtension(srdPath!, "srd")!;
+
+            // Try and open the accompanying resource data files if they are present (not always)
+            FileStream? srdvStream = null;
+            try
+            {
+                srdvStream = new(srdPath2 + 'v', FileMode.Open);
+            }
+            catch (FileNotFoundException ex)
+            { }
+
+            FileStream? srdiStream = null;
+            try
+            {
+                srdiStream = new(srdPath2 + 'i', FileMode.Open);
+            }
+            catch (FileNotFoundException ex)
+            { }
+
+            SrdSerializer.Deserialize(srdStream, srdvStream, srdiStream, out SrdData testSrd);
+            srdvStream?.Close();
+            srdiStream?.Close();
+            return;
+
+            //SpcData testSpc = new();
+            //using FileStream outputTestStream = new(@"C:\Users\James\Desktop\Games\DRV3 Tests\Program Tests\test.spc", FileMode.Create);
+            //SpcSerializer.Serialize(testSpc, outputTestStream);
+            //return;
         }
     }
 }
