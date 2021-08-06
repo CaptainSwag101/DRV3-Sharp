@@ -82,7 +82,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             if (rsi.ResourceStrings.Count > 0)
                 TextureFilename = rsi.ResourceStrings[0];
             else
-                throw new InvalidDataException("The TXR's resource sub-block did not contain a texture filename.");
+                throw new InvalidDataException("The TXR's resource sub-block did not contain the texture filename.");
 
             // Read texture/mipmap data
             foreach (var externalData in rsi.ExternalResourceData)

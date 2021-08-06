@@ -44,20 +44,6 @@ namespace DRV3_Sharp.Formats.Resource.SRD
             byte[] subData = srdReader.ReadBytes(subDataSize);
             Utils.SkipToNearest(srdReader, 16);
 
-            //// Decode sub-block data into discrete sub-blocks via recursion (should be +1 layer deep AT MOST in a non-malformed SRD)
-            //List<ISrdBlock>? subBlocks = null;
-            //if (subData.Length > 0)
-            //{
-            //    subBlocks = new();
-            //    using MemoryStream subStream = new(subData);
-            //    while (subStream.Position < subStream.Length)
-            //    {
-            //        Deserialize(subStream, inputSrdvStream, inputSrdiStream, out ISrdBlock subBlock);
-            //        subBlocks.Add(subBlock);
-            //    }
-            //}
-
-            // Decode the main block data
             // Each block decodes sub-block data in its own way, since different blocks use their sub-data differently
             outputBlock = blockType switch
             {
@@ -67,8 +53,8 @@ namespace DRV3_Sharp.Formats.Resource.SRD
                 "$TXR" => new TxrBlock(mainData, subData, inputSrdvStream),
                 "$TXI" => new TxiBlock(mainData, subData),
                 "$VTX" => new VtxBlock(mainData, subData, inputSrdiStream),
-                //"$MSH" => new MshBlock(),
-                //"$MAT" => new MatBlock(),
+                "$MSH" => new MshBlock(mainData, subData),
+                "$MAT" => new MatBlock(mainData, subData),
                 //"$SCN" => new ScnBlock(),
                 //"$TRE" => new TreBlock(),
                 //"$SKL" => new SklBlock(),

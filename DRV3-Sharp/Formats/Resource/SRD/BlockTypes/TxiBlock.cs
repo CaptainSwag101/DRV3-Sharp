@@ -39,6 +39,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
 
         public TxiBlock(byte[] mainData, byte[] subData)
         {
+            // Read main data
             using BinaryReader reader = new(new MemoryStream(mainData));
 
             Unknown00 = reader.ReadInt32();
@@ -55,10 +56,11 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             if (block is RsiBlock) rsi = (RsiBlock)block;
             else throw new InvalidDataException("The first sub-block was not an RSI block.");
 
+            // Read material name reference
             if (rsi.ResourceStrings.Count > 0)
                 MaterialNameReference = rsi.ResourceStrings[0];
             else
-                throw new InvalidDataException("The TXI's resource sub-block did not contain a material name reference.");
+                throw new InvalidDataException("The TXI's resource sub-block did not contain the material name reference.");
         }
     }
 }

@@ -20,7 +20,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
         }
     }
 
-    class VtxBlock : ISrdBlock
+    record VtxBlock : ISrdBlock
     {
         // Header data
         public int VectorCount;   // Likely the number of half-float triplets in the "float list"
