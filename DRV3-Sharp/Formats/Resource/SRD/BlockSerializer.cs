@@ -55,7 +55,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD
                 "$VTX" => new VtxBlock(mainData, subData, inputSrdiStream),
                 "$MSH" => new MshBlock(mainData, subData),
                 "$MAT" => new MatBlock(mainData, subData),
-                //"$SCN" => new ScnBlock(),
+                "$SCN" => new ScnBlock(mainData, subData),
                 //"$TRE" => new TreBlock(),
                 //"$SKL" => new SklBlock(),
                 "$CT0" => new Ct0Block(),

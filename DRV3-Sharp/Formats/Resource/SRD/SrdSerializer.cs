@@ -48,7 +48,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD
             List<ISrdBlock> vtxBlocks = blocks.Where(block => block is VtxBlock).ToList();
             List<ISrdBlock> mshBlocks = blocks.Where(block => block is MshBlock).ToList();
             List<ISrdBlock> matBlocks = blocks.Where(block => block is MatBlock).ToList();
-            //List<ISrdBlock> scnBlocks = blocks.Where(block => block is ScnBlock).ToList();
+            List<ISrdBlock> scnBlocks = blocks.Where(block => block is ScnBlock).ToList();
             //List<ISrdBlock> treBlocks = blocks.Where(block => block is TreBlock).ToList();
             //List<ISrdBlock> sklBlocks = blocks.Where(block => block is SklBlock).ToList();
             //List<ISrdBlock> anmBlocks = blocks.Where(block => block is AnmBlock).ToList();
