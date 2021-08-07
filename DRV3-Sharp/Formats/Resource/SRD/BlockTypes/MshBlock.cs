@@ -68,7 +68,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             if (rsi.ResourceStrings.Count > 0)
                 MeshName = rsi.ResourceStrings[0];
             else
-                throw new InvalidDataException("The TXR's resource sub-block did not contain the mesh name.");
+                throw new InvalidDataException("The MSH's resource sub-block did not contain the mesh name.");
         }
     }
 }

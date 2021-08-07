@@ -66,11 +66,11 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             if (rsi.ResourceStrings.Count > 0)
                 MaterialName = rsi.ResourceStrings[0];
             else
-                throw new InvalidDataException("The TXR's resource sub-block did not contain the material name.");
+                throw new InvalidDataException("The MAT's resource sub-block did not contain the material name.");
 
+            MaterialShaderReferences = new string[rsi.ResourceStrings.Count - 1];
             if (rsi.ResourceStrings.Count > 1)
             {
-                MaterialShaderReferences = new string[rsi.ResourceStrings.Count - 1];
                 rsi.ResourceStrings.CopyTo(1, MaterialShaderReferences, 0, rsi.ResourceStrings.Count - 1);
             }
         }
