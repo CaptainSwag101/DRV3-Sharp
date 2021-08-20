@@ -107,7 +107,6 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
 
                     // Decode font table
                     using BinaryReader fontReader = new(new MemoryStream(data));
-                    //fontReader.BaseStream.Seek(0, SeekOrigin.Begin);
 
                     string fontMagic = Encoding.ASCII.GetString(fontReader.ReadBytes(4));
                     Debug.Assert(fontMagic == "SpFt");
@@ -122,16 +121,14 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
                     short unknown24 = fontReader.ReadInt16();
                     short unknown26 = fontReader.ReadInt16();
                     int unknownAddressListAddress = fontReader.ReadInt32();
-                    int unknown2C = fontReader.ReadInt32(); // Padding?
 
                     // Read enabled/disabled glyph list
                     // These are single-bit flags, 1 or 0 to indicate that
                     // any given glyph is present or not present in the font, respectively.
                     List<bool> glyphFlags = new();
-
                     // Always round up to the nearest full byte
                     int glyphFlagByteCount = (int)Math.Ceiling(potentialGlyphCount / 8m);
-                    for (int gNum = 0; gNum < glyphFlagByteCount; ++gNum)
+                    for (int flagNum = 0; flagNum < glyphFlagByteCount; ++flagNum)
                     {
                         byte b = fontReader.ReadByte();
                         for (int i = 0; i < 8; ++i)
@@ -141,6 +138,32 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
                             glyphFlags.Add(((b >> i) & 1) > 0);
                         }
                     }
+
+                    // Read glyph group offset list
+                    fontReader.BaseStream.Seek(glyphOffsetListAddress, SeekOrigin.Begin);
+                    List<int> glyphGroupOffsets = new();
+                    // Each offset is a 32-bit int, so it applies to each group of 32 glyphs
+                    int glyphGroupCount = (int)Math.Ceiling(glyphFlagByteCount / 4m);
+                    for (int groupNum = 0; groupNum < glyphGroupCount; ++groupNum)
+                    {
+                        glyphGroupOffsets.Add(fontReader.ReadInt32());
+                    }
+
+                    // With this information, build a list of all glyphs present in the font
+                    List<char> glyphsPresent = new();
+                    for (int glyphNum = 0; glyphNum < glyphFlags.Count; ++glyphNum)
+                    {
+                        //int groupOffset = glyphGroupOffsets[glyphNum / 32];
+
+                        if (glyphFlags[glyphNum])
+                        {
+                            glyphsPresent.Add(Encoding.Unicode.GetChars(BitConverter.GetBytes(glyphNum)).First());
+                            Console.WriteLine(glyphsPresent.Last());
+                        }
+                    }
+
+                    // Read bounding box data
+                    fontReader.BaseStream.Seek(boundingBoxListAddress, SeekOrigin.Begin);
 
                     Debugger.Break();
                 }
