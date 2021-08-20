@@ -39,10 +39,16 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
         Indexed8 = 0x1A,
         BPTC = 0x1C
     }
-    
-    public struct FontGlyphData
-    {
 
+    public struct GlyphBoundingBox
+    {
+        public short XPos;
+        public short YPos;
+        public byte Width;
+        public byte Height;
+        public byte PadLeft;
+        public byte PadRight;
+        public byte PadTop;
     }
 
     /// <summary>
@@ -62,7 +68,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
         public string TextureFilename;
 
         public List<byte[]> TextureData = new();
-        public List<FontGlyphData>? FontGlyphs = null;
+        public Dictionary<char, GlyphBoundingBox>? FontGlyphs = null;
 
         public TxrBlock(byte[] mainData, byte[] subData, Stream? inputSrdvStream)
         {
@@ -103,8 +109,6 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             {
                 if (name == "font_table")
                 {
-                    FontGlyphs = new();
-
                     // Decode font table
                     using BinaryReader fontReader = new(new MemoryStream(data));
 
@@ -139,7 +143,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
                         }
                     }
 
-                    // Read glyph group offset list
+                    // Read glyph group offset list (possibly unnecessary, this table might only be used by the game engine)
                     fontReader.BaseStream.Seek(glyphOffsetListAddress, SeekOrigin.Begin);
                     List<int> glyphGroupOffsets = new();
                     // Each offset is a 32-bit int, so it applies to each group of 32 glyphs
@@ -154,16 +158,40 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
                     for (int glyphNum = 0; glyphNum < glyphFlags.Count; ++glyphNum)
                     {
                         //int groupOffset = glyphGroupOffsets[glyphNum / 32];
-
-                        if (glyphFlags[glyphNum])
-                        {
-                            glyphsPresent.Add(Encoding.Unicode.GetChars(BitConverter.GetBytes(glyphNum)).First());
-                            Console.WriteLine(glyphsPresent.Last());
-                        }
+                        if (glyphFlags[glyphNum]) glyphsPresent.Add(Encoding.Unicode.GetChars(BitConverter.GetBytes(glyphNum)).First());
                     }
+                    // Debug only: output a Unicode text file with all glyphs in the font
+#if DEBUG
+                    using StreamWriter debugGlyphWriter = new(new FileStream("glyph_debug.txt", FileMode.Create), Encoding.UTF8);
+                    for (int g = 0; g < glyphsPresent.Count; ++g)
+                    {
+                        debugGlyphWriter.Write(glyphsPresent[g]);
+                        if (g % 80 == 0 && g != 0) debugGlyphWriter.WriteLine();
+                    }
+#endif
 
                     // Read bounding box data
                     fontReader.BaseStream.Seek(boundingBoxListAddress, SeekOrigin.Begin);
+                    FontGlyphs = new();
+                    foreach (char glyph in glyphsPresent)
+                    {
+                        GlyphBoundingBox bb;
+
+                        byte b1, b2, b3;
+                        b1 = fontReader.ReadByte();
+                        b2 = fontReader.ReadByte();
+                        b3 = fontReader.ReadByte();
+
+                        bb.XPos = (short)(((b2 & 0x0F) << 8) | b1);
+                        bb.YPos = (short)((b3 << 4) | ((b2 & 0xF0) >> 4));
+                        bb.Width = fontReader.ReadByte();
+                        bb.Height = fontReader.ReadByte();
+                        bb.PadLeft = fontReader.ReadByte();
+                        bb.PadRight = fontReader.ReadByte();
+                        bb.PadTop = fontReader.ReadByte();
+
+                        FontGlyphs.Add(glyph, bb);
+                    }
 
                     Debugger.Break();
                 }
