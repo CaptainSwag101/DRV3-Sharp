@@ -27,83 +27,6 @@ namespace DRV3_Sharp.Formats.Text.STX
         private const string CONST_FILE_MAGIC = "STXT";
         private const string CONST_LANG_MAGIC = "JPLL";
 
-        public static void Serialize(StxData inputData, Stream outputStream)
-        {
-            using BinaryWriter writer = new(outputStream, Encoding.ASCII, true);
-
-            writer.Write(Encoding.ASCII.GetBytes(CONST_FILE_MAGIC));
-            writer.Write(Encoding.ASCII.GetBytes(CONST_LANG_MAGIC));
-
-            writer.Write(inputData.Tables.Count);
-            writer.Write((int)0);   // tableOffset, to be written later
-
-            // Write table info
-            foreach (var table in inputData.Tables)
-            {
-                writer.Write(table.UnknownData);
-                writer.Write(table.Strings.Count);
-                writer.Write((ulong)0); // Pad to nearest 16-byte boundary
-            }
-
-            // Write tableOffset
-            long lastPos = writer.BaseStream.Position;
-            writer.BaseStream.Seek(0x0C, SeekOrigin.Begin);
-            writer.Write((int)lastPos);
-            writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
-
-            // Write temporary padding for string IDs/offset
-            foreach (var table in inputData.Tables)
-            {
-                writer.Write(new byte[(8 * table.Strings.Count)]);
-            }
-
-            // Write string data & corresponding ID/offset pair
-            long infoPairPos = lastPos;
-            foreach (var table in inputData.Tables)
-            {
-                uint strId = 0;
-                List<(int, string)> writtenStrings = new();
-                foreach (string str in table.Strings)
-                {
-                    // De-duplicate strings by re-using offsets
-                    int foundOffset = -1;
-                    foreach (var (offset, text) in writtenStrings)
-                    {
-                        if (text == str)
-                        {
-                            foundOffset = offset;
-                            break;
-                        }
-                    }
-
-                    // Write ID/offset pair
-                    int latestPos = (int)writer.BaseStream.Position;
-
-                    int strPos;
-                    if (foundOffset >= 0)
-                        strPos = foundOffset;
-                    else
-                        strPos = latestPos;
-
-                    writer.BaseStream.Seek(infoPairPos, SeekOrigin.Begin);
-                    writer.Write(strId++);
-                    writer.Write(strPos);
-                    writer.BaseStream.Seek(latestPos, SeekOrigin.Begin);
-
-                    // Increment infoPairPos 8 bytes to next entry position
-                    infoPairPos += 8;
-
-                    // Write string data if there are no existing duplicates
-                    if (foundOffset < 0)
-                    {
-                        byte[] strData = Encoding.Unicode.GetBytes(str);
-                        writer.Write(strData);
-                        writer.Write((ushort)0);
-                    }
-                }
-            }
-        }
-
         public static void Deserialize(Stream inputStream, out StxData outputData)
         {
             using BinaryReader reader = new(inputStream, Encoding.ASCII, true);
@@ -153,6 +76,83 @@ namespace DRV3_Sharp.Formats.Text.STX
                 }
 
                 outputData.Tables.Add(new StringTable(unknown, strings));
+            }
+        }
+
+        public static void Serialize(StxData inputData, Stream outputStream)
+        {
+            using BinaryWriter writer = new(outputStream, Encoding.ASCII, true);
+
+            writer.Write(Encoding.ASCII.GetBytes(CONST_FILE_MAGIC));
+            writer.Write(Encoding.ASCII.GetBytes(CONST_LANG_MAGIC));
+
+            writer.Write(inputData.Tables.Count);
+            writer.Write((int)0);   // tableOffset, to be written later
+
+            // Write table info
+            foreach (var table in inputData.Tables)
+            {
+                writer.Write(table.UnknownData);
+                writer.Write(table.Strings.Count);
+                writer.Write((ulong)0); // Pad to nearest 16-byte boundary
+            }
+
+            // Write tableOffset
+            long lastPos = writer.BaseStream.Position;
+            writer.BaseStream.Seek(0x0C, SeekOrigin.Begin);
+            writer.Write((int)lastPos);
+            writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
+
+            // Write temporary padding for string IDs/offset
+            foreach (var table in inputData.Tables)
+            {
+                writer.Write(new byte[(8 * table.Strings.Count)]);  // (4 * 2) bytes per string entry
+            }
+
+            // Write string data & corresponding ID/offset pair
+            long infoPairPos = lastPos;
+            foreach (var table in inputData.Tables)
+            {
+                uint strId = 0;
+                List<(int, string)> writtenStrings = new();
+                foreach (string str in table.Strings)
+                {
+                    // De-duplicate strings by re-using offsets
+                    int? foundOffset = null;
+                    foreach (var (offset, text) in writtenStrings)
+                    {
+                        if (text == str)
+                        {
+                            foundOffset = offset;
+                            break;
+                        }
+                    }
+
+                    int latestPos = (int)writer.BaseStream.Position;
+
+                    int strPos;
+                    if (foundOffset is not null)
+                        strPos = (int)foundOffset;
+                    else
+                        strPos = latestPos;
+
+                    // Write ID/offset pair
+                    writer.BaseStream.Seek(infoPairPos, SeekOrigin.Begin);
+                    writer.Write(strId++);
+                    writer.Write(strPos);
+                    writer.BaseStream.Seek(latestPos, SeekOrigin.Begin);
+
+                    // Increment infoPairPos 8 bytes to next entry position
+                    infoPairPos += 8;
+
+                    // Write string data if there are no existing duplicates
+                    if (foundOffset is null)
+                    {
+                        byte[] strData = Encoding.Unicode.GetBytes(str);
+                        writer.Write(strData);
+                        writer.Write((ushort)0);
+                    }
+                }
             }
         }
     }
