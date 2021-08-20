@@ -26,12 +26,12 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
 {
     record MatBlock : ISrdBlock
     {
-        public uint Unknown10;
-        public float Unknown14;
-        public float Unknown18;
-        public float Unknown1C;
-        public ushort Unknown20;
-        public ushort Unknown22;
+        public uint Unknown00;
+        public float Unknown04;
+        public float Unknown08;
+        public float Unknown0C;
+        public ushort Unknown10;
+        public ushort Unknown12;
         public List<(string, string)> MapTexturePairs = new();
         public List<(string Name, byte[] Data)> ExtraMaterialInfo = new();
         public string MaterialName;
@@ -42,12 +42,12 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             // Read main data
             using BinaryReader reader = new(new MemoryStream(mainData));
 
-            Unknown10 = reader.ReadUInt32();
-            Unknown14 = reader.ReadSingle();
-            Unknown18 = reader.ReadSingle();
-            Unknown1C = reader.ReadSingle();
-            Unknown20 = reader.ReadUInt16();
-            Unknown22 = reader.ReadUInt16();
+            Unknown00 = reader.ReadUInt32();
+            Unknown04 = reader.ReadSingle();
+            Unknown08 = reader.ReadSingle();
+            Unknown0C = reader.ReadSingle();
+            Unknown10 = reader.ReadUInt16();
+            Unknown12 = reader.ReadUInt16();
             ushort stringMapStart = reader.ReadUInt16();
             ushort stringMapCount = reader.ReadUInt16();
 

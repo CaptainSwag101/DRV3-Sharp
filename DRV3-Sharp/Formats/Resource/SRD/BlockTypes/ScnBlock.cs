@@ -1,4 +1,21 @@
-﻿using System;
+﻿/*
+    DRV3-Sharp, a free and open-source toolkit
+    for working with files and assets from Danganronpa V3.
+
+    Copyright (C) 2020-2021  James Pelster
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -9,7 +26,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
 {
     record ScnBlock : ISrdBlock
     {
-        public uint Unknown10;
+        public uint Unknown00;
         public List<string> SceneRootNodes = new();
         public List<string> UnknownStrings = new();
         public string SceneName;
@@ -21,7 +38,7 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             // Read main data
             using BinaryReader reader = new(new MemoryStream(mainData));
 
-            Unknown10 = reader.ReadUInt32();
+            Unknown00 = reader.ReadUInt32();
             ushort sceneRootNodeIndexOffset = reader.ReadUInt16();
             ushort sceneRootNodeIndexCount = reader.ReadUInt16();
             ushort unknownStringIndexOffset = reader.ReadUInt16();

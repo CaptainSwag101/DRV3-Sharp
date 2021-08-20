@@ -41,17 +41,18 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
     {
         // Header data
         public int VectorCount;   // Likely the number of half-float triplets in the "float list"
-        public short Unknown14;
+        public short Unknown04;
         public short MeshType;
         public int VertexCount;
-        public short Unknown1C;
-        public byte Unknown1E;
-        public uint Unknown28;
+        public short Unknown0C;
+        public byte Unknown0E;
+        public uint Unknown18;
         public List<short> UnknownShortList;
         public List<VertexDataSection> VertexDataSections;
         public short BindBoneRoot;
         public List<string> BindBoneList;
         public List<float> UnknownFloatList;
+        public string VertexGroupName;
 
         // Geometry data
         public List<Vector3> Vertices = new();
@@ -66,17 +67,17 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             using BinaryReader reader = new(new MemoryStream(mainData));
 
             VectorCount = reader.ReadInt32();
-            Unknown14 = reader.ReadInt16();
+            Unknown04 = reader.ReadInt16();
             MeshType = reader.ReadInt16();
             VertexCount = reader.ReadInt32();
-            Unknown1C = reader.ReadInt16();
-            Unknown1E = reader.ReadByte();
+            Unknown0C = reader.ReadInt16();
+            Unknown0E = reader.ReadByte();
             byte vertexSubBlockCount = reader.ReadByte();
             ushort bindBoneRootOffset = reader.ReadUInt16();
             ushort vertexSubBlockListOffset = reader.ReadUInt16();
             ushort unknownFloatListOffset = reader.ReadUInt16();
             ushort bindBoneListOffset = reader.ReadUInt16();
-            Unknown28 = reader.ReadUInt32();
+            Unknown18 = reader.ReadUInt32();
             Utils.SkipToNearest(reader, 16);
 
             // Read unknown list of shorts
@@ -131,6 +132,12 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             BlockSerializer.Deserialize(subBlockStream, null, inputSrdiStream, out ISrdBlock block);
             if (block is RsiBlock) rsi = (RsiBlock)block;
             else throw new InvalidDataException("The first sub-block was not an RSI block.");
+
+            // Read vertex group name reference
+            if (rsi.ResourceStrings.Count > 0)
+                VertexGroupName = rsi.ResourceStrings[0];
+            else
+                throw new InvalidDataException("The VTX's resource sub-block did not contain the vertex group name.");
 
             // Extract geometry data
             using BinaryReader geometryReader = new(new MemoryStream(rsi.ExternalResourceData[0].Data));

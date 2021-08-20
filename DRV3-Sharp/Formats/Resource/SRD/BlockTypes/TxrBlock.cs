@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -38,36 +39,43 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
         Indexed8 = 0x1A,
         BPTC = 0x1C
     }
+    
+    public struct FontGlyphData
+    {
+
+    }
 
     /// <summary>
     /// Texture Resource Block
     /// </summary>
     record TxrBlock : ISrdBlock
     {
-        public int Unknown10;
+        public int Unknown00;
         public ushort Swizzle;
         public ushort DisplayWidth;
         public ushort DisplayHeight;
         public ushort Scanline;
         public TextureFormat Format;
-        public byte Unknown1D;
+        public byte Unknown0D;
         public byte Palette;
         public byte PaletteId;
         public string TextureFilename;
+
         public List<byte[]> TextureData = new();
+        public List<FontGlyphData>? FontGlyphs = null;
 
         public TxrBlock(byte[] mainData, byte[] subData, Stream? inputSrdvStream)
         {
             // Read main data
             using BinaryReader reader = new(new MemoryStream(mainData));
 
-            Unknown10 = reader.ReadInt32();
+            Unknown00 = reader.ReadInt32();
             Swizzle = reader.ReadUInt16();
             DisplayWidth = reader.ReadUInt16();
             DisplayHeight = reader.ReadUInt16();
             Scanline = reader.ReadUInt16();
             Format = (TextureFormat)reader.ReadByte();
-            Unknown1D = reader.ReadByte();
+            Unknown0D = reader.ReadByte();
             Palette = reader.ReadByte();
             PaletteId = reader.ReadByte();
 
@@ -85,10 +93,57 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
                 throw new InvalidDataException("The TXR's resource sub-block did not contain the texture filename.");
 
             // Read texture/mipmap data
-            foreach (var externalData in rsi.ExternalResourceData)
+            foreach (var (data, location) in rsi.ExternalResourceData)
             {
-                if (externalData.Location == ResourceDataLocation.Srdv)
-                    TextureData.Add(externalData.Data);
+                if (location == ResourceDataLocation.Srdv) TextureData.Add(data);
+            }
+
+            // Read font table, if present
+            foreach (var (name, data) in rsi.LocalResourceData)
+            {
+                if (name == "font_table")
+                {
+                    FontGlyphs = new();
+
+                    // Decode font table
+                    using BinaryReader fontReader = new(new MemoryStream(data));
+                    //fontReader.BaseStream.Seek(0, SeekOrigin.Begin);
+
+                    string fontMagic = Encoding.ASCII.GetString(fontReader.ReadBytes(4));
+                    Debug.Assert(fontMagic == "SpFt");
+                    int unknown04 = fontReader.ReadInt32();
+                    int potentialGlyphCount = fontReader.ReadInt32();
+                    int unknown0C = fontReader.ReadInt32(); // Starting glyph ID?
+                    int fontNameAddress = fontReader.ReadInt32();
+                    int unknown14 = fontReader.ReadInt32();
+                    int boundingBoxListAddress = fontReader.ReadInt32();
+                    int unknown1C = fontReader.ReadInt32();
+                    int glyphOffsetListAddress = fontReader.ReadInt32();
+                    short unknown24 = fontReader.ReadInt16();
+                    short unknown26 = fontReader.ReadInt16();
+                    int unknownAddressListAddress = fontReader.ReadInt32();
+                    int unknown2C = fontReader.ReadInt32(); // Padding?
+
+                    // Read enabled/disabled glyph list
+                    // These are single-bit flags, 1 or 0 to indicate that
+                    // any given glyph is present or not present in the font, respectively.
+                    List<bool> glyphFlags = new();
+
+                    // Always round up to the nearest full byte
+                    int glyphFlagByteCount = (int)Math.Ceiling(potentialGlyphCount / 8m);
+                    for (int gNum = 0; gNum < glyphFlagByteCount; ++gNum)
+                    {
+                        byte b = fontReader.ReadByte();
+                        for (int i = 0; i < 8; ++i)
+                        {
+                            if (glyphFlags.Count >= potentialGlyphCount) break;
+
+                            glyphFlags.Add(((b >> i) & 1) > 0);
+                        }
+                    }
+
+                    Debugger.Break();
+                }
             }
         }
     }

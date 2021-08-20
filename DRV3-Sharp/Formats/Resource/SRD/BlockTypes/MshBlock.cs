@@ -26,14 +26,14 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
 {
     record MshBlock : ISrdBlock
     {
-        public uint Unknown10;
-        public ushort Unknown1A;
-        public ushort Unknown1C;
+        public uint Unknown00;
+        public ushort Unknown0A;
+        public ushort Unknown0C;
         public ushort StringMapDataAlmostEndOffset;
-        public byte Unknown20;
-        public byte Unknown21;
-        public byte Unknown22;
-        public byte Unknown23;
+        public byte Unknown10;
+        public byte Unknown11;
+        public byte Unknown12;
+        public byte Unknown13;
         public string MeshName;
         public string VertexBlockName;
         public string MaterialNameReference;
@@ -44,17 +44,17 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
         {
             using BinaryReader reader = new(new MemoryStream(mainData));
 
-            Unknown10 = reader.ReadUInt32();
+            Unknown00 = reader.ReadUInt32();
             ushort vertexBlockNameOffset = reader.ReadUInt16();
             ushort materialNameOffset = reader.ReadUInt16();
             ushort unknownStringOffset = reader.ReadUInt16();
-            Unknown1A = reader.ReadUInt16();
-            Unknown1C = reader.ReadUInt16();
+            Unknown0A = reader.ReadUInt16();
+            Unknown0C = reader.ReadUInt16();
             StringMapDataAlmostEndOffset = reader.ReadUInt16();
-            Unknown20 = reader.ReadByte();
-            Unknown21 = reader.ReadByte();
-            Unknown22 = reader.ReadByte();
-            Unknown23 = reader.ReadByte();
+            Unknown10 = reader.ReadByte();
+            Unknown11 = reader.ReadByte();
+            Unknown12 = reader.ReadByte();
+            Unknown13 = reader.ReadByte();
 
             // Read string mapping offsets
             while (reader.BaseStream.Position < (StringMapDataAlmostEndOffset + 4))

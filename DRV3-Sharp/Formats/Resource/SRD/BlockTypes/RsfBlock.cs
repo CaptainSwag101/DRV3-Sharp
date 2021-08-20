@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -26,20 +27,20 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
 {
     record RsfBlock : ISrdBlock
     {
-        public int Unknown00;
-        public int Unknown04;
-        public int Unknown08;
-        public int Unknown0C;
         public string FolderName;
 
         public RsfBlock(byte[] mainData)
         {
             using BinaryReader reader = new(new MemoryStream(mainData));
 
-            Unknown00 = reader.ReadInt32();
-            Unknown04 = reader.ReadInt32();
-            Unknown08 = reader.ReadInt32();
-            Unknown0C = reader.ReadInt32();
+            int unknown00 = reader.ReadInt32();
+            Debug.Assert(unknown00 == 16);
+            int unknown04 = reader.ReadInt32();
+            Debug.Assert(unknown04 == 20110331);
+            int unknown08 = reader.ReadInt32();
+            Debug.Assert(unknown08 == 20110401);
+            int unknown0C = reader.ReadInt32();
+            Debug.Assert(unknown0C == 0);
             FolderName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
         }
     }

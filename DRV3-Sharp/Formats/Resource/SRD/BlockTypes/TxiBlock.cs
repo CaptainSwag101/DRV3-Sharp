@@ -32,7 +32,10 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
         public int Unknown00;
         public int Unknown04;
         public int Unknown08;
-        public byte[] Unknown0C;
+        public byte Unknown0C;
+        public byte Unknown0D;
+        public byte Unknown0E;
+        public byte Unknown0F;
         public int Unknown10;
         public string TextureFilenameReference;
         public string MaterialNameReference;
@@ -45,7 +48,10 @@ namespace DRV3_Sharp.Formats.Resource.SRD.BlockTypes
             Unknown00 = reader.ReadInt32();
             Unknown04 = reader.ReadInt32();
             Unknown08 = reader.ReadInt32();
-            Unknown0C = reader.ReadBytes(4);
+            Unknown0C = reader.ReadByte();
+            Unknown0D = reader.ReadByte();
+            Unknown0E = reader.ReadByte();
+            Unknown0F = reader.ReadByte();
             Unknown10 = reader.ReadInt32();
             TextureFilenameReference = Utils.ReadNullTerminatedString(reader, Encoding.GetEncoding("shift-jis"));
 
