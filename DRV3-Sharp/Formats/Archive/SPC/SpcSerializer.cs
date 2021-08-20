@@ -41,7 +41,8 @@ namespace DRV3_Sharp.Formats.Archive.SPC
             int unknown2 = reader.ReadInt32();
             reader.BaseStream.Seek(0x10, SeekOrigin.Current);
 
-            outputData = new(unknown1, unknown2);
+            outputData = new();
+            outputData.Unknown2C = unknown2;
 
             string tableHeader = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (tableHeader != CONST_TABLE_HEADER) throw new InvalidDataException($"Invalid file table header, expected {CONST_TABLE_HEADER} but got {tableHeader}.");
@@ -74,9 +75,16 @@ namespace DRV3_Sharp.Formats.Archive.SPC
             using BinaryWriter writer = new(outputStream, Encoding.ASCII, true);
 
             writer.Write(Encoding.ASCII.GetBytes(CONST_FILE_MAGIC));
-            writer.Write(inputData.UnknownData1);
+            // Write unknown data 1 (24 bytes, possibly padding?)
+            writer.Write((int)0);
+            byte[] padding1 = new byte[8];
+            Array.Fill<byte>(padding1, 0xFF);
+            byte[] padding2 = new byte[0x18];
+            Array.Fill<byte>(padding2, 0x00);
+            writer.Write(padding1);
+            writer.Write(padding2);
             writer.Write(inputData.FileCount);
-            writer.Write(inputData.UnknownData2);
+            writer.Write(inputData.Unknown2C);
             writer.Write(new byte[0x10]);
             writer.Write(Encoding.ASCII.GetBytes(CONST_TABLE_HEADER));
             writer.Write(new byte[0x0C]);
