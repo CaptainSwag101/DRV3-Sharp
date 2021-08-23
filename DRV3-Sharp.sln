@@ -1,9 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31320.298
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31612.314
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DRV3-Sharp", "DRV3-Sharp\DRV3-Sharp.csproj", "{3ADDC2C2-D71B-465C-BE52-E9700EE48047}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DRV3-Sharp", "DRV3-Sharp\DRV3-Sharp.csproj", "{3ADDC2C2-D71B-465C-BE52-E9700EE48047}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DRV3-Sharp-Library", "DRV3-Sharp-Library\DRV3-Sharp-Library.csproj", "{85F3BBA2-96DF-47FE-8C6E-5DC4971710E4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{3ADDC2C2-D71B-465C-BE52-E9700EE48047}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3ADDC2C2-D71B-465C-BE52-E9700EE48047}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3ADDC2C2-D71B-465C-BE52-E9700EE48047}.Release|Any CPU.Build.0 = Release|Any CPU
+		{85F3BBA2-96DF-47FE-8C6E-5DC4971710E4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{85F3BBA2-96DF-47FE-8C6E-5DC4971710E4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{85F3BBA2-96DF-47FE-8C6E-5DC4971710E4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{85F3BBA2-96DF-47FE-8C6E-5DC4971710E4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
