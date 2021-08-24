@@ -81,11 +81,5 @@ namespace DRV3_Sharp_Library
         {
             return x + (x % multipleOf);
         }
-
-        public static byte[] SwapEndian(byte[] bytes)
-        {
-            Array.Reverse(bytes);
-            return bytes;
-        }
     }
 }
