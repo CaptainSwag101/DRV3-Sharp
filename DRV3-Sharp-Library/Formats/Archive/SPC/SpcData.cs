@@ -55,7 +55,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                 else
                     Console.WriteLine($"Compression resulted in a larger or equal data size! Storing as uncompressed. ({compressedData.Length} >= {data.Length})");
 
-                Files.Add(name, new ArchivedFile(data, unknownFlag, false, data.Length));
+                Files.Add(name, new ArchivedFile(data, unknownFlag, preCompressed, data.Length));
             }
             else
             {

@@ -32,7 +32,23 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
             using BinaryReader reader = new(inputStream, Encoding.ASCII, true);
 
             string fileMagic = Encoding.ASCII.GetString(reader.ReadBytes(4));
-            if (fileMagic == CONST_VITA_COMPRESSED_MAGIC) throw new NotImplementedException("Files from the PS Vita version are not currently supported.");
+            if (fileMagic == CONST_VITA_COMPRESSED_MAGIC)
+            {
+                // For Vita files, do Vita decompression and then recursively decompress,
+                // then short-circuit and return for convenience.
+                reader.BaseStream.Seek(0, SeekOrigin.Begin);
+                byte[] vitaData = reader.ReadBytes((int)reader.BaseStream.Length);
+                byte[] fixedData = SpcCompressor.VitaDecompressWhole(vitaData);
+
+                //using FileStream testVitaPartialOutput = new("vitaOutputTest.spc", FileMode.Create);
+                //testVitaPartialOutput.Write(fixedData);
+                //testVitaPartialOutput.Flush();
+                //testVitaPartialOutput.Close();
+
+                using MemoryStream fixedStream = new(fixedData);
+                Deserialize(fixedStream, out outputData);
+                return;
+            }
             if (fileMagic != CONST_FILE_MAGIC) throw new InvalidDataException($"Invalid file magic, expected {CONST_FILE_MAGIC} but got {fileMagic}.");
 
             byte[] unknown1 = reader.ReadBytes(0x24);

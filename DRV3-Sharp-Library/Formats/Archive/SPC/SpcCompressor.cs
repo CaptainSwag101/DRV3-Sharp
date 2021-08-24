@@ -16,7 +16,10 @@
 */
 
 using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 
 namespace DRV3_Sharp_Library.Formats.Archive.SPC
 {
@@ -184,6 +187,83 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
             }
 
             return compressedData.ToArray();
+        }
+
+        public static byte[] VitaDecompressWhole(byte[] compressedData)
+        {
+            List<byte> decompressedData = new();
+
+            using BinaryReader reader = new(new MemoryStream(compressedData));
+            _ = reader.ReadBytes(4);    // Magic value, $CMP
+            int compressedSize = BinaryPrimitives.ReverseEndianness(reader.ReadInt32());
+            _ = reader.ReadBytes(8);
+            int decompressedSize = BinaryPrimitives.ReverseEndianness(reader.ReadInt32());
+            int compressedSize2 = BinaryPrimitives.ReverseEndianness(reader.ReadInt32());
+            _ = reader.ReadBytes(4);
+            int unknown = BinaryPrimitives.ReverseEndianness(reader.ReadInt32());
+
+            while (true)
+            {
+                string compressionMode = Encoding.ASCII.GetString(reader.ReadBytes(4));
+
+                if (!compressionMode.StartsWith("$CL") && compressionMode != "$CR0") break;
+
+                int chunkDecompressedSize = BinaryPrimitives.ReverseEndianness(reader.ReadInt32());
+                int chunkCompressedSize = BinaryPrimitives.ReverseEndianness(reader.ReadInt32());
+                _ = reader.ReadBytes(4);
+
+                byte[] chunkData = reader.ReadBytes(chunkCompressedSize - 0x10);
+
+                // $CR0 means uncompressed
+                if (compressionMode != "$CR0")
+                    chunkData = VitaDecompressChunk(chunkData, compressionMode);
+
+                decompressedData.AddRange(chunkData);
+            }
+
+            return decompressedData.ToArray();
+        }
+
+        private static byte[] VitaDecompressChunk(byte[] chunkData, string compressionMode)
+        {
+            List<byte> decompressedChunk = new();
+
+            int processedBytes = 0;
+
+            int shift;
+            if (compressionMode == "$CLN") shift = 8;
+            else if (compressionMode == "$CL1") shift = 7;
+            else if (compressionMode == "$CL2") shift = 6;
+            else throw new InvalidDataException($"Invalid compression mode {compressionMode}.");
+
+            byte mask = (byte)((byte)(1 << shift) - 1);
+
+            while (processedBytes < chunkData.Length)
+            {
+                byte b = chunkData[processedBytes++];
+
+                if ((b & 1) > 0)
+                {
+                    // Read from buffer
+                    int count = (b & mask) >> 1;
+                    int offset = ((b >> shift) << 8) | chunkData[processedBytes++];
+
+                    // Duplicate the last {count} bytes starting at {offset}
+                    for (int i = 0; i < count; ++i)
+                    {
+                        decompressedChunk.Add(decompressedChunk[^offset]);
+                    }
+                }
+                else
+                {
+                    // Raw bytes
+                    int count = (b >> 1);
+                    decompressedChunk.AddRange(chunkData[processedBytes..(processedBytes + count)]);
+                    processedBytes += count;
+                }
+            }
+
+            return decompressedChunk.ToArray();
         }
 
         // The 4-step method seems to be faster than the 3-step method slightly
