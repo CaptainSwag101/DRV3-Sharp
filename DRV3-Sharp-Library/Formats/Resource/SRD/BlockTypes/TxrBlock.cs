@@ -192,8 +192,6 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 
                         FontGlyphs.Add(glyph, bb);
                     }
-
-                    Debugger.Break();
                 }
             }
         }

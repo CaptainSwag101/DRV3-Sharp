@@ -56,8 +56,6 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
             //List<ISrdBlock> treBlocks = blocks.Where(block => block is TreBlock).ToList();
             //List<ISrdBlock> sklBlocks = blocks.Where(block => block is SklBlock).ToList();
             //List<ISrdBlock> anmBlocks = blocks.Where(block => block is AnmBlock).ToList();
-
-            Debugger.Break();
         }
 
         public static void Serialize(SrdData inputData, Stream outputSrdStream, Stream outputSrdvStream, Stream outputSrdiStream)

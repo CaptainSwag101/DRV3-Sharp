@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using DRV3_Sharp.Operators;
 using DRV3_Sharp_Library.Formats;
 using DRV3_Sharp_Library.Formats.Archive.SPC;
 using DRV3_Sharp_Library.Formats.Resource.SRD;
@@ -41,7 +42,33 @@ namespace DRV3_Sharp
         {
             if (type is null) type = ProgramUtils.DeduceTypeFromPath(path);
 
-            Console.WriteLine($"(PLACEHOLDER) Pretending to create file of type {type} at {path}.");
+            Console.WriteLine($"Attempting to create file of type {type} at {path}.");
+
+            Program.SetUnsavedChanges(true);
+
+            switch (type)
+            {
+                case "spc":
+                    {
+                        SpcData created = new();
+                        Program.LoadData(created, path);
+                        break;
+                    }
+
+                case "stx":
+                    {
+                        StxData created = new();
+                        Program.LoadData(created, path);
+                        break;
+                    }
+
+                case "srd":
+                    {
+                        SrdData created = new();
+                        Program.LoadData(created, path);
+                        break;
+                    }
+            }
         }
 
         [ArgActionMethod, ArgDescription("Opens the file at the specified path, with an optionally-specified format, and prompts the user to operate on the file.")]
@@ -115,8 +142,10 @@ namespace DRV3_Sharp
 
     class Program
     {
-        private static IDanganV3Data? _loadedData = null;
-        private static string? _loadedDataPath = null;
+        private static IDanganV3Data? loadedData;
+        private static string? loadedDataPath;
+        private static bool unsavedChanges = false;
+        private static bool shouldExit = false;
 
         static void Main(string[] args)
         {
@@ -127,15 +156,98 @@ namespace DRV3_Sharp
             Args.InvokeAction<FileOperations>(args);
         }
 
+        public static IDanganV3Data? GetData()
+        {
+            return loadedData;
+        }
+
         public static void LoadData(IDanganV3Data data, string path)
         {
-            _loadedData = data;
-            _loadedDataPath = path;
+            loadedData = data;
+            loadedDataPath = path;
 
             // Use PowerArgs to generate prompts to operate on whatever file was loaded
+            if (loadedData is SpcData)
+            {
+                while (!shouldExit)
+                {
+                    Args.InvokeAction<SpcOperator>("-?");
+                    string currentCommand = Console.ReadLine()!;
+                    Args.InvokeAction<SpcOperator>(currentCommand);
+                }
+            }
+            else if (loadedData is StxData)
+            {
+                while (!shouldExit)
+                {
+                    Args.InvokeAction<StxOperator>("-?");
+                    string currentCommand = Console.ReadLine()!;
+                    Args.InvokeAction<StxOperator>(currentCommand);
+                }
+            }
+            else if (loadedData is SrdData)
+            {
+                while (!shouldExit)
+                {
+                    Args.InvokeAction<SrdOperator>("-?");
+                    string currentCommand = Console.ReadLine()!;
+                    Args.InvokeAction<SrdOperator>(currentCommand);
+                }
+            }
+        }
 
+        public static void SaveData()
+        {
+            if (loadedData is null) throw new InvalidOperationException($"The current file data is null.");
+            if (loadedDataPath is null) throw new InvalidOperationException($"The current file path is null.");
 
-            Debugger.Break();
+            using FileStream fs = new(loadedDataPath, FileMode.Create);
+
+            if (loadedData is SpcData)
+            {
+                SpcSerializer.Serialize((SpcData)loadedData, fs);
+            }
+            else if (loadedData is StxData)
+            {
+                StxSerializer.Serialize((StxData)loadedData, fs);
+            }
+            else if (loadedData is SrdData)
+            {
+                // If the file doesn't end in .srd, make a secondary path that does so we can compute the accompanying file names correctly
+                string srdPathCorrectedExt = Path.ChangeExtension(loadedDataPath, "srd")!;
+
+                FileStream srdvStream = new(srdPathCorrectedExt + 'v', FileMode.Create);
+                FileStream srdiStream = new(srdPathCorrectedExt + 'i', FileMode.Create);
+
+                SrdSerializer.Serialize((SrdData)loadedData, fs, srdvStream, srdiStream);
+            }
+
+            SetUnsavedChanges(false);
+        }
+
+        public static void SetUnsavedChanges(bool state)
+        {
+            unsavedChanges = state;
+        }
+
+        public static void PrepareToExit()
+        {
+            if (unsavedChanges)
+            {
+                string? response = null;
+                while (true)
+                {
+                    Console.Write("There are unsaved changes! Are you sure you want to exit? (Y/N) ");
+                    response = Console.ReadLine()!.ToLowerInvariant();
+
+                    if (response.StartsWith('n'))
+                        return;
+                    else if (response.StartsWith('y'))
+                        break;
+                }
+            }
+
+            shouldExit = true;
         }
     }
 }
