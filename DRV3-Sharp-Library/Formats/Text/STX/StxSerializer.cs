@@ -22,7 +22,7 @@ using System.Text;
 
 namespace DRV3_Sharp_Library.Formats.Text.STX
 {
-    static class StxSerializer
+    public static class StxSerializer
     {
         private const string CONST_FILE_MAGIC = "STXT";
         private const string CONST_LANG_MAGIC = "JPLL";

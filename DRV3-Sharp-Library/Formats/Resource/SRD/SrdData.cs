@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD
 {
-    public class SrdData
+    public class SrdData : IDanganV3Data
     {
         List<AbstractResource> Resources = new();
     }

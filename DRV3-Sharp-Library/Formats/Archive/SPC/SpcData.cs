@@ -23,7 +23,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
 {
     public record ArchivedFile(byte[] Data, short UnknownFlag, bool IsCompressed, int OriginalSize);
 
-    public class SpcData
+    public class SpcData : IDanganV3Data
     {
         public int Unknown2C;
         public int FileCount { get { return Files.Count; } }

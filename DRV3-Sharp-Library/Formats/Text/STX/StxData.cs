@@ -23,9 +23,9 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Text.STX
 {
-    record StringTable(int UnknownData, List<string> Strings);
+    public record StringTable(int UnknownData, List<string> Strings);
 
-    class StxData
+    public class StxData : IDanganV3Data
     {
         public readonly List<StringTable> Tables = new();
 
