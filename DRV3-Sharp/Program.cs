@@ -26,14 +26,6 @@ using System.Text;
 
 namespace DRV3_Sharp
 {
-    static class ProgramUtils
-    {
-        public static string DeduceTypeFromPath(string path)
-        {
-            return Path.GetExtension(path).ToLowerInvariant();
-        }
-    }
-
     class Program
     {
         private static IDanganV3Data? loadedData;
@@ -89,6 +81,11 @@ namespace DRV3_Sharp
             }
 
             SetUnsavedChanges(false);
+        }
+
+        public static string DeduceTypeFromPath(string path)
+        {
+            return Path.GetExtension(path).ToLowerInvariant();
         }
 
         public static void SetUnsavedChanges(bool state)
