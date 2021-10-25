@@ -22,10 +22,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PowerArgs" Version="3.6.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\DRV3-Sharp-Library\DRV3-Sharp-Library.csproj" />
   </ItemGroup>
 
