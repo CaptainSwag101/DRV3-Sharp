@@ -28,110 +28,6 @@ using System.Text;
 
 namespace DRV3_Sharp
 {
-    [ArgExceptionBehavior(ArgExceptionPolicy.StandardExceptionHandling)]
-    public class FileOperations
-    {
-        [HelpHook, ArgShortcut("-?"), ArgDescription("Shows this help")]
-        public bool Help { get; set; }
-
-        [ArgActionMethod, ArgDescription("Creates a new file at the specified path, with an optionally-specified format, and prompts the user to operate on the file.")]
-        public void Create(
-            [ArgRequired, ArgDescription("The file to create.")]string path,
-            [ArgDescription("Overrides the data type inferred from the file extension."), ArgDefaultValue(null)] string? type
-            )
-        {
-            if (type is null) type = ProgramUtils.DeduceTypeFromPath(path);
-
-            Console.WriteLine($"Attempting to create file of type {type} at {path}.");
-
-            Program.SetUnsavedChanges(true);
-
-            switch (type)
-            {
-                case "spc":
-                    {
-                        SpcData created = new();
-                        Program.LoadData(created, path);
-                        break;
-                    }
-
-                case "stx":
-                    {
-                        StxData created = new();
-                        Program.LoadData(created, path);
-                        break;
-                    }
-
-                case "srd":
-                    {
-                        SrdData created = new();
-                        Program.LoadData(created, path);
-                        break;
-                    }
-            }
-        }
-
-        [ArgActionMethod, ArgDescription("Opens the file at the specified path, with an optionally-specified format, and prompts the user to operate on the file.")]
-        public void Open(
-            [ArgRequired, ArgDescription("The file to open."), ArgExistingFile]string path,
-            [ArgDescription("Overrides the data type inferred from the file extension."), ArgDefaultValue(null)]string? type
-            )
-        {
-            if (type is null) type = ProgramUtils.DeduceTypeFromPath(path);
-
-            Console.WriteLine($"Attempting to open file of type {type} at {path}.");
-
-            using FileStream fs = new(path, FileMode.Open);
-
-            switch (type)
-            {
-                case "spc":
-                    {
-                        SpcSerializer.Deserialize(fs, out SpcData loaded);
-                        Program.LoadData(loaded, path);
-                        break;
-                    }
-
-                case "stx":
-                    {
-                        StxSerializer.Deserialize(fs, out StxData loaded);
-                        Program.LoadData(loaded, path);
-                        break;
-                    }
-
-                case "srd":
-                    {
-                        // If the file doesn't end in .srd, make a secondary path that does so we can compute the accompanying file names correctly
-                        string srdPathCorrectedExt = Path.ChangeExtension(path, "srd")!;
-
-                        // Try and open the accompanying resource data files if they are present (not always)
-                        FileStream? srdvStream = null;
-                        try
-                        {
-                            srdvStream = new(srdPathCorrectedExt + 'v', FileMode.Open);
-                        }
-                        catch (FileNotFoundException ex)
-                        { }
-
-                        FileStream? srdiStream = null;
-                        try
-                        {
-                            srdiStream = new(srdPathCorrectedExt + 'i', FileMode.Open);
-                        }
-                        catch (FileNotFoundException ex)
-                        { }
-
-                        SrdSerializer.Deserialize(fs, srdvStream, srdiStream, out SrdData loaded);
-                        srdvStream?.Close();
-                        srdiStream?.Close();
-
-                        Program.LoadData(loaded, path);
-                        break;
-                    }
-            }
-        }
-    }
-
     static class ProgramUtils
     {
         public static string DeduceTypeFromPath(string path)
@@ -152,8 +48,7 @@ namespace DRV3_Sharp
             // Setup text encoding so we can use Shift-JIS encoding for certain files later on
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
-            // Do initial setup
-            Args.InvokeAction<FileOperations>(args);
+            // Do initial startup
         }
 
         public static IDanganV3Data? GetData()
@@ -166,34 +61,7 @@ namespace DRV3_Sharp
             loadedData = data;
             loadedDataPath = path;
 
-            // Use PowerArgs to generate prompts to operate on whatever file was loaded
-            if (loadedData is SpcData)
-            {
-                while (!shouldExit)
-                {
-                    Args.InvokeAction<SpcOperator>("-?");
-                    string currentCommand = Console.ReadLine()!;
-                    Args.InvokeAction<SpcOperator>(currentCommand);
-                }
-            }
-            else if (loadedData is StxData)
-            {
-                while (!shouldExit)
-                {
-                    Args.InvokeAction<StxOperator>("-?");
-                    string currentCommand = Console.ReadLine()!;
-                    Args.InvokeAction<StxOperator>(currentCommand);
-                }
-            }
-            else if (loadedData is SrdData)
-            {
-                while (!shouldExit)
-                {
-                    Args.InvokeAction<SrdOperator>("-?");
-                    string currentCommand = Console.ReadLine()!;
-                    Args.InvokeAction<SrdOperator>(currentCommand);
-                }
-            }
+            // Do stuff for each filetype
         }
 
         public static void SaveData()
