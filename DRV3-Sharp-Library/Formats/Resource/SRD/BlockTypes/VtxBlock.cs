@@ -168,10 +168,13 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
                                 {
                                     //Console.WriteLine($"Mesh type: {MeshType}");
                                     Vector2 texcoord;
+
                                     texcoord.X = float.PositiveInfinity;
                                     texcoord.X = geometryReader.ReadSingle();           // U
                                     while (float.IsNaN(texcoord.X) || !float.IsFinite(texcoord.X))
                                         texcoord.X = geometryReader.ReadSingle();
+
+                                    texcoord.Y = float.PositiveInfinity;
                                     texcoord.Y = geometryReader.ReadSingle();           // V, invert for non-glTF exports
                                     while (float.IsNaN(texcoord.Y) || !float.IsFinite(texcoord.Y))
                                         texcoord.Y = geometryReader.ReadSingle();

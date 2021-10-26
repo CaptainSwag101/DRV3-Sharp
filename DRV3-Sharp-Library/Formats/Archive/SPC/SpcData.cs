@@ -46,13 +46,11 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
             else
                 compressedData = data;
 
-            // If the compressed data is somehow larger or equal to uncompressed data (or is already compressed),
+            // If the compressed data is somehow larger or equal to uncompressed data,
             // save the file as uncompressed. This will save space AND reduce loading times for the game.
             if (preCompressed || compressedData.Length >= data.Length)
             {
-                if (preCompressed)
-                    Console.WriteLine("Data is already compressed, storing as-is.");
-                else
+                if (!preCompressed)
                     Console.WriteLine($"Compression resulted in a larger or equal data size! Storing as uncompressed. ({compressedData.Length} >= {data.Length})");
 
                 Files.Add(name, new ArchivedFile(data, unknownFlag, preCompressed, data.Length));
