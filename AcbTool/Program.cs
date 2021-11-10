@@ -49,6 +49,10 @@ namespace AcbTool
                     using FileStream audioFile = new FileStream(outFilePath, FileMode.Create);
                     audioFile.Write(audioData);
                 }
+                else
+                {
+                    Console.WriteLine($"Cue #{cueNum}, \"{cueValues[cueNum]}\" was not present in the loaded AWB. This may or may not be expected behavior.");
+                }
             }
         }
     }
