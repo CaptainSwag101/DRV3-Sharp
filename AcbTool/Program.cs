@@ -33,7 +33,7 @@ namespace AcbTool
             Directory.CreateDirectory(outputDir);
 
             List<string> cueValues = loadedAcb.Cues.Values.ToList();
-            for (short cueNum = 0; cueNum < loadedAcb.Cues.Count; ++cueNum)
+            for (short cueNum = 0; cueNum < cueValues.Count; ++cueNum)
             {
                 if (loadedAwb.AudioData.ContainsKey(cueNum))
                 {
