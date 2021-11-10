@@ -32,7 +32,6 @@ namespace AcbTool
             string outputDir = info.DirectoryName + Path.DirectorySeparatorChar + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
             Directory.CreateDirectory(outputDir);
 
-            //using FileStream fs = new FileStream(info.FullName + "_cuenames.txt", FileMode.Create);
             List<string> cueValues = loadedAcb.Cues.Values.ToList();
             for (short cueNum = 0; cueNum < loadedAcb.Cues.Count; ++cueNum)
             {
@@ -44,14 +43,13 @@ namespace AcbTool
                     // Guess output file extension
                     if (audioData[0] == 0x80 && audioData[1] == 0x00)
                         outFilePath += ".adx";
-                    else if (audioData[0] == (byte)'H' && audioData[1] == (byte)'C' && (char)audioData[2] == (byte)'A')
+                    else if (audioData[0..3] == Encoding.ASCII.GetBytes("HCA"))
                         outFilePath += ".hca";
 
                     using FileStream audioFile = new FileStream(outFilePath, FileMode.Create);
                     audioFile.Write(audioData);
                 }
             }
-            //fs.Flush();
         }
     }
 }
