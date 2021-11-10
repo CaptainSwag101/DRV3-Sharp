@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -32,15 +33,13 @@ namespace AcbTool
             Directory.CreateDirectory(outputDir);
 
             //using FileStream fs = new FileStream(info.FullName + "_cuenames.txt", FileMode.Create);
-            foreach (var cue in loadedAcb.Cues)
+            List<string> cueValues = loadedAcb.Cues.Values.ToList();
+            for (short cueNum = 0; cueNum < loadedAcb.Cues.Count; ++cueNum)
             {
-                //fs.Write(Encoding.ASCII.GetBytes(cue.Value + '\n'));
-
-                short audioKey = (short)loadedAcb.Cues.Keys.ToList().IndexOf(cue.Key);
-                if (loadedAwb.AudioData.ContainsKey(audioKey))
+                if (loadedAwb.AudioData.ContainsKey(cueNum))
                 {
-                    string outFilePath = outputDir + Path.DirectorySeparatorChar + cue.Value;
-                    byte[] audioData = loadedAwb.AudioData[audioKey];
+                    byte[] audioData = loadedAwb.AudioData[cueNum];
+                    string outFilePath = outputDir + Path.DirectorySeparatorChar + cueValues[cueNum];
 
                     // Guess output file extension
                     if (audioData[0] == 0x80 && audioData[1] == 0x00)
