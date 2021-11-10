@@ -32,6 +32,7 @@ namespace AcbTool
             string outputDir = info.DirectoryName + Path.DirectorySeparatorChar + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
             Directory.CreateDirectory(outputDir);
 
+            byte[] hcaMagic = Encoding.ASCII.GetBytes("HCA");
             List<string> cueValues = loadedAcb.Cues.Values.ToList();
             for (short cueNum = 0; cueNum < cueValues.Count; ++cueNum)
             {
@@ -43,7 +44,7 @@ namespace AcbTool
                     // Guess output file extension
                     if (audioData[0] == 0x80 && audioData[1] == 0x00)
                         outFilePath += ".adx";
-                    else if (audioData[0..3] == Encoding.ASCII.GetBytes("HCA"))
+                    else if (audioData[0..3] == hcaMagic)
                         outFilePath += ".hca";
 
                     using FileStream audioFile = new FileStream(outFilePath, FileMode.Create);
