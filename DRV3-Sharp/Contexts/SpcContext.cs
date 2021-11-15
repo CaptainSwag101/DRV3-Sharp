@@ -1,4 +1,21 @@
-﻿using System;
+﻿/*
+    DRV3-Sharp, a free and open-source toolkit
+    for working with files and assets from Danganronpa V3.
+
+    Copyright (C) 2020-2021  James Pelster
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -23,7 +40,7 @@ namespace DRV3_Sharp.Contexts
                 operationList.Add(new NewSpcOperation());
                 operationList.Add(new LoadSpcOperation());
                 operationList.Add(new HelpOperation());
-                operationList.Add(new ExitOperation());
+                operationList.Add(new BackOperation());
 
                 // If an SPC file is loaded, add file-related operations
                 if (loadedData is not null)
@@ -38,15 +55,6 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        protected static SpcContext GetVerifiedContext(IOperationContext compare)
-        {
-            // Ensure that this is not somehow being called from the wrong context
-            if (compare.GetType() != typeof(SpcContext))
-                throw new InvalidOperationException($"This operation was called from an illegal context {compare.GetType()}, it should only be called from {typeof(SpcContext)}.");
-
-            return (SpcContext)compare;
-        }
-
         public SpcContext()
         { }
 
@@ -54,6 +62,15 @@ namespace DRV3_Sharp.Contexts
         {
             loadedData = initialData;
             loadedDataPath = initialDataPath;
+        }
+
+        protected static SpcContext GetVerifiedContext(IOperationContext compare)
+        {
+            // Ensure that this is not somehow being called from the wrong context
+            if (compare.GetType() != typeof(SpcContext))
+                throw new InvalidOperationException($"This operation was called from an illegal context {compare.GetType()}, it should only be called from {typeof(SpcContext)}.");
+
+            return (SpcContext)compare;
         }
 
         public bool ConfirmIfUnsavedChanges()
@@ -194,21 +211,21 @@ namespace DRV3_Sharp.Contexts
                 {
                     for (int i = 0; i < maxFiles; ++i)
                     {
-                        var entry = context.loadedData.GetFileEntry(i);
+                        ArchivedFile entry = context.loadedData.Files[i];
 
                         // Preserve original foreground color in the case of a custom-themed terminal
                         ConsoleColor origForeground = Console.ForegroundColor;
                         Console.ForegroundColor = ConsoleColor.Blue;
-                        Console.WriteLine(entry!.Value.Name);
+                        Console.WriteLine(entry.Name);
                         Console.ForegroundColor = origForeground;
                         Console.Write("\tIs Compressed: ");
-                        Console.WriteLine(entry!.Value.File.IsCompressed);
+                        Console.WriteLine(entry.IsCompressed);
                         Console.Write("\tOriginal Size: ");
-                        Console.WriteLine(entry!.Value.File.OriginalSize);
-                        //Console.Write("\tArchived Size: ");
-                        //Console.WriteLine(entry!.Value.File.Data.Length);
+                        Console.WriteLine(entry.OriginalSize);
+                        Console.Write("\tArchived Size: ");
+                        Console.WriteLine(entry.Data.Length);
                         Console.Write("\tUnknown Flag: ");
-                        Console.WriteLine(entry!.Value.File.UnknownFlag);
+                        Console.WriteLine(entry.UnknownFlag);
                         Console.WriteLine();
                     }
                 }
@@ -282,11 +299,11 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ExitOperation : IOperation
+        internal class BackOperation : IOperation
         {
-            public string Name => "Exit";
+            public string Name => "Back";
 
-            public string Description => "Ends the current SPC operations.";
+            public string Description => "Ends the current SPC operations and returns to the previous screen.";
 
             public void Perform(IOperationContext rawContext)
             {

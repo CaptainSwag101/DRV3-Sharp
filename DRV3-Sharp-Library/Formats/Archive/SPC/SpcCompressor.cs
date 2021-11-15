@@ -25,7 +25,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
 {
     public static class SpcCompressor
     {
-        // WARNING: Changing these constants will likely break the compression or reduce efficiency!
+        // WARNING: Changing these constants will likely break the compression or reduce its effectiveness!
         private const int SPC_BLOCK_SIZE = 16;
         private const int SPC_WINDOW_MAX_SIZE = 1024;
         private const int SPC_SEQUENCE_MAX_SIZE = 65;
@@ -45,7 +45,6 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                 // We use an 8-bit flag to determine whether something is raw data,
                 // or if we need to pull from the buffer, going from most to least significant bit.
                 // We reverse the bit order to make it easier to work with.
-
                 if (flag == 1)
                 {
                     // Add an extra "1" bit so our last flag value will always cause us to read new flag data.
@@ -59,6 +58,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                     break;
                 }
 
+                // Check if the current flag bit is set
                 if ((flag & 1) == 1)
                 {
                     // Raw byte
@@ -127,7 +127,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                 // Keep track of the current sequence of data we're trying to compress
                 int seqLen = 1; // The length of the sequence that we're trying to compress
                 int foundAt = -1;   // Where that sequence is found previously in the sliding window, relative to the start of the window
-                int searchbackLen = Math.Min(pos, SPC_WINDOW_MAX_SIZE);
+                int searchbackLen = Math.Min(pos, SPC_WINDOW_MAX_SIZE); // Clamp searchbackLen to prevent seeking back past the beginning
 
                 // When we start this loop, we've just started looking for a new sequence to compress
                 for (; seqLen <= SPC_SEQUENCE_MAX_SIZE; ++seqLen)

@@ -82,7 +82,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                 byte[] data = reader.ReadBytes(currentSize);
                 reader.BaseStream.Seek(dataPadding, SeekOrigin.Current);
 
-                outputData.AddFile(name, data, unknownFlag, (compressionFlag == 2));
+                outputData.Files.Add(new ArchivedFile(name, data, unknownFlag, (compressionFlag == 2), originalSize));
             }
         }
 
@@ -107,15 +107,13 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
 
             for (int i = 0; i < inputData.FileCount; ++i)
             {
-                var entry = inputData.GetFileEntry(i);
-                // We can use null forgiveness because we know we're iterating in-bounds.
-                string name = entry?.Name!;
-                ArchivedFile subfile = entry?.File!;
+                ArchivedFile entry = inputData.Files[i];
 
-                writer.Write(subfile.IsCompressed ? 2 : 1);
-                writer.Write(subfile.UnknownFlag);
-                writer.Write(subfile.Data.Length);
-                writer.Write(subfile.OriginalSize);
+                string name = entry.Name;
+                writer.Write(entry.IsCompressed ? 2 : 1);
+                writer.Write(entry.UnknownFlag);
+                writer.Write(entry.Data.Length);
+                writer.Write(entry.OriginalSize);
                 writer.Write(name.Length);
                 writer.Write(new byte[0x10]);
 
@@ -123,8 +121,8 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                 writer.Write(Encoding.GetEncoding("shift-jis").GetBytes(name));
                 writer.Write(new byte[namePadding + 1]);
 
-                int dataPadding = (0x10 - subfile.Data.Length % 0x10) % 0x10;
-                writer.Write(subfile.Data);
+                int dataPadding = (0x10 - entry.Data.Length % 0x10) % 0x10;
+                writer.Write(entry.Data);
                 writer.Write(new byte[dataPadding]);
             }
         }
