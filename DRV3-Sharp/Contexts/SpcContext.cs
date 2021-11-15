@@ -108,27 +108,30 @@ namespace DRV3_Sharp.Contexts
 
                 if (!context.ConfirmIfUnsavedChanges()) return;
 
-                // Load the file now
+                // Get the file path
                 Console.WriteLine("Enter the full path of the file to load (or drag and drop it) and press Enter: ");
                 string? path = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(path))
                 {
                     Console.WriteLine("The specified path is null or invalid.");
-                    _ = Console.Read();
+                    Console.WriteLine("Press any key to continue...");
+                    _ = Console.ReadKey(true);
                     return;
                 }
 
-                // Trim leading and trailing quotation marks
+                // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
                 path = path.Trim('"');
 
                 if (!File.Exists(path))
                 {
                     Console.WriteLine("The specified file does not exist.");
-                    _ = Console.Read();
+                    Console.WriteLine("Press any key to continue...");
+                    _ = Console.ReadKey(true);
                     return;
                 }
 
-                FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                // Load the file now that we've verified it exists
+                using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 SpcSerializer.Deserialize(fs, out context.loadedData);
                 context.loadedDataPath = path;
                 context.unsavedChanges = false;
@@ -153,10 +156,21 @@ namespace DRV3_Sharp.Contexts
                     if (path is null)
                     {
                         Console.WriteLine("The specified path is null.");
+                        Console.WriteLine("Press any key to continue...");
+                        _ = Console.ReadKey(true);
                         return;
                     }
 
-                    FileStream fs = new(path, FileMode.Create, FileAccess.Write, FileShare.None);
+                    // Ensure the path isn't a directory
+                    if (new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory))
+                    {
+                        Console.WriteLine("The specified path is a directory.");
+                        Console.WriteLine("Press any key to continue...");
+                        _ = Console.ReadKey(true);
+                        return;
+                    }
+
+                    using FileStream fs = new(path, FileMode.Create, FileAccess.Write, FileShare.None);
                     SpcSerializer.Serialize(context.loadedData!, fs);   // It shouldn't be possible to invoke this operation while context.loadedData is null
                     fs.Flush();
                 }
@@ -233,7 +247,7 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
-                var context = GetVerifiedContext(rawContext);
+                _ = GetVerifiedContext(rawContext);
 
                 // Extract the file now
                 throw new NotImplementedException();

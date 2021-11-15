@@ -25,7 +25,7 @@ namespace DRV3_Sharp
 {
     internal class Program
     {
-        private static Stack<IOperationContext> contextStack = new();
+        private static readonly Stack<IOperationContext> contextStack = new();
         private static int highlightedOperation = 0;
 
         static void Main(string[] args)
