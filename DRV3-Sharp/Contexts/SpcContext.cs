@@ -191,8 +191,8 @@ namespace DRV3_Sharp.Contexts
                         Console.WriteLine(entry!.Value.File.IsCompressed);
                         Console.Write("\tOriginal Size: ");
                         Console.WriteLine(entry!.Value.File.OriginalSize);
-                        Console.Write("\tArchived Size: ");
-                        Console.WriteLine(entry!.Value.File.Data.Length);
+                        //Console.Write("\tArchived Size: ");
+                        //Console.WriteLine(entry!.Value.File.Data.Length);
                         Console.Write("\tUnknown Flag: ");
                         Console.WriteLine(entry!.Value.File.UnknownFlag);
                         Console.WriteLine();
