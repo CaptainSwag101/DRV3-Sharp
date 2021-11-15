@@ -14,7 +14,7 @@ namespace V3Lib.Sfl.EntryTypes
     public class TransformationSubentry
     {
         public string Name;
-        public List<TransformationCommand> Commands = new List<TransformationCommand>();
+        public List<TransformationCommand> Commands = new();
 
         public TransformationSubentry(string name, List<TransformationCommand> commands)
         {
@@ -25,6 +25,6 @@ namespace V3Lib.Sfl.EntryTypes
 
     public class TransformationEntry : Entry
     {
-        public List<TransformationSubentry> Subentries = new List<TransformationSubentry>();
+        public List<TransformationSubentry> Subentries = new();
     }
 }

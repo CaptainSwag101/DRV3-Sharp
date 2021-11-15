@@ -18,11 +18,11 @@ namespace V3Lib.Srd.BlockTypes
         public string VertexBlockName;
         public string MaterialName;
         public string UnknownString;
-        public List<string> MappedStrings = new List<string>();
+        public List<string> MappedStrings = new();
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadUInt32();
             ushort vertexBlockNameOffset = reader.ReadUInt16();
@@ -62,7 +62,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override string GetInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
             sb.Append($"{nameof(VertexBlockName)}: {VertexBlockName}\n");

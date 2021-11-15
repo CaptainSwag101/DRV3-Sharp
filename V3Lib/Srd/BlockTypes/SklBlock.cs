@@ -17,7 +17,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadUInt32();
             Unknown14 = reader.ReadUInt16();
@@ -78,11 +78,11 @@ namespace V3Lib.Srd.BlockTypes
 
         public override string GetInfo()
         {
-            StringBuilder sb1 = new StringBuilder();
-            List<string> tmp = new List<string>();
+            StringBuilder sb1 = new();
+            List<string> tmp = new();
             foreach (var (ParentBoneID, Unknown, Matrix1, Matrix2, Matrix3, BoneName) in BoneInfoList)
             {
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 sb.Append($"Parent Bone ID: {ParentBoneID}, Unknown: {Unknown}, Name: {BoneName}\n");
 
                 sb.Append("{matrix1\n");

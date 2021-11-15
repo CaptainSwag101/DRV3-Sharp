@@ -41,14 +41,14 @@ namespace SrdTool
         public static void ExportModel(SrdFile srd, string exportName)
         {
             // Setup the scene for the root of our model
-            Scene scene = new Scene();
+            Scene scene = new();
 
             // Get all our various data
             scene.Materials.AddRange(GetMaterials(srd));
             scene.Meshes.AddRange(GetMeshes(srd, scene.Materials));
             scene.RootNode = GetNodeTree(srd, scene.Materials, scene.Meshes);
 
-            AssimpContext exportContext = new AssimpContext();
+            AssimpContext exportContext = new();
             var exportFormats = exportContext.GetSupportedExportFormats();
             foreach (var format in exportFormats)
             {
@@ -67,7 +67,7 @@ namespace SrdTool
             var treBlocks = srd.Blocks.Where(b => b is TreBlock).ToList();
 
             // Create a manual root node in case the scene has multiple roots
-            Node RootNode = new Node("RootNode");
+            Node RootNode = new("RootNode");
 
             foreach (TreBlock tre in treBlocks)
             {
@@ -81,7 +81,7 @@ namespace SrdTool
                 // Generate a list of real nodes in the scene
                 foreach (TreeNode treeNode in flattenedTreeNodes)
                 {
-                    Node n = new Node(treeNode.StringValue);
+                    Node n = new(treeNode.StringValue);
 
                     foreach (Mesh mesh in meshes)
                     {
@@ -145,7 +145,7 @@ namespace SrdTool
                 var vtxResources = vtx.Children[0] as RsiBlock;
 
                 // Extract position data
-                using BinaryReader positionReader = new BinaryReader(new MemoryStream(vtxResources.ExternalData[0]));
+                using BinaryReader positionReader = new(new MemoryStream(vtxResources.ExternalData[0]));
                 var curVertexList = new List<Vector3>();
                 var curNormalList = new List<Vector3>();
                 var curTexcoordList = new List<Vector2>();
@@ -225,7 +225,7 @@ namespace SrdTool
                 }
 
                 // Extract index data
-                using BinaryReader indexReader = new BinaryReader(new MemoryStream(vtxResources.ExternalData[1]));
+                using BinaryReader indexReader = new(new MemoryStream(vtxResources.ExternalData[1]));
                 var curIndexList = new List<ushort[]>();
                 while (indexReader.BaseStream.Position < indexReader.BaseStream.Length)
                 {
@@ -252,7 +252,7 @@ namespace SrdTool
                 var msh = mshBlocks[d] as MshBlock;
                 var mshResources = msh.Children[0] as RsiBlock;
 
-                Mesh mesh = new Mesh()
+                Mesh mesh = new()
                 {
                     Name = mshResources.ResourceStringList[0],
                     PrimitiveType = PrimitiveType.Triangle,
@@ -262,14 +262,14 @@ namespace SrdTool
                 // Add vertices
                 foreach (var vertex in meshData.Vertices)
                 {
-                    Vector3D vec3D = new Vector3D(vertex.X, vertex.Y, vertex.Z);
+                    Vector3D vec3D = new(vertex.X, vertex.Y, vertex.Z);
                     mesh.Vertices.Add(vec3D);
                 }
 
                 // Add normals
                 foreach (var normal in meshData.Normals)
                 {
-                    Vector3D vec3D = new Vector3D(normal.X, normal.Y, normal.Z);
+                    Vector3D vec3D = new(normal.X, normal.Y, normal.Z);
                     mesh.Normals.Add(vec3D);
                 }
 
@@ -278,14 +278,14 @@ namespace SrdTool
                 mesh.TextureCoordinateChannels[0] = new List<Vector3D>();
                 foreach (var uv in meshData.Texcoords)
                 {
-                    Vector3D vec3D = new Vector3D(uv.X, uv.Y, 0.0f);
+                    Vector3D vec3D = new(uv.X, uv.Y, 0.0f);
                     mesh.TextureCoordinateChannels[0].Add(vec3D);
                 }
 
                 // Add faces
                 foreach (var indexArray in meshData.Indices)
                 {
-                    Face face = new Face();
+                    Face face = new();
 
                     foreach (ushort index in indexArray)
                     {
@@ -302,7 +302,7 @@ namespace SrdTool
 
                     var matchingBone = boneInfoList.Where(b => b.BoneName == boneName).First();
 
-                    Bone bone = new Bone();
+                    Bone bone = new();
                     bone.Name = boneName;
 
                     mesh.Bones.Add(bone);
@@ -342,13 +342,13 @@ namespace SrdTool
             {
                 var matResources = mat.Children[0] as RsiBlock;
 
-                Material material = new Material();
+                Material material = new();
                 material.Name = matResources.ResourceStringList[0];
 
                 foreach (var pair in mat.MapTexturePairs)
                 {
                     // Find the TXI block associated with the current map
-                    TxiBlock matchingTxi = new TxiBlock();
+                    TxiBlock matchingTxi = new();
                     foreach (TxiBlock txi in txiBlocks)
                     {
                         var txiResources = txi.Children[0] as RsiBlock;
@@ -359,7 +359,7 @@ namespace SrdTool
                         }
                     }
 
-                    TextureSlot texSlot = new TextureSlot
+                    TextureSlot texSlot = new()
                     {
                         FilePath = matchingTxi.TextureFilename,
                         Mapping = TextureMapping.FromUV,

@@ -32,7 +32,7 @@ namespace SpcTool
             // Parse input arguments
             // If the first argument is a valid SPC file (and if we reach this point it probably is), load it.
             string loadedSpcName = args[0];
-            FileInfo loadedSpcInfo = new FileInfo(loadedSpcName);
+            FileInfo loadedSpcInfo = new(loadedSpcName);
             if (!loadedSpcInfo.Exists)
             {
                 Console.WriteLine($"ERROR: \"{loadedSpcName}\" does not exist.");
@@ -44,7 +44,7 @@ namespace SpcTool
                 Console.WriteLine("WARNING: Input file does not have the \".spc\" extension.\nIf you experience any issues, it means this file probably isn't an SPC archive.");
             }
 
-            SpcFile loadedSpc = new SpcFile();
+            SpcFile loadedSpc = new();
             loadedSpc.Load(loadedSpcName);
 
             // Combine any remaining args into a single long string to be broken down by our regex
@@ -53,12 +53,12 @@ namespace SpcTool
             {
                 autoExecQueue = new Queue<string>();
 
-                StringBuilder remainingArgsBuilder = new StringBuilder();
+                StringBuilder remainingArgsBuilder = new();
                 remainingArgsBuilder.AppendJoin(" ", args[1..args.Length]);
                 string remainingArgsCombined = remainingArgsBuilder.ToString();
 
                 // Identify and capture any string groups, contained in curly brackets {like this}, and add them to the auto-exec queue
-                Regex stringGroupRegex = new Regex(@"(?<=\{).+?(?=\})");
+                Regex stringGroupRegex = new(@"(?<=\{).+?(?=\})");
                 MatchCollection matches = stringGroupRegex.Matches(remainingArgsCombined);
                 foreach (Match? m in matches)
                 {
@@ -88,7 +88,7 @@ namespace SpcTool
                         }
 
                         // Implemented based on https://stackoverflow.com/a/5227134/
-                        Regex regex = new Regex("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
+                        Regex regex = new("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
                         var targets = (from Match m in regex.Matches(targetsRaw)
                                         where m.Groups["match"].Success
                                         select m.Groups["match"].Value).ToList();
@@ -115,7 +115,7 @@ namespace SpcTool
                         }
 
                         // Implemented based on https://stackoverflow.com/a/5227134
-                        Regex regex = new Regex("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
+                        Regex regex = new("(?<match>[^\\s\"]+)| (?<match>\"[^\"]*\")", RegexOptions.None);
                         var targets = (from Match m in regex.Matches(targetsRaw)
                                         where m.Groups["match"].Success
                                         select m.Groups["match"].Value).ToList();
@@ -146,14 +146,14 @@ namespace SpcTool
             };
 
             // Show initial prompt
-            StringBuilder promptBuilder = new StringBuilder();
+            StringBuilder promptBuilder = new();
             promptBuilder.Append($"Loaded SPC archive: {loadedSpcName}\n");
             promptBuilder.Append($"Valid commands to perform on this archive:\n");
             promptBuilder.AppendJoin(", ", commandDict.Keys);
             Console.WriteLine(promptBuilder.ToString());
 
             // Process any commands, then prompt the user
-            CommandParser parser = new CommandParser(commandDict);
+            CommandParser parser = new(commandDict);
             parser.Prompt("Please enter your command, or \"exit\" to quit: ", @"exit", autoExecQueue);
         }
 
@@ -164,7 +164,7 @@ namespace SpcTool
             Directory.CreateDirectory(outputDir);
 
             // Generate list of subfiles to be extracted that match the target regex
-            List<string> subfilesToExtract = new List<string>();
+            List<string> subfilesToExtract = new();
             foreach (string target in targets)
             {
                 string regexTarget = "^" + Regex.Escape(target).Replace("\\?", ".?").Replace("\\*", ".*") + "$";
@@ -252,7 +252,7 @@ namespace SpcTool
                 Console.WriteLine($"\tOriginal size: {subfile.OriginalSize:n0} bytes");
 
                 // Benchmark decompression and compression
-                Stopwatch stopwatch = new Stopwatch();
+                Stopwatch stopwatch = new();
 
                 Console.Write("Decompressing (Preliminary)...");
                 stopwatch.Start();

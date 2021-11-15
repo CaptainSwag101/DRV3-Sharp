@@ -9,11 +9,11 @@ namespace V3Lib.Sfl
     public class SflFile
     {
         public decimal Version;
-        public List<Table> Tables = new List<Table>();
+        public List<Table> Tables = new();
 
         public bool Load(string sflPath, out string errorMessage)
         {
-            using BinaryReader reader = new BinaryReader(new FileStream(sflPath, FileMode.Open));
+            using BinaryReader reader = new(new FileStream(sflPath, FileMode.Open));
 
             // Read magic value
             string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
@@ -34,7 +34,7 @@ namespace V3Lib.Sfl
             for (uint tNum = 0; tNum < tableCount; ++tNum)
             {
                 // Read table header
-                Table table = new Table();
+                Table table = new();
                 table.Id = reader.ReadUInt32();
                 uint tableLength = reader.ReadUInt32();
                 ushort entryCount = reader.ReadUInt16();

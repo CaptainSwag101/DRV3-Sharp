@@ -38,7 +38,7 @@ namespace SrdTool
                 return;
             }
 
-            FileInfo info = new FileInfo(args[0]);
+            FileInfo info = new(args[0]);
             if (!info.Exists)
             {
                 Console.WriteLine($"ERROR: \"{args[0]}\" does not exist.");
@@ -71,12 +71,12 @@ namespace SrdTool
             {
                 autoExecQueue = new Queue<string>();
 
-                StringBuilder remainingArgsBuilder = new StringBuilder();
+                StringBuilder remainingArgsBuilder = new();
                 remainingArgsBuilder.AppendJoin(" ", args[1..args.Length]);
                 string remainingArgsCombined = remainingArgsBuilder.ToString();
 
                 // Identify and capture any string groups, contained in curly brackets {like this}, and add them to the auto-exec queue
-                Regex stringGroupRegex = new Regex(@"(?<=\{).+?(?=\})");
+                Regex stringGroupRegex = new(@"(?<=\{).+?(?=\})");
                 MatchCollection matches = stringGroupRegex.Matches(remainingArgsCombined);
                 foreach (Match? m in matches)
                 {
@@ -195,7 +195,7 @@ namespace SrdTool
             };
 
             // Show initial prompt
-            StringBuilder promptBuilder = new StringBuilder();
+            StringBuilder promptBuilder = new();
             promptBuilder.Append($"Loaded SRD file: {SrdName}\n");
             if (info.Extension.ToLower() != ".srd")
             {
@@ -206,7 +206,7 @@ namespace SrdTool
             Console.WriteLine(promptBuilder.ToString());
 
             // Process any commands, then prompt the user
-            CommandParser parser = new CommandParser(commandDict);
+            CommandParser parser = new(commandDict);
             parser.Prompt("Please enter your command, or \"exit\" to quit: ", @"exit", autoExecQueue);
         }
 
@@ -247,7 +247,7 @@ namespace SrdTool
             {
                 if (b is TxrBlock txr && b.Children[0] is RsiBlock rsi)
                 {
-                    using BinaryReader fontReader = new BinaryReader(new MemoryStream(rsi.ResourceData));
+                    using BinaryReader fontReader = new(new MemoryStream(rsi.ResourceData));
                     string fontMagic = Encoding.ASCII.GetString(fontReader.ReadBytes(4));
                     if (fontMagic != @"SpFt")
                     {
@@ -296,7 +296,7 @@ namespace SrdTool
                         byte width = fontReader.ReadByte();
                         byte height = fontReader.ReadByte();
 
-                        Rectangle bbRect = new Rectangle(xPos, yPos, width, height);
+                        Rectangle bbRect = new(xPos, yPos, width, height);
 
                         sbyte[] glyphKerning = new sbyte[3];
                         glyphKerning[0] = fontReader.ReadSByte();   // left
@@ -498,7 +498,7 @@ namespace SrdTool
                         int mipHeight = (int)Math.Max(1, dispHeight / Math.Pow(2, m));
 
                         // Convert the raw pixel data into something we can actually write to an image file
-                        ImageBinary imageBinary = new ImageBinary(mipWidth, mipHeight, pixelFormat, inputImageData);
+                        ImageBinary imageBinary = new(mipWidth, mipHeight, pixelFormat, inputImageData);
                         byte[] outputImageData = imageBinary.GetOutputPixelData(0);
                         var image = new Image<Rgba32>(mipWidth, mipHeight);
                         for (int y = 0; y < mipHeight; ++y)
@@ -557,7 +557,7 @@ namespace SrdTool
                             mipmapName = mipmapName.Insert(mipmapNameNoExtension.Length, $" ({mipWidth}x{mipHeight})");
 
                         string outputFolder = new FileInfo(textureSrdName).DirectoryName;
-                        using FileStream fs = new FileStream(outputFolder + Path.DirectorySeparatorChar + mipmapName, FileMode.Create);
+                        using FileStream fs = new(outputFolder + Path.DirectorySeparatorChar + mipmapName, FileMode.Create);
                         switch (mipmapExtension)
                         {
                             case ".png":
@@ -586,7 +586,7 @@ namespace SrdTool
         {
             string textureName = new FileInfo(texturePath).Name;
 
-            using FileStream textureStream = new FileStream(texturePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+            using FileStream textureStream = new(texturePath, FileMode.Open, FileAccess.Read, FileShare.Read);
             Image<Rgba32> texture = Image.Load<Rgba32>(textureStream);
             if (texture == null)
             {
@@ -594,7 +594,7 @@ namespace SrdTool
                 return;
             }
 
-            List<byte> pixelData = new List<byte>();
+            List<byte> pixelData = new();
             for (int y = 0; y < texture.Height; ++y)
             {
                 for (int x = 0; x < texture.Width; ++x)
@@ -603,7 +603,7 @@ namespace SrdTool
                 }
             }
 
-            ImageBinary imageBinary = new ImageBinary(texture.Width, texture.Height, PixelDataFormat.FormatAbgr8888, pixelData.ToArray());
+            ImageBinary imageBinary = new(texture.Width, texture.Height, PixelDataFormat.FormatAbgr8888, pixelData.ToArray());
 
             foreach (Block b in Srd.Blocks)
             {

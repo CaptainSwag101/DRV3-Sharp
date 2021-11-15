@@ -36,7 +36,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new(new MemoryStream(rawData));
 
             VectorCount = reader.ReadInt32();
             Unknown14 = reader.ReadInt16();
@@ -101,8 +101,8 @@ namespace V3Lib.Srd.BlockTypes
 
         public override byte[] SerializeData(string srdiPath, string srdvPath)
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new();
+            using BinaryWriter writer = new(ms);
 
             writer.Write((int)((UnknownFloatList.Count / 3.0f) * 2.0f));
             writer.Write(Unknown14);
@@ -164,7 +164,7 @@ namespace V3Lib.Srd.BlockTypes
             }
 
             // Write bone names and store their location
-            List<ushort> boneNameOffsets = new List<ushort>();
+            List<ushort> boneNameOffsets = new();
             foreach (string str in BindBoneList)
             {
                 boneNameOffsets.Add((ushort)writer.BaseStream.Position);
@@ -186,7 +186,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override string GetInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
             sb.Append($"{nameof(MeshType)}: {MeshType}\n");

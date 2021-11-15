@@ -20,7 +20,7 @@ namespace StxTool
 
             foreach (string arg in args)
             {
-                FileInfo info = new FileInfo(arg);
+                FileInfo info = new(arg);
                 if (!info.Exists)
                 {
                     Console.WriteLine($"ERROR: File \"{arg}\" does not exist, skipping.");
@@ -30,10 +30,10 @@ namespace StxTool
                 if (info.Extension.ToLowerInvariant() == ".stx")
                 {
                     // Convert STX to TXT
-                    StxFile stx = new StxFile();
+                    StxFile stx = new();
                     stx.Load(info.FullName);
 
-                    using StreamWriter writer = new StreamWriter(info.FullName.Replace(info.Extension, "") + ".txt", false);
+                    using StreamWriter writer = new(info.FullName.Replace(info.Extension, "") + ".txt", false);
                     foreach (var table in stx.StringTables)
                     {
                         writer.WriteLine("{");
@@ -49,14 +49,14 @@ namespace StxTool
                 else if (info.Extension.ToLowerInvariant() == ".txt")
                 {
                     // Convert TXT to STX
-                    StxFile stx = new StxFile();
+                    StxFile stx = new();
 
-                    using StreamReader reader = new StreamReader(info.FullName);
+                    using StreamReader reader = new(info.FullName);
                     while (reader != null && !reader.EndOfStream)
                     {
                         if (reader.ReadLine().StartsWith('{'))
                         {
-                            List<string> table = new List<string>();
+                            List<string> table = new();
 
                             while (true)
                             {

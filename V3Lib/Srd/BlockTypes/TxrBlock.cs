@@ -33,7 +33,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadInt32();
             Swizzle = reader.ReadUInt16();
@@ -48,8 +48,8 @@ namespace V3Lib.Srd.BlockTypes
 
         public override byte[] SerializeData(string srdiPath, string srdvPath)
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new();
+            using BinaryWriter writer = new(ms);
 
             writer.Write(Unknown10);
             writer.Write(Swizzle);
@@ -67,7 +67,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override string GetInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
             sb.Append($"Swizzle: {Swizzle}\n");

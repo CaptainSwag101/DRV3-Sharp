@@ -26,7 +26,7 @@ namespace DatTool
 
             foreach (string arg in args)
             {
-                FileInfo info = new FileInfo(arg);
+                FileInfo info = new(arg);
                 if (!info.Exists)
                 {
                     Console.WriteLine($"ERROR: File \"{arg}\" does not exist, skipping.");
@@ -36,13 +36,13 @@ namespace DatTool
                 if (info.Extension.ToLowerInvariant() == ".dat")
                 {
                     // Convert DAT to CSV
-                    DatFile dat = new DatFile();
+                    DatFile dat = new();
                     dat.Load(info.FullName);
 
-                    StringBuilder output = new StringBuilder();
+                    StringBuilder output = new();
 
                     // Write first row (header)
-                    List<string> headerEntries = new List<string>();
+                    List<string> headerEntries = new();
                     foreach (var def in dat.ColumnDefinitions)
                     {
                         headerEntries.Add($"{def.Name} ({def.Type})");
@@ -51,10 +51,10 @@ namespace DatTool
                     output.Append('\n');
 
                     // Write row data
-                    List<string> rowData = new List<string>();
+                    List<string> rowData = new();
                     for (int row = 0; row < dat.Data.Count; ++row)
                     {
-                        StringBuilder rowStr = new StringBuilder();
+                        StringBuilder rowStr = new();
 
                         List<string> escapedRowStrs = dat.Data[row];
                         for (int s = 0; s < escapedRowStrs.Count; ++s)
@@ -69,15 +69,15 @@ namespace DatTool
                     }
                     output.AppendJoin('\n', rowData);
 
-                    using StreamWriter writer = new StreamWriter(info.FullName.Substring(0, info.FullName.Length - info.Extension.Length) + ".csv", false, Encoding.Unicode);
+                    using StreamWriter writer = new(info.FullName.Substring(0, info.FullName.Length - info.Extension.Length) + ".csv", false, Encoding.Unicode);
                     writer.Write(output.ToString());
                 }
                 else if (info.Extension.ToLowerInvariant() == ".csv")
                 {
                     // Convert CSV to DAT
-                    DatFile dat = new DatFile();
+                    DatFile dat = new();
 
-                    using StreamReader reader = new StreamReader(info.FullName, Encoding.Unicode);
+                    using StreamReader reader = new(info.FullName, Encoding.Unicode);
 
                     // First line is column definitions
                     string[] header = reader.ReadLine().Split(',');
@@ -93,7 +93,7 @@ namespace DatTool
                     while (!reader.EndOfStream)
                     {
                         string[] rowCells = reader.ReadLine().Split(',');
-                        List<string> rowStrings = new List<string>();
+                        List<string> rowStrings = new();
                         for (int col = 0; col < rowCells.Length; ++col)
                         {
                             // Update the column definitions with the proper value count

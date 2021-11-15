@@ -14,7 +14,7 @@ namespace V3Lib.Srd
 
         public void Load(string srdPath, string srdiPath, string srdvPath)
         {
-            using BinaryReader reader = new BinaryReader(new FileStream(srdPath, FileMode.Open));
+            using BinaryReader reader = new(new FileStream(srdPath, FileMode.Open));
             Blocks = ReadBlocks(reader, srdiPath, srdvPath);
         }
 
@@ -24,14 +24,14 @@ namespace V3Lib.Srd
             if (File.Exists(srdiPath)) File.Delete(srdiPath);
             if (File.Exists(srdvPath)) File.Delete(srdvPath);
 
-            using BinaryWriter writer = new BinaryWriter(new FileStream(srdPath, FileMode.Create));
+            using BinaryWriter writer = new(new FileStream(srdPath, FileMode.Create));
             WriteBlocks(writer, Blocks, srdiPath, srdvPath);
             writer.Flush();
         }
 
         public static List<Block> ReadBlocks(BinaryReader reader, string srdiPath, string srdvPath)
         {
-            List<Block> blockList = new List<Block>();
+            List<Block> blockList = new();
 
             while (reader.BaseStream.Position < reader.BaseStream.Length)
             {
@@ -65,7 +65,7 @@ namespace V3Lib.Srd
 
 
                 byte[] rawSubdata = reader.ReadBytes(subdataLength);
-                using (BinaryReader subdataReader = new BinaryReader(new MemoryStream(rawSubdata)))
+                using (BinaryReader subdataReader = new(new MemoryStream(rawSubdata)))
                 {
                     List<Block> childBlocks = ReadBlocks(subdataReader, srdiPath, srdvPath);
                     block.Children = childBlocks;
@@ -89,7 +89,7 @@ namespace V3Lib.Srd
                 byte[] rawData = block.SerializeData(srdiPath, srdvPath);
                 writer.WriteBE(rawData.Length);
 
-                using BinaryWriter subdataWriter = new BinaryWriter(new MemoryStream());
+                using BinaryWriter subdataWriter = new(new MemoryStream());
                 WriteBlocks(subdataWriter, block.Children, srdiPath, srdvPath);
                 byte[] rawSubdata = ((MemoryStream)subdataWriter.BaseStream).ToArray();
                 subdataWriter.Close();

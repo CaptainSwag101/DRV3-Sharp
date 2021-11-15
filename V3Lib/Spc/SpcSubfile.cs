@@ -26,10 +26,10 @@ namespace V3Lib.Spc
                 return;
             }
 
-            List<byte> compressedData = new List<byte>(OriginalSize);
+            List<byte> compressedData = new(OriginalSize);
 
             // Make a copy of the original Data as a List<byte> so we can grab ranges via shallow copy
-            List<byte> originalData = new List<byte>(Data);
+            List<byte> originalData = new(Data);
 
             // First, read from the readahead area into the sequence one byte at a time.
             // Then, see if the sequence already exists in the previous 1023 bytes.
@@ -39,7 +39,7 @@ namespace V3Lib.Spc
             // If we did find a duplicate sequence, and it is adjacent to the readahead area,
             // see how many bytes of that sequence can be repeated until we encounter
             // a non-duplicate byte or reach the end of the readahead area.
-            List<byte> block = new List<byte>(16);
+            List<byte> block = new(16);
             int pos = 0;
             int flag = 0;
             byte currentFlagBit = 0;
@@ -76,7 +76,7 @@ namespace V3Lib.Spc
                 // Find the largest matching sequence in the window
                 int foundIndex = -1;
                 int foundLength = 1;
-                List<byte> seq = new List<byte>(65) { lookahead[0] };
+                List<byte> seq = new(65) { lookahead[0] };
 
                 for (; foundLength <= lookaheadLength; ++foundLength)
                 {
@@ -147,7 +147,7 @@ namespace V3Lib.Spc
             }
 
             // Create our result array where we store compressed data as we generate it
-            List<byte> compressedData = new List<byte>(OriginalSize);
+            List<byte> compressedData = new(OriginalSize);
 
             // Make a Span<byte> of the original uncompressed data so we can slice into it for our sliding window
             ReadOnlySpan<byte> originalData = Data;
@@ -156,7 +156,7 @@ namespace V3Lib.Spc
             int pos = 0;    // Current reading position in uncompressed data
             int flag = 0;   // 8-bit (technically 9-bit) flag describing which parts of the current block are compressed/uncompressed
             byte curFlagBit = 0;    // Which bit of the flag we're currently operating on ('8' triggers a block write and resets)
-            List<byte> curBlock = new List<byte>(SPC_BLOCK_SIZE);   // The current block of data that's finished being compressed
+            List<byte> curBlock = new(SPC_BLOCK_SIZE);   // The current block of data that's finished being compressed
 
             // This repeats until we've stored the final compressed block,
             // after we reach the end of the uncompressed data.
@@ -256,7 +256,7 @@ namespace V3Lib.Spc
                 return;
             }
 
-            List<byte> decompressedData = new List<byte>(OriginalSize);
+            List<byte> decompressedData = new(OriginalSize);
 
             int flag = 1;
             int pos = 0;

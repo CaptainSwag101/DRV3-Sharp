@@ -8,10 +8,10 @@ namespace V3Lib.Dat
 {
     public class DatFile
     {
-        public List<(string Name, string Type, ushort Count)> ColumnDefinitions = new List<(string Name, string Type, ushort Count)>();
-        public List<List<string>> Data = new List<List<string>>();
+        public List<(string Name, string Type, ushort Count)> ColumnDefinitions = new();
+        public List<List<string>> Data = new();
 
-        private static readonly Dictionary<string, Type> DataTypes = new Dictionary<string, Type>()
+        private static readonly Dictionary<string, Type> DataTypes = new()
         {
             { "u8", typeof(byte) },
             { "u16", typeof(ushort) },
@@ -29,7 +29,7 @@ namespace V3Lib.Dat
             { "utf16", typeof(ushort) }
         };
 
-        private static readonly Dictionary<string, int> DataTypeSizes = new Dictionary<string, int>()
+        private static readonly Dictionary<string, int> DataTypeSizes = new()
         {
             { "u8", sizeof(byte) },
             { "u16", sizeof(ushort) },
@@ -47,7 +47,7 @@ namespace V3Lib.Dat
             { "utf16", sizeof(ushort) }
         };
 
-        private static readonly Dictionary<string, Func<BinaryReader, object>> ReadFunctions = new Dictionary<string, Func<BinaryReader, object>>()
+        private static readonly Dictionary<string, Func<BinaryReader, object>> ReadFunctions = new()
         {
             { "u8", reader => reader.ReadByte() },
             { "u16", reader => reader.ReadUInt16() },
@@ -65,7 +65,7 @@ namespace V3Lib.Dat
             { "utf16", reader => reader.ReadUInt16() }
         };
 
-        private static readonly Dictionary<string, Action<BinaryWriter, object>> WriteFunctions = new Dictionary<string, Action<BinaryWriter, object>>()
+        private static readonly Dictionary<string, Action<BinaryWriter, object>> WriteFunctions = new()
         {
             { "u8", (writer, val) => writer.Write((byte)val) },
             { "u16", (writer, val) => writer.Write((ushort)val) },
@@ -85,7 +85,7 @@ namespace V3Lib.Dat
 
         public void Load(string datPath)
         {
-            using BinaryReader reader = new BinaryReader(new FileStream(datPath, FileMode.Open, FileAccess.Read, FileShare.Read));
+            using BinaryReader reader = new(new FileStream(datPath, FileMode.Open, FileAccess.Read, FileShare.Read));
 
             // Read header
             uint rowCount = reader.ReadUInt32();
@@ -109,8 +109,8 @@ namespace V3Lib.Dat
             long rowDataPos = reader.BaseStream.Position;
             reader.BaseStream.Seek((bytesPerRow * rowCount), SeekOrigin.Current);
 
-            List<string> utf8Strings = new List<string>();
-            List<string> utf16Strings = new List<string>();
+            List<string> utf8Strings = new();
+            List<string> utf16Strings = new();
             ushort utf8Count = reader.ReadUInt16();
             ushort utf16Count = reader.ReadUInt16();
 
@@ -132,15 +132,15 @@ namespace V3Lib.Dat
             // Read row data
             for (int row = 0; row < rowCount; ++row)
             {
-                List<string> rowData = new List<string>();
+                List<string> rowData = new();
 
                 for (int col = 0; col < columnCount; ++col)
                 {
                     string type = ColumnDefinitions[col].Type.ToLowerInvariant();
 
-                    StringBuilder resultStr = new StringBuilder();
+                    StringBuilder resultStr = new();
 
-                    List<string> strList = new List<string>();
+                    List<string> strList = new();
                     for (int i = 0; i < ColumnDefinitions[col].Count; ++i)
                     {
                         // This should auto-increment the BaseStream.Position value as expected, no need to do any trickery
@@ -170,7 +170,7 @@ namespace V3Lib.Dat
 
         public void Save(string datPath)
         {
-            using BinaryWriter writer = new BinaryWriter(new FileStream(datPath, FileMode.Create, FileAccess.Write, FileShare.None));
+            using BinaryWriter writer = new(new FileStream(datPath, FileMode.Create, FileAccess.Write, FileShare.None));
 
             // Write header
             writer.Write((uint)Data.Count); // rowCount
@@ -196,8 +196,8 @@ namespace V3Lib.Dat
             Utils.WritePadding(writer, 16);
 
             // Write row data according to its type
-            List<string> utf8Strings = new List<string>();
-            List<string> utf16Strings = new List<string>();
+            List<string> utf8Strings = new();
+            List<string> utf16Strings = new();
             foreach (var rowData in Data)
             {
                 for (int col = 0; col < ColumnDefinitions.Count; ++col)

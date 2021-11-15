@@ -20,15 +20,15 @@ namespace AcbTool
                 return;
             }
 
-            AcbFile loadedAcb = new AcbFile();
+            AcbFile loadedAcb = new();
             string loadedAcbPath = args[0];
             loadedAcb.Load(loadedAcbPath);
 
-            AwbFile loadedAwb = new AwbFile();
+            AwbFile loadedAwb = new();
             string loadedAwbPath = args[1];
             loadedAwb.Load(loadedAwbPath);
 
-            FileInfo info = new FileInfo(loadedAcbPath);
+            FileInfo info = new(loadedAcbPath);
             string outputDir = info.DirectoryName + Path.DirectorySeparatorChar + info.Name.Substring(0, info.Name.Length - info.Extension.Length);
             Directory.CreateDirectory(outputDir);
 
@@ -47,7 +47,7 @@ namespace AcbTool
                     else if (audioData[0..3] == hcaMagic)
                         outFilePath += ".hca";
 
-                    using FileStream audioFile = new FileStream(outFilePath, FileMode.Create);
+                    using FileStream audioFile = new(outFilePath, FileMode.Create);
                     audioFile.Write(audioData);
                 }
                 else

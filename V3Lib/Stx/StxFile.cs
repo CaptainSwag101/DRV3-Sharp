@@ -19,11 +19,11 @@ namespace V3Lib.Stx
 
     public class StxFile
     {
-        public List<StringTable> StringTables = new List<StringTable>();
+        public List<StringTable> StringTables = new();
         
         public void Load(string stxPath)
         {
-            using BinaryReader reader = new BinaryReader(new FileStream(stxPath, FileMode.Open));
+            using BinaryReader reader = new(new FileStream(stxPath, FileMode.Open));
 
             // Verify the magic value, it should be "STXT"
             string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
@@ -64,7 +64,7 @@ namespace V3Lib.Stx
             reader.BaseStream.Seek(tableOffset, SeekOrigin.Begin);
             foreach (var (Unknown, StringCount) in tableInfo)
             {
-                List<string> strings = new List<string>();
+                List<string> strings = new();
 
                 for (int s = 0; s < StringCount; ++s)
                 {
@@ -89,7 +89,7 @@ namespace V3Lib.Stx
 
         public void Save(string stxPath)
         {
-            using BinaryWriter writer = new BinaryWriter(new FileStream(stxPath, FileMode.Create));
+            using BinaryWriter writer = new(new FileStream(stxPath, FileMode.Create));
 
             writer.Write(Encoding.ASCII.GetBytes("STXTJPLL"));
 

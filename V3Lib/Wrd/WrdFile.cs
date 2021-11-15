@@ -13,13 +13,13 @@ namespace V3Lib.Wrd
 
     public class WrdFile
     {
-        public List<WrdCommand> Commands = new List<WrdCommand>();
-        public List<string> InternalStrings = new List<string>();
+        public List<WrdCommand> Commands = new();
+        public List<string> InternalStrings = new();
         public bool UsesExternalStrings = false;
 
         public void Load(string wrdPath)
         {
-            using BinaryReader reader = new BinaryReader(new FileStream(wrdPath, FileMode.Open));
+            using BinaryReader reader = new(new FileStream(wrdPath, FileMode.Open));
 
             // Read counts
             ushort stringCount = reader.ReadUInt16();
@@ -32,13 +32,13 @@ namespace V3Lib.Wrd
 
             // Read pointers
             uint localBranchDataPtr = reader.ReadUInt32();
-            uint labelOffsetsPtr = reader.ReadUInt32();
+            uint labelOffsetsPtr = reader.ReadUInt32(); // The label addresses stored here are offset by the header length (0x20)
             uint labelNamesPtr = reader.ReadUInt32();
             uint parametersPtr = reader.ReadUInt32();
             uint stringsPtr = reader.ReadUInt32();
 
             // Read label names
-            List<string> labelNames = new List<string>();
+            List<string> labelNames = new();
             reader.BaseStream.Seek(labelNamesPtr, SeekOrigin.Begin);
             for (ushort i = 0; i < labelCount; ++i)
             {
@@ -48,7 +48,7 @@ namespace V3Lib.Wrd
             }
 
             // Read plaintext parameters
-            List<string> parameters = new List<string>();
+            List<string> parameters = new();
             reader.BaseStream.Seek(parametersPtr, SeekOrigin.Begin);
             for (ushort i = 0; i < parameterCount; ++i)
             {
@@ -60,7 +60,7 @@ namespace V3Lib.Wrd
             // Read internal dialogue strings, if any
             if (stringsPtr != 0)
             {
-                using BinaryReader stringReader = new BinaryReader(reader.BaseStream, Encoding.Unicode, true);
+                using BinaryReader stringReader = new(reader.BaseStream, Encoding.Unicode, true);
                 stringReader.BaseStream.Seek(stringsPtr, SeekOrigin.Begin);
                 for (ushort i = 0; i < stringCount; ++i)
                 {
@@ -92,7 +92,7 @@ namespace V3Lib.Wrd
 
                 // We need 2 bytes per argument
                 int argNumber = 0;
-                List<string> args = new List<string>();
+                List<string> args = new();
                 while (reader.BaseStream.Position + 1 < localBranchDataPtr)
                 {
                     byte b1 = reader.ReadByte();
@@ -133,12 +133,12 @@ namespace V3Lib.Wrd
         {
             // Compile commands to raw bytecode in a separate array,
             // then iterate through it to get the offset addresses.
-            using MemoryStream commandData = new MemoryStream();
-            using BinaryWriter commandWriter = new BinaryWriter(commandData);
-            List<ushort> labelOffsets = new List<ushort>();
-            List<(ushort ID, ushort Offset)> localBranchData = new List<(ushort ID, ushort Offset)>();
-            List<string> labelNames = new List<string>();
-            List<string> parameters = new List<string>();
+            using MemoryStream commandData = new();
+            using BinaryWriter commandWriter = new(commandData);
+            List<ushort> labelOffsets = new();
+            List<(ushort ID, ushort Offset)> localBranchData = new();
+            List<string> labelNames = new();
+            List<string> parameters = new();
             ushort stringCount = 0;
             
             foreach (WrdCommand command in Commands)
@@ -206,7 +206,7 @@ namespace V3Lib.Wrd
             commandWriter.Flush();
 
             // Finally, save the raw data to the file
-            using BinaryWriter writer = new BinaryWriter(new FileStream(wrdPath, FileMode.Create));
+            using BinaryWriter writer = new(new FileStream(wrdPath, FileMode.Create));
 
             // Write counts
             writer.Write(BitConverter.GetBytes(stringCount));
@@ -279,7 +279,7 @@ namespace V3Lib.Wrd
                 writer.BaseStream.Seek(0x1C, SeekOrigin.Begin);
                 writer.Write(stringsPtr);
                 writer.BaseStream.Seek(0, SeekOrigin.End);
-                using BinaryWriter stringWriter = new BinaryWriter(writer.BaseStream, Encoding.Unicode, true);
+                using BinaryWriter stringWriter = new(writer.BaseStream, Encoding.Unicode, true);
                 foreach (string str in InternalStrings)
                 {
                     stringWriter.Write(str);

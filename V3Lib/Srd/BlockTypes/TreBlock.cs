@@ -12,7 +12,7 @@ namespace V3Lib.Srd.BlockTypes
     {
         public string StringValue { get; set; }
 
-        private readonly List<TreeNode> _children = new List<TreeNode>();
+        private readonly List<TreeNode> _children = new();
 
         public TreeNode(string value) => StringValue = value;
 
@@ -55,7 +55,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new(new MemoryStream(rawData));
 
             uint maxTreeDepth = reader.ReadUInt32();
             Unknown14 = reader.ReadUInt16();
@@ -84,7 +84,7 @@ namespace V3Lib.Srd.BlockTypes
                 // Seek to the string data and read it, then seek back
                 long lastPos = reader.BaseStream.Position;
                 reader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
-                TreeNode node = new TreeNode(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
+                TreeNode node = new(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
                 reader.BaseStream.Seek(lastPos, SeekOrigin.Begin);
 
                 // Read and append any endpoints
@@ -99,7 +99,7 @@ namespace V3Lib.Srd.BlockTypes
                         uint unknown04 = reader.ReadUInt32();
                         long lastPos3 = reader.BaseStream.Position;
                         reader.BaseStream.Seek(endpointStringOffset, SeekOrigin.Begin);
-                        TreeNode endpoint = new TreeNode(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
+                        TreeNode endpoint = new(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
                         node.Add(endpoint);
                         reader.BaseStream.Seek(lastPos3, SeekOrigin.Begin);
                     }
@@ -150,8 +150,8 @@ namespace V3Lib.Srd.BlockTypes
 
         public override byte[] SerializeData(string srdiPath, string srdvPath)
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new();
+            using BinaryWriter writer = new(ms);
 
             // Iterate through the list to write the item data, while keeping track of
             // the number of entries so we know where each endpoint reference goes
@@ -163,9 +163,9 @@ namespace V3Lib.Srd.BlockTypes
             int stringOffset = unknownFloatOffset + (16 * sizeof(float));
 
             int maxDepth = 0;
-            using BinaryWriter entryWriter = new BinaryWriter(new MemoryStream());
-            using BinaryWriter endpointWriter = new BinaryWriter(new MemoryStream());
-            using BinaryWriter stringWriter = new BinaryWriter(new MemoryStream());
+            using BinaryWriter entryWriter = new(new MemoryStream());
+            using BinaryWriter endpointWriter = new(new MemoryStream());
+            using BinaryWriter stringWriter = new(new MemoryStream());
             SaveTree(RootNode, entryWriter, endpointWriter, stringWriter, ref maxDepth, 0, endpointOffset, stringOffset);
             byte[] entryData = ((MemoryStream)entryWriter.BaseStream).ToArray();
             byte[] endpointData = ((MemoryStream)endpointWriter.BaseStream).ToArray();
@@ -212,7 +212,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override string GetInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append("Tree contents:\n");
             sb.Append(PrintTreeNodeInfo(RootNode));
@@ -243,7 +243,7 @@ namespace V3Lib.Srd.BlockTypes
 
         private string PrintTreeNodeInfo(TreeNode node)
         {
-            StringBuilder nodeSb = new StringBuilder();
+            StringBuilder nodeSb = new();
 
             nodeSb.Append(node.StringValue);
             nodeSb.Append('\n');

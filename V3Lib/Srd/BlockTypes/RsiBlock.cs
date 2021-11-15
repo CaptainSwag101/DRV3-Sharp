@@ -55,11 +55,11 @@ namespace V3Lib.Srd.BlockTypes
         public byte[] ResourceData;
         public List<string> ResourceStringList;
 
-        public List<byte[]> ExternalData = new List<byte[]>();
+        public List<byte[]> ExternalData = new();
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new(new MemoryStream(rawData));
 
             // TODO: If Unknown10 == 0x04, maybe we read the remaining numbers as shorts, otherwise as ints?
             Unknown10 = reader.ReadByte();
@@ -115,7 +115,7 @@ namespace V3Lib.Srd.BlockTypes
                         {
                             if (!string.IsNullOrEmpty(srdiPath))
                             {
-                                using BinaryReader srdiReader = new BinaryReader(new FileStream(srdiPath, FileMode.Open, FileAccess.Read, FileShare.Read));
+                                using BinaryReader srdiReader = new(new FileStream(srdiPath, FileMode.Open, FileAccess.Read, FileShare.Read));
                                 srdiReader.BaseStream.Seek(maskedOffset, SeekOrigin.Begin);
                                 int size = info.Values[1];
                                 byte[] data = srdiReader.ReadBytes(size);
@@ -129,7 +129,7 @@ namespace V3Lib.Srd.BlockTypes
                         {
                             if (!string.IsNullOrEmpty(srdvPath))
                             {
-                                using BinaryReader srdvReader = new BinaryReader(new FileStream(srdvPath, FileMode.Open, FileAccess.Read, FileShare.Read));
+                                using BinaryReader srdvReader = new(new FileStream(srdvPath, FileMode.Open, FileAccess.Read, FileShare.Read));
                                 srdvReader.BaseStream.Seek(maskedOffset, SeekOrigin.Begin);
                                 int size = info.Values[1];
                                 byte[] data = srdvReader.ReadBytes(size);
@@ -143,8 +143,8 @@ namespace V3Lib.Srd.BlockTypes
 
         public override byte[] SerializeData(string srdiPath, string srdvPath)
         {
-            using MemoryStream ms = new MemoryStream();
-            using BinaryWriter writer = new BinaryWriter(ms);
+            using MemoryStream ms = new();
+            using BinaryWriter writer = new(ms);
 
             writer.Write(Unknown10);
             writer.Write(Unknown11);
@@ -229,7 +229,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override string GetInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
             sb.Append($"{nameof(Unknown11)}: {Unknown11}\n");
@@ -241,12 +241,12 @@ namespace V3Lib.Srd.BlockTypes
             sb.Append($"{nameof(Unknown1A)}: {Unknown1A}\n");
 
             sb.Append($"Resource Info: \n");
-            List<string> infoOutputList = new List<string>();
+            List<string> infoOutputList = new();
             foreach (ResourceInfo info in ResourceInfoList)
             {
-                StringBuilder sb2 = new StringBuilder();
+                StringBuilder sb2 = new();
                 sb2.Append("{ ");
-                List<string> intStrings = new List<string>();
+                List<string> intStrings = new();
                 foreach (int val in info.Values)
                 {
                     intStrings.Add(val.ToString("X8"));

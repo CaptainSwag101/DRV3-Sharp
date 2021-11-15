@@ -13,11 +13,11 @@ namespace V3Lib.Srd.BlockTypes
         public float Unknown1C;
         public ushort Unknown20;
         public ushort Unknown22;
-        public Dictionary<string, string> MapTexturePairs = new Dictionary<string, string>();
+        public Dictionary<string, string> MapTexturePairs = new();
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadUInt32();
             Unknown14 = reader.ReadSingle();
@@ -54,7 +54,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override string GetInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
             sb.Append($"{nameof(Unknown14)}: {Unknown14}\n");
@@ -67,7 +67,7 @@ namespace V3Lib.Srd.BlockTypes
             var infoList = new List<string>();
             foreach (var pair in MapTexturePairs)
             {
-                StringBuilder sb2 = new StringBuilder();
+                StringBuilder sb2 = new();
 
                 sb2.Append("{ ");
                 sb2.Append($"{pair.Key}, {pair.Value}");

@@ -7,7 +7,7 @@ namespace V3Lib.Spc
 {
     public class SpcFile
     {
-        public List<SpcSubfile> Subfiles = new List<SpcSubfile>();
+        public List<SpcSubfile> Subfiles = new();
         private byte[] Unknown1;
         private int Unknown2;
 
@@ -18,7 +18,7 @@ namespace V3Lib.Spc
         /// <exception cref="InvalidDataException">Occurs when the file you're trying to read does not conform to the SPC specification, and is likely invalid.</exception>
         public void Load(string spcPath)
         {
-            using BinaryReader reader = new BinaryReader(new FileStream(spcPath, FileMode.Open));
+            using BinaryReader reader = new(new FileStream(spcPath, FileMode.Open));
 
             // Verify the magic value, it could either be "CPS." (the one we want) or "$CMP" (most files in the console version, unusable for now)
             string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
@@ -54,7 +54,7 @@ namespace V3Lib.Spc
             // For each subfile in the table, read the corresponding data
             for (int i = 0; i < fileCount; ++i)
             {
-                SpcSubfile subfile = new SpcSubfile
+                SpcSubfile subfile = new()
                 {
                     CompressionFlag = reader.ReadInt16(),
                     UnknownFlag = reader.ReadInt16(),
@@ -78,7 +78,7 @@ namespace V3Lib.Spc
 
         public void Save(string spcPath)
         {
-            using BinaryWriter writer = new BinaryWriter(new FileStream(spcPath, FileMode.Create));
+            using BinaryWriter writer = new(new FileStream(spcPath, FileMode.Create));
 
             writer.Write(Encoding.ASCII.GetBytes("CPS."));
             writer.Write(Unknown1);
@@ -128,7 +128,7 @@ namespace V3Lib.Spc
                         subfile.Decompress();
                     }
 
-                    using FileStream output = new FileStream(outputLocation + Path.DirectorySeparatorChar + filename, FileMode.Create);
+                    using FileStream output = new(outputLocation + Path.DirectorySeparatorChar + filename, FileMode.Create);
                     output.Write(subfile.Data);
                     output.Close();
 
@@ -148,7 +148,7 @@ namespace V3Lib.Spc
         /// <exception cref="FileNotFoundException">Occurs when the file you're trying to insert does not exist.</exception>
         public void InsertSubfile(string filename, bool compress = true)
         {
-            FileInfo insertInfo = new FileInfo(filename);
+            FileInfo insertInfo = new(filename);
 
             if (!insertInfo.Exists)
             {
@@ -168,9 +168,9 @@ namespace V3Lib.Spc
                 }
             }
 
-            using BinaryReader reader = new BinaryReader(new FileStream(filename, FileMode.Open));
+            using BinaryReader reader = new(new FileStream(filename, FileMode.Open));
             int subfileSize = (int)reader.BaseStream.Length;
-            SpcSubfile subfileToInject = new SpcSubfile
+            SpcSubfile subfileToInject = new()
             {
                 CompressionFlag = 1,
                 UnknownFlag = (short)(subfileSize > ushort.MaxValue ? 8 : 4),   // seems like this flag might relate to size? This is a BIG guess though.

@@ -29,12 +29,12 @@ namespace V3Lib.CriWare
 
 
         //public string Name;
-        public List<Dictionary<string, object>> Contents = new List<Dictionary<string, object>>();
+        public List<Dictionary<string, object>> Contents = new();
 
 
         public void Load(byte[] rawData)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new(new MemoryStream(rawData));
 
             string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (magic != "@UTF")
@@ -126,7 +126,7 @@ namespace V3Lib.CriWare
                     byte schemaType = schemaInfo[c].SchemaType;
                     int columnOffset = -1;
 
-                    using BinaryReader stringReader = new BinaryReader(new MemoryStream(stringTableData));
+                    using BinaryReader stringReader = new(new MemoryStream(stringTableData));
                     stringReader.BaseStream.Seek(schemaInfo[c].ColumnNameOffset, SeekOrigin.Begin);
                     columnName = Utils.ReadNullTerminatedString(stringReader, Encoding.ASCII);
                     

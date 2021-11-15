@@ -8,12 +8,12 @@ namespace V3Lib.Srd.BlockTypes
     public sealed class ScnBlock : Block
     {
         public uint Unknown10;
-        public List<string> SceneRootNodes = new List<string>();
-        public List<string> UnknownStrings = new List<string>();
+        public List<string> SceneRootNodes = new();
+        public List<string> UnknownStrings = new();
 
         public override void DeserializeData(byte[] rawData, string srdiPath, string srdvPath)
         {
-            using BinaryReader reader = new BinaryReader(new MemoryStream(rawData));
+            using BinaryReader reader = new(new MemoryStream(rawData));
 
             Unknown10 = reader.ReadUInt32();
             ushort sceneRootNodeIndexOffset = reader.ReadUInt16();
@@ -51,7 +51,7 @@ namespace V3Lib.Srd.BlockTypes
 
         public override string GetInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
 
             sb.Append($"{nameof(Unknown10)}: {Unknown10}\n");
 

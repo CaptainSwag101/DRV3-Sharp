@@ -9,6 +9,6 @@ namespace V3Lib.Sfl
         public uint Id;
         public ushort Unknown1;
         public uint Unknown2;
-        public List<Entry> Entries = new List<Entry>();
+        public List<Entry> Entries = new();
     }
 }

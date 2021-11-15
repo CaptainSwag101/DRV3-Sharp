@@ -20,7 +20,7 @@ namespace SflTool
 
             foreach (string arg in args)
             {
-                FileInfo info = new FileInfo(arg);
+                FileInfo info = new(arg);
                 if (!info.Exists)
                 {
                     Console.WriteLine($"ERROR: File \"{arg}\" does not exist, skipping.");
@@ -30,7 +30,7 @@ namespace SflTool
                 if (info.Extension.ToLowerInvariant() == ".sfl")
                 {
                     // Convert SFL to JSON
-                    SflFile sfl = new SflFile();
+                    SflFile sfl = new();
                     if (!sfl.Load(info.FullName, out string errorMessage))
                     {
                         Console.WriteLine($"ERROR: {errorMessage}");

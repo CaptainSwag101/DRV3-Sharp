@@ -7,11 +7,11 @@ namespace V3Lib.CriWare
 {
     public class AwbFile
     {
-        public Dictionary<short, byte[]> AudioData = new Dictionary<short, byte[]>();
+        public Dictionary<short, byte[]> AudioData = new();
 
         public void Load(string awbPath)
         {
-            using BinaryReader reader = new BinaryReader(new FileStream(awbPath, FileMode.Open));
+            using BinaryReader reader = new(new FileStream(awbPath, FileMode.Open));
 
             string magic = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (magic != "AFS2")
@@ -24,8 +24,8 @@ namespace V3Lib.CriWare
             int numEntries = reader.ReadInt32();
             int alignment = reader.ReadInt32();
 
-            List<short> ids = new List<short>();
-            List<int> ends = new List<int>();
+            List<short> ids = new();
+            List<int> ends = new();
 
             for (int entry = 0; entry < numEntries; ++entry)
             {

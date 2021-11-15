@@ -11,8 +11,8 @@ namespace V3Lib
         // (or maybe I'm just a moron), so we have to do it manually.
         public static string ReadNullTerminatedString(BinaryReader reader, Encoding encoding)
         {
-            using BinaryReader stringReader = new BinaryReader(reader.BaseStream, encoding, true);
-            StringBuilder sb = new StringBuilder();
+            using BinaryReader stringReader = new(reader.BaseStream, encoding, true);
+            StringBuilder sb = new();
             while (stringReader.BaseStream.Position < stringReader.BaseStream.Length)
             {
                 char c = stringReader.ReadChar();

@@ -7,7 +7,7 @@ namespace V3Lib.Rsct
 {
     public class RsctFile
     {
-        public List<(string String, uint Unknown)> Strings = new List<(string String, uint Unknown)>();
+        public List<(string String, uint Unknown)> Strings = new();
 
         public void Load(string rsctPath)
         {
