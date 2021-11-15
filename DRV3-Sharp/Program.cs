@@ -34,7 +34,7 @@ namespace DRV3_Sharp
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             // Do initial startup
-            contextStack.Push(new SpcContext());    // Placeholder, this should be RootContext (or whatever I decide to call it when I'm finished)
+            contextStack.Push(new RootContext());
 
             // While there exists a valid context, loop through its possible operations
             // and show the user what can be performed.

@@ -37,6 +37,15 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
+        protected static SpcContext GetVerifiedContext(IOperationContext compare)
+        {
+            // Ensure that this is not somehow being called from the wrong context
+            if (compare.GetType() != typeof(SpcContext))
+                throw new InvalidOperationException($"This operation was called from an illegal context {compare.GetType()}, it should only be called from {typeof(SpcContext)}.");
+
+            return (SpcContext)compare;
+        }
+
         public SpcContext()
         { }
 
@@ -76,9 +85,7 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
-                // Ensure that this is not somehow being called from the wrong context
-                if (rawContext is not SpcContext context)
-                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+                var context = GetVerifiedContext(rawContext);
 
                 if (!context.ConfirmIfUnsavedChanges()) return;
 
@@ -96,9 +103,7 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
-                // Ensure that this is not somehow being called from the wrong context
-                if (rawContext is not SpcContext context)
-                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+                var context = GetVerifiedContext(rawContext);
 
                 if (!context.ConfirmIfUnsavedChanges()) return;
 
@@ -119,9 +124,7 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
-                // Ensure that this is not somehow being called from the wrong context
-                if (rawContext is not SpcContext context)
-                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+                var context = GetVerifiedContext(rawContext);
 
                 // Save the file now
                 throw new NotImplementedException();
@@ -138,9 +141,7 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
-                // Ensure that this is not somehow being called from the wrong context
-                if (rawContext is not SpcContext context)
-                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+                var context = GetVerifiedContext(rawContext);
 
                 // Insert the file now
                 throw new NotImplementedException();
@@ -157,9 +158,7 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
-                // Ensure that this is not somehow being called from the wrong context
-                if (rawContext is not SpcContext context)
-                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+                var context = GetVerifiedContext(rawContext);
 
                 // Extract the file now
                 throw new NotImplementedException();
@@ -174,9 +173,7 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
-                // Ensure that this is not somehow being called from the wrong context
-                if (rawContext is not SpcContext context)
-                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+                var context = GetVerifiedContext(rawContext);
 
                 var operations = context.PossibleOperations;
                 foreach (IOperation op in operations)
@@ -204,9 +201,7 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
-                // Ensure that this is not somehow being called from the wrong context
-                if (rawContext is not SpcContext context)
-                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+                var context = GetVerifiedContext(rawContext);
 
                 if (!context.ConfirmIfUnsavedChanges()) return;
 
