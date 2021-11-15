@@ -266,8 +266,7 @@ namespace DRV3_Sharp.Contexts
             {
                 _ = GetVerifiedContext(rawContext);
 
-                // Extract the file now
-                throw new NotImplementedException();
+                Program.PushContext(new SpcExtractContext());
             }
         }
 
