@@ -7,6 +7,10 @@
     <Nullable>enable</Nullable>
     <StartupObject>DRV3_Sharp.Program</StartupObject>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <Version>$(VersionPrefix)3.0.0-alpha1</Version>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <FileVersion>3.0.0.0</FileVersion>
+    <PackageLicenseFile>D:\jpmac\Documents\GitHub\DRV3-Sharp\LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
