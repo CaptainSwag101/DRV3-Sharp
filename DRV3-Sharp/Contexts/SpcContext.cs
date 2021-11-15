@@ -11,6 +11,7 @@ namespace DRV3_Sharp.Contexts
     {
         private SpcData? loadedData;
         private string? loadedDataPath;
+        private bool unsavedChanges = false;
 
         public List<IOperation> PossibleOperations
         {
@@ -18,15 +19,19 @@ namespace DRV3_Sharp.Contexts
             {
                 List<IOperation> operationList = new();
 
+                // Add always-available operations
+                operationList.Add(new NewSpcOperation());
+                operationList.Add(new LoadSpcOperation());
+                operationList.Add(new HelpOperation());
+                operationList.Add(new ExitOperation());
+
                 // If an SPC file is loaded, add file-related operations
                 if (loadedData != null)
                 {
-                    
+                    operationList.Insert(2, new SaveSpcOperation());
+                    operationList.Insert(3, new InsertFileOperation());
+                    operationList.Insert(4, new ExtractFileOperation());
                 }
-
-                // Add always-available operations
-                operationList.Add(new HelpOperation());
-                operationList.Add(new ExitOperation());
 
                 return operationList;
             }
@@ -41,7 +46,127 @@ namespace DRV3_Sharp.Contexts
             loadedDataPath = initialDataPath;
         }
 
-        private class HelpOperation : IOperation
+        public bool ConfirmIfUnsavedChanges()
+        {
+            if (unsavedChanges)
+            {
+                ConsoleColor fgColor = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("You have unsaved changes pending! These changes WILL BE LOST if you continue!");
+                Console.ForegroundColor = fgColor;
+                Console.Write("Are you sure you want to continue? (y/N) ");
+
+                var key = Console.ReadKey(false).Key;
+                if (key == ConsoleKey.Y)
+                    return true;
+                else
+                    return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        internal class NewSpcOperation : IOperation
+        {
+            public string Name => "New SPC";
+
+            public string Description => "Creates a new, empty SPC archive to be populated.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                // Ensure that this is not somehow being called from the wrong context
+                if (rawContext is not SpcContext context)
+                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+
+                if (!context.ConfirmIfUnsavedChanges()) return;
+
+                context.loadedData = new();
+                context.loadedDataPath = null;
+                context.unsavedChanges = false;
+            }
+        }
+
+        internal class LoadSpcOperation : IOperation
+        {
+            public string Name => "Load SPC";
+
+            public string Description => "Load an existing SPC archive file.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                // Ensure that this is not somehow being called from the wrong context
+                if (rawContext is not SpcContext context)
+                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+
+                if (!context.ConfirmIfUnsavedChanges()) return;
+
+                context.loadedData = new();
+                context.loadedDataPath = null;
+                context.unsavedChanges = false;
+
+                // Load the file now
+                throw new NotImplementedException();
+            }
+        }
+
+        internal class SaveSpcOperation : IOperation
+        {
+            public string Name => "Save SPC";
+
+            public string Description => "Save the currently-loaded SPC archive file.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                // Ensure that this is not somehow being called from the wrong context
+                if (rawContext is not SpcContext context)
+                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+
+                // Save the file now
+                throw new NotImplementedException();
+
+                context.unsavedChanges = false;
+            }
+        }
+
+        internal class InsertFileOperation : IOperation
+        {
+            public string Name => "Insert File";
+
+            public string Description => "Insert a file into the currently-loaded SPC archive.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                // Ensure that this is not somehow being called from the wrong context
+                if (rawContext is not SpcContext context)
+                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+
+                // Insert the file now
+                throw new NotImplementedException();
+
+                context.unsavedChanges = true;
+            }
+        }
+
+        internal class ExtractFileOperation : IOperation
+        {
+            public string Name => "Extract File";
+
+            public string Description => "Extract a file from the currently-loaded SPC archive.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                // Ensure that this is not somehow being called from the wrong context
+                if (rawContext is not SpcContext context)
+                    throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
+
+                // Extract the file now
+                throw new NotImplementedException();
+            }
+        }
+
+        internal class HelpOperation : IOperation
         {
             public string Name => "Help";
 
@@ -71,7 +196,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        private class ExitOperation : IOperation
+        internal class ExitOperation : IOperation
         {
             public string Name => "Exit";
 
@@ -83,6 +208,9 @@ namespace DRV3_Sharp.Contexts
                 if (rawContext is not SpcContext context)
                     throw new InvalidOperationException($"This operation was called from an illegal context {rawContext.GetType()}, it should only be called from {typeof(SpcContext)}.");
 
+                if (!context.ConfirmIfUnsavedChanges()) return;
+
+                // Pop this context off the program's context stack
                 Program.PopContext();
             }
         }
