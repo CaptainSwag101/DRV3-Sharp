@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using DRV3_Sharp_Library.Formats.Archive.SPC;
@@ -26,11 +26,12 @@ namespace DRV3_Sharp.Contexts
                 operationList.Add(new ExitOperation());
 
                 // If an SPC file is loaded, add file-related operations
-                if (loadedData != null)
+                if (loadedData is not null)
                 {
                     operationList.Insert(2, new SaveSpcOperation());
-                    operationList.Insert(3, new InsertFileOperation());
-                    operationList.Insert(4, new ExtractFileOperation());
+                    operationList.Insert(3, new ListFileOperation());
+                    operationList.Insert(4, new InsertFileOperation());
+                    operationList.Insert(5, new ExtractFileOperation());
                 }
 
                 return operationList;
@@ -107,12 +108,30 @@ namespace DRV3_Sharp.Contexts
 
                 if (!context.ConfirmIfUnsavedChanges()) return;
 
-                context.loadedData = new();
-                context.loadedDataPath = null;
-                context.unsavedChanges = false;
-
                 // Load the file now
-                throw new NotImplementedException();
+                Console.WriteLine("Enter the full path of the file to load (or drag and drop it) and press Enter: ");
+                string? path = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(path))
+                {
+                    Console.WriteLine("The specified path is null or invalid.");
+                    _ = Console.Read();
+                    return;
+                }
+
+                // Trim leading and trailing quotation marks
+                path = path.Trim('"');
+
+                if (!File.Exists(path))
+                {
+                    Console.WriteLine("The specified file does not exist.");
+                    _ = Console.Read();
+                    return;
+                }
+
+                FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                SpcSerializer.Deserialize(fs, out context.loadedData);
+                context.loadedDataPath = path;
+                context.unsavedChanges = false;
             }
         }
 
@@ -127,9 +146,65 @@ namespace DRV3_Sharp.Contexts
                 var context = GetVerifiedContext(rawContext);
 
                 // Save the file now
-                throw new NotImplementedException();
+                if (string.IsNullOrWhiteSpace(context.loadedDataPath))
+                {
+                    Console.WriteLine("Please specify where to save the file:");
+                    string? path = Console.ReadLine();
+                    if (path is null)
+                    {
+                        Console.WriteLine("The specified path is null.");
+                        return;
+                    }
+
+                    FileStream fs = new(path, FileMode.Create, FileAccess.Write, FileShare.None);
+                    SpcSerializer.Serialize(context.loadedData!, fs);   // It shouldn't be possible to invoke this operation while context.loadedData is null
+                    fs.Flush();
+                }
 
                 context.unsavedChanges = false;
+            }
+        }
+
+        internal class ListFileOperation : IOperation
+        {
+            public string Name => "List Files";
+
+            public string Description => "List all files currently stored in the archive.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                var context = GetVerifiedContext(rawContext);
+
+                int maxFiles = context.loadedData!.FileCount;
+                if (maxFiles > 0)
+                {
+                    for (int i = 0; i < maxFiles; ++i)
+                    {
+                        var entry = context.loadedData.GetFileEntry(i);
+
+                        // Preserve original foreground color in the case of a custom-themed terminal
+                        ConsoleColor origForeground = Console.ForegroundColor;
+                        Console.ForegroundColor = ConsoleColor.Blue;
+                        Console.WriteLine(entry!.Value.Name);
+                        Console.ForegroundColor = origForeground;
+                        Console.Write("\tIs Compressed: ");
+                        Console.WriteLine(entry!.Value.File.IsCompressed);
+                        Console.Write("\tOriginal Size: ");
+                        Console.WriteLine(entry!.Value.File.OriginalSize);
+                        Console.Write("\tArchived Size: ");
+                        Console.WriteLine(entry!.Value.File.Data.Length);
+                        Console.Write("\tUnknown Flag: ");
+                        Console.WriteLine(entry!.Value.File.UnknownFlag);
+                        Console.WriteLine();
+                    }
+                }
+                else
+                {
+                    Console.WriteLine("This archive contains no files.");
+                }
+
+                Console.WriteLine("Press any key to continue...");
+                _ = Console.ReadKey(true);
             }
         }
 
