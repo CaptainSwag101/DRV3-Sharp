@@ -47,7 +47,27 @@ namespace DRV3_Sharp
 
                 Console.WriteLine("You can perform the following operations:");
                 var operations = currentContext.PossibleOperations;
-                for (int opNum = 0; opNum < operations.Count; ++opNum)
+
+                // Only display (Console.WindowHeight - 3) operations on screen at any given time,
+                // otherwise for large lists (like SPC extraction) we'll scroll the screen at a rapid pace.
+                // The highlight should be centered on the screen as best as possible.
+                int operationsListSize = (Console.WindowHeight - 3);
+                int halfSize = (operationsListSize / 2);
+                int operationsListLowerBound = highlightedOperation - halfSize;
+                int operationsListUpperBound = highlightedOperation + halfSize;
+
+                // Compensate for non-centered highlight when at either end of the list
+                int lowerDifference = Math.Max(0, 0 - operationsListLowerBound);
+                int upperDifference = Math.Max(0, operationsListUpperBound - operations.Count);
+                operationsListLowerBound -= upperDifference;
+                operationsListUpperBound += lowerDifference;
+
+                // Final clamp to ensure in-bounds
+                operationsListLowerBound = Math.Max(0, operationsListLowerBound);
+                operationsListUpperBound = Math.Min(operations.Count, operationsListUpperBound);
+
+                Range operationsListRange = operationsListLowerBound .. operationsListUpperBound;
+                for (int opNum = operationsListRange.Start.Value; opNum < operationsListRange.End.Value; ++opNum)
                 {
                     if (highlightedOperation == opNum)
                     {
@@ -72,14 +92,25 @@ namespace DRV3_Sharp
                 }
 
                 var keyPress = Console.ReadKey(true);
+                const int FAST_SCROLL_AMOUNT = 10;
                 switch (keyPress.Key)
                 {
+                    // Single-entry scroll
                     case ConsoleKey.UpArrow:
                         if (highlightedOperation > 0) --highlightedOperation;
                         break;
-
                     case ConsoleKey.DownArrow:
                         if (highlightedOperation < (operations.Count - 1)) ++highlightedOperation;
+                        break;
+
+                    // Fast scroll
+                    case ConsoleKey.PageUp:
+                        if (highlightedOperation > FAST_SCROLL_AMOUNT) highlightedOperation -= FAST_SCROLL_AMOUNT;
+                        else if (highlightedOperation > 0) highlightedOperation = 0;
+                        break;
+                    case ConsoleKey.PageDown:
+                        if (highlightedOperation < (operations.Count - FAST_SCROLL_AMOUNT - 1)) highlightedOperation += FAST_SCROLL_AMOUNT;
+                        else if (highlightedOperation < (operations.Count - 1)) highlightedOperation = (operations.Count - 1);
                         break;
 
                     case ConsoleKey.Enter:
