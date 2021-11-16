@@ -95,6 +95,9 @@ namespace DRV3_Sharp.Contexts
                     fs.Write(data);
                     fs.Flush();
                 }
+
+                // Since we've extracted all files at once, the user probably doesn't want to stick around
+                Program.PopContext();
             }
         }
 
