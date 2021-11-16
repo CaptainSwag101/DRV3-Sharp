@@ -126,7 +126,7 @@ namespace DRV3_Sharp.Contexts
                 if (!context.ConfirmIfUnsavedChanges()) return;
 
                 // Get the file path
-                Console.WriteLine("Enter the full path of the file to load (or drag and drop it) and press Enter: ");
+                Console.WriteLine("Enter the full path of the file to load (or drag and drop it) and press Enter:");
                 string? path = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(path))
                 {
@@ -168,7 +168,7 @@ namespace DRV3_Sharp.Contexts
                 // Save the file now
                 if (string.IsNullOrWhiteSpace(context.loadedDataPath))
                 {
-                    Console.WriteLine("Please specify where to save the file:");
+                    Console.WriteLine("Enter the full path where the file should be saved (or drag and drop it) and press Enter:");
                     string? path = Console.ReadLine();
                     if (path is null)
                     {
@@ -177,6 +177,9 @@ namespace DRV3_Sharp.Contexts
                         _ = Console.ReadKey(true);
                         return;
                     }
+
+                    // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
+                    path = path.Trim('"');
 
                     // Ensure the path isn't a directory
                     if (new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory))
@@ -187,10 +190,12 @@ namespace DRV3_Sharp.Contexts
                         return;
                     }
 
-                    using FileStream fs = new(path, FileMode.Create, FileAccess.Write, FileShare.None);
-                    SpcSerializer.Serialize(context.loadedData!, fs);   // It shouldn't be possible to invoke this operation while context.loadedData is null
-                    fs.Flush();
+                    context.loadedDataPath = path;
                 }
+
+                using FileStream fs = new(context.loadedDataPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                SpcSerializer.Serialize(context.loadedData!, fs);   // It shouldn't be possible to invoke this operation while context.loadedData is null
+                fs.Flush();
 
                 context.unsavedChanges = false;
             }
@@ -249,8 +254,76 @@ namespace DRV3_Sharp.Contexts
             {
                 var context = GetVerifiedContext(rawContext);
 
-                // Insert the file now
-                throw new NotImplementedException();
+                // Get the file path to insert
+                Console.WriteLine("Enter the full path of the file to insert (or drag and drop it) and press Enter:");
+                string? path = Console.ReadLine();
+                if (path is null)
+                {
+                    Console.WriteLine("The specified path is null.");
+                    Console.WriteLine("Press any key to continue...");
+                    _ = Console.ReadKey(true);
+                    return;
+                }
+
+                // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
+                path = path.Trim('"');
+
+                // Ensure the path isn't a directory
+                if (new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory))
+                {
+                    Console.WriteLine("The specified path is a directory.");
+                    Console.WriteLine("Press any key to continue...");
+                    _ = Console.ReadKey(true);
+                    return;
+                }
+
+                // Check if a file by that name already exists in the archive
+                string fileName = new FileInfo(path).Name;
+                int? foundIndex = null;
+                for (int i = 0; i < context.loadedData!.FileCount; ++i)
+                {
+                    if (context.loadedData!.Files[i].Name == fileName)
+                    {
+                        Console.Write("A file with the same name already exists in the archive! Overwrite? (y/N): ");
+
+                        var key = Console.ReadKey(false).Key;
+                        if (key == ConsoleKey.Y)
+                        {
+                            foundIndex = i;
+                            break;
+                        }
+                        else
+                        {
+                            return;
+                        }
+                    }
+                }
+
+                using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+                byte[] fileData = new byte[fs.Length];
+                fs.Read(fileData, 0, (int)fs.Length);
+
+                // Try to compress the file
+                byte[] compressedData = SpcCompressor.Compress(fileData);
+
+                // Prepare to generate the new ArchivedFile
+                ArchivedFile newFile;
+
+                // If the compressed data is smaller, use it. Otherwise, don't bother
+                if (compressedData.Length < fileData.Length)
+                    newFile = new(fileName, compressedData, 4, true, fileData.Length);
+                else
+                    newFile = new(fileName, fileData, 4, false, fileData.Length);
+
+                // If the file already exists, replace that one
+                if (foundIndex is not null)
+                {
+                    context.loadedData!.Files[(int)foundIndex] = newFile;
+                }
+                else
+                {
+                    context.loadedData!.Files.Add(newFile);
+                }
 
                 context.unsavedChanges = true;
             }
