@@ -27,7 +27,7 @@ namespace DRV3_Sharp.Contexts
 {
     internal class SpcExtractContext : IOperationContext
     {
-        private readonly SpcData loadedSpc;
+        private readonly SpcData loadedData;
 
         public List<IOperation> PossibleOperations
         {
@@ -37,9 +37,9 @@ namespace DRV3_Sharp.Contexts
 
                 // Add "back" and "extract all" operations first
                 operationList.Add(new BackOperation());
-                operationList.Add(new ExtractAllOperation(loadedSpc));
+                operationList.Add(new ExtractAllOperation());
 
-                foreach (ArchivedFile file in loadedSpc.Files)
+                foreach (ArchivedFile file in loadedData.Files)
                 {
                     operationList.Add(new ExtractFileOperation(file));
                 }
@@ -50,7 +50,16 @@ namespace DRV3_Sharp.Contexts
 
         public SpcExtractContext(SpcData spc)
         {
-            loadedSpc = spc;
+            loadedData = spc;
+        }
+
+        protected static SpcExtractContext GetVerifiedContext(IOperationContext compare)
+        {
+            // Ensure that this is not somehow being called from the wrong context
+            if (compare.GetType() != typeof(SpcExtractContext))
+                throw new InvalidOperationException($"This operation was called from an illegal context {compare.GetType()}, it should only be called from {typeof(SpcExtractContext)}.");
+
+            return (SpcExtractContext)compare;
         }
 
         internal class BackOperation : IOperation
@@ -61,26 +70,23 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
+                _ = GetVerifiedContext(rawContext);
+
                 Program.PopContext();
             }
         }
 
         internal class ExtractAllOperation : IOperation
         {
-            private SpcData spcToExtract;
-
             public string Name => "Extract All";
 
             public string Description => "";
 
-            public ExtractAllOperation(SpcData spc)
-            {
-                spcToExtract = spc;
-            }
-
             public void Perform(IOperationContext rawContext)
             {
-                foreach (ArchivedFile file in spcToExtract.Files)
+                var context = GetVerifiedContext(rawContext);
+
+                foreach (ArchivedFile file in context.loadedData.Files)
                 {
                     byte[] data;
 
@@ -103,7 +109,7 @@ namespace DRV3_Sharp.Contexts
 
         internal class ExtractFileOperation : IOperation
         {
-            private ArchivedFile fileToExtract;
+            private readonly ArchivedFile fileToExtract;
 
             public string Name => fileToExtract.Name;
 
