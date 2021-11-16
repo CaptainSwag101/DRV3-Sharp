@@ -122,6 +122,8 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
+                _ = GetVerifiedContext(rawContext);
+
                 byte[] data;
 
                 // If the file is compressed, decompress it first
