@@ -34,6 +34,7 @@ namespace DRV3_Sharp.Contexts
                 // Populate with file types (and help and exit options)
                 operationList.Add(new SpcOperation());
                 operationList.Add(new HelpOperation());
+                operationList.Add(new CancelOperation());
 
                 return operationList;
             }
