@@ -48,7 +48,7 @@ namespace DRV3_Sharp.Contexts
                     operationList.Insert(2, new SaveSpcOperation());
                     operationList.Insert(3, new ListFileOperation());
                     operationList.Insert(4, new InsertFileOperation());
-                    operationList.Insert(5, new ExtractFileOperation());
+                    operationList.Insert(5, new ExtractFileOperation(loadedData));
                 }
 
                 return operationList;
@@ -258,15 +258,22 @@ namespace DRV3_Sharp.Contexts
 
         internal class ExtractFileOperation : IOperation
         {
+            private readonly SpcData loadedSpc;
+
             public string Name => "Extract File";
 
             public string Description => "Extract a file from the currently-loaded SPC archive.";
+
+            public ExtractFileOperation(SpcData spc)
+            {
+                loadedSpc = spc;
+            }
 
             public void Perform(IOperationContext rawContext)
             {
                 _ = GetVerifiedContext(rawContext);
 
-                Program.PushContext(new SpcExtractContext());
+                Program.PushContext(new SpcExtractContext(loadedSpc));
             }
         }
 
