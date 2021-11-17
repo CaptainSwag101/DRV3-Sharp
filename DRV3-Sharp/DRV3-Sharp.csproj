@@ -29,4 +29,10 @@
     <ProjectReference Include="..\DRV3-Sharp-Library\DRV3-Sharp-Library.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

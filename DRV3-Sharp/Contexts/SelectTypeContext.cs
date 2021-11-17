@@ -33,6 +33,7 @@ namespace DRV3_Sharp.Contexts
 
                 // Populate with file types (and help and exit options)
                 operationList.Add(new SpcOperation());
+                operationList.Add(new StxOperation());
                 operationList.Add(new HelpOperation());
                 operationList.Add(new CancelOperation());
 
@@ -61,6 +62,21 @@ namespace DRV3_Sharp.Contexts
 
                 Program.PopContext();   // Remove this context so if we exit the upcoming context, we fall back directly to RootContext
                 Program.PushContext(new SpcContext());
+            }
+        }
+        
+        internal class StxOperation : IOperation
+        {
+            public string Name => "STX";
+
+            public string Description => "The primary text file type used by DRV3. (CURRENTLY UNFINISHED)";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                _ = GetVerifiedContext(rawContext);
+
+                Program.PopContext();   // Remove this context so if we exit the upcoming context, we fall back directly to RootContext
+                Program.PushContext(new StxContext());
             }
         }
 
