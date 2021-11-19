@@ -69,7 +69,7 @@ namespace DRV3_Sharp.Contexts
         {
             public string Name => "STX";
 
-            public string Description => "The primary text file type used by DRV3. (CURRENTLY UNFINISHED)";
+            public string Description => "The primary text file type used by DRV3.";
 
             public void Perform(IOperationContext rawContext)
             {
