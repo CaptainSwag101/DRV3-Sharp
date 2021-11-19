@@ -34,6 +34,7 @@ namespace DRV3_Sharp.Contexts
                 // Populate with file types (and help and exit options)
                 operationList.Add(new SpcOperation());
                 operationList.Add(new StxOperation());
+                operationList.Add(new SrdOperation());
                 operationList.Add(new HelpOperation());
                 operationList.Add(new CancelOperation());
 
@@ -77,6 +78,21 @@ namespace DRV3_Sharp.Contexts
 
                 Program.PopContext();   // Remove this context so if we exit the upcoming context, we fall back directly to RootContext
                 Program.PushContext(new StxContext());
+            }
+        }
+        
+        internal class SrdOperation : IOperation
+        {
+            public string Name => "SRD";
+
+            public string Description => "The primary resource container used by DRV3. (CURRENTLY UNFINISHED!)";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                _ = GetVerifiedContext(rawContext);
+
+                Program.PopContext();   // Remove this context so if we exit the upcoming context, we fall back directly to RootContext
+                Program.PushContext(new SrdContext());
             }
         }
 
