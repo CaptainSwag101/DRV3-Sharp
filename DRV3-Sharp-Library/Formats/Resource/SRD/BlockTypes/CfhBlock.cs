@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 {
-    record CfhBlock : ISrdBlock
+    public record CfhBlock : ISrdBlock
     {
         public CfhBlock()
         { }

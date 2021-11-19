@@ -54,7 +54,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
     /// <summary>
     /// Texture Resource Block
     /// </summary>
-    record TxrBlock : ISrdBlock
+    public record TxrBlock : ISrdBlock
     {
         public int Unknown00;
         public ushort Swizzle;

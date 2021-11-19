@@ -27,7 +27,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
     /// <summary>
     /// Texture Instance Block
     /// </summary>
-    record TxiBlock : ISrdBlock
+    public record TxiBlock : ISrdBlock
     {
         public int Unknown00;
         public int Unknown04;

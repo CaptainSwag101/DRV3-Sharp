@@ -15,7 +15,7 @@ namespace DRV3_Sharp
                 Console.WriteLine(promptMessage);
 
             string? path = Console.ReadLine();
-            if (path is null)
+            if (string.IsNullOrWhiteSpace(path))
             {
                 Console.WriteLine("The specified path is null.");
                 Console.WriteLine("Press any key to continue...");

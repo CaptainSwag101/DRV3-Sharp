@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 {
-    record RsfBlock : ISrdBlock
+    public record RsfBlock : ISrdBlock
     {
         public string FolderName;
 

@@ -22,6 +22,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DRV3_Sharp_Library.Formats.Resource.SRD;
+using DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes;
 
 namespace DRV3_Sharp.Contexts
 {
@@ -47,6 +48,7 @@ namespace DRV3_Sharp.Contexts
                 if (loadedData is not null)
                 {
                     operationList.Insert(2, new SaveSrdOperation());
+                    operationList.Insert(3, new ListBlocksOperation());
                 }
 
                 return operationList;
@@ -183,7 +185,102 @@ namespace DRV3_Sharp.Contexts
 
             public void Perform(IOperationContext rawContext)
             {
-                throw new NotImplementedException();
+                var context = GetVerifiedContext(rawContext);
+
+                List<(string name, string description)> displayList = new();
+                foreach (var block in context.loadedData!.Blocks)
+                {
+                    string blockTypeName = "";
+                    StringBuilder descriptionBuilder = new();
+
+                    if (block is CfhBlock)
+                    {
+                        blockTypeName = "CFH (Header)";
+                        // Empty description
+                    }
+                    else if (block is RsfBlock rsf)
+                    {
+                        blockTypeName = "RSF (Sub-Header)";
+                        descriptionBuilder.Append($"\tResource Name: {rsf.FolderName}\n");
+                    }
+                    else if (block is VtxBlock vtx)
+                    {
+                        blockTypeName = "VTX (Vertex Group)";
+                        descriptionBuilder.Append($"\tVertex Group Name: {vtx.VertexGroupName}\n");
+                        descriptionBuilder.Append($"\tVertex Count: {vtx.VertexCount}\n");
+                        descriptionBuilder.Append($"\tMesh Type: {vtx.MeshType}\n");
+                        descriptionBuilder.Append($"\tUnknown04: {vtx.Unknown04}\n");
+                        descriptionBuilder.Append($"\tUnknown0C: {vtx.Unknown0C}\n");
+                        descriptionBuilder.Append($"\tUnknown0E: {vtx.Unknown0E}\n");
+                        descriptionBuilder.Append($"\tUnknown18: {vtx.Unknown18}\n");
+                    }
+                    else if (block is MshBlock msh)
+                    {
+                        blockTypeName = "MSH (Geometry Mesh)";
+                        descriptionBuilder.Append($"\tMesh Name: {msh.MeshName}\n");
+                        descriptionBuilder.Append($"\tAssociated Vertex Group Name: {msh.VertexBlockName}\n");
+                        descriptionBuilder.Append($"\tAssociated Material Name: {msh.MaterialNameReference}\n");
+                        descriptionBuilder.Append($"\tUnknown String: {msh.UnknownString}\n");
+                        descriptionBuilder.Append($"\tUnknown00: {msh.Unknown00}\n");
+                        descriptionBuilder.Append($"\tUnknown0A: {msh.Unknown0A}\n");
+                        descriptionBuilder.Append($"\tUnknown0C: {msh.Unknown0C}\n");
+                        descriptionBuilder.Append($"\tUnknown10: {msh.Unknown10}\n");
+                        descriptionBuilder.Append($"\tUnknown11: {msh.Unknown11}\n");
+                        descriptionBuilder.Append($"\tUnknown12: {msh.Unknown12}\n");
+                        descriptionBuilder.Append($"\tUnknown13: {msh.Unknown13}\n");
+                    }
+                    else if (block is MatBlock mat)
+                    {
+                        blockTypeName = "MAT (Material)";
+                        descriptionBuilder.Append($"\tMaterial Name: {mat.MaterialName}\n");
+                        descriptionBuilder.Append("\tShader References: [");
+                        descriptionBuilder.AppendJoin(", ", mat.MaterialShaderReferences);
+                        descriptionBuilder.Append("]\n");
+                        descriptionBuilder.Append($"\tUnknown00: {mat.Unknown00}\n");
+                        descriptionBuilder.Append($"\tUnknown04: {mat.Unknown04}\n");
+                        descriptionBuilder.Append($"\tUnknown08: {mat.Unknown04}\n");
+                        descriptionBuilder.Append($"\tUnknown0C: {mat.Unknown08}\n");
+                        descriptionBuilder.Append($"\tUnknown10: {mat.Unknown10}\n");
+                        descriptionBuilder.Append($"\tUnknown12: {mat.Unknown12}\n");
+                    }
+                    else if (block is TxrBlock txr)
+                    {
+                        blockTypeName = "TXR (Texture Resource)";
+                        descriptionBuilder.Append($"\tTexture Filename: {txr.TextureFilename}\n");
+                        descriptionBuilder.Append($"\tTexture Format: {txr.Format}\n");
+                        descriptionBuilder.Append($"\tWidth: {txr.DisplayWidth}\n");
+                        descriptionBuilder.Append($"\tHeight: {txr.DisplayHeight}\n");
+                        descriptionBuilder.Append($"\tUnknown00: {txr.Unknown00}\n");
+                        descriptionBuilder.Append($"\tUnknown0D: {txr.Unknown0D}\n");
+                    }
+                    else if (block is TxiBlock txi)
+                    {
+                        blockTypeName = "TXI (Texture Instance, used to link other blocks to TXR blocks)";
+                        descriptionBuilder.Append($"\tAssociated Texture Name: {txi.TextureFilenameReference}\n");
+                        descriptionBuilder.Append($"\tAssociated Material Name: {txi.MaterialNameReference}\n");
+                    }
+                    else if (block is ScnBlock scn)
+                    {
+                        blockTypeName = "SCN (3D Scene)";
+                        descriptionBuilder.Append($"\tScene Name: {scn.SceneName}\n");
+                    }
+                    else if (block is Ct0Block)
+                    {
+                        blockTypeName = "CT0 (Section Terminator)";
+                        // Empty description
+                    }
+                    else if (block is UnknownBlock unk)
+                    {
+                        blockTypeName = $"{unk.Type.TrimStart('$')} (Unknown Block Purpose or Unimplemented Block Type)";
+                        descriptionBuilder.Append($"\tData Size (excluding sub-blocks): {unk.MainData.Length}\n");
+                    }
+
+                    displayList.Add((blockTypeName, descriptionBuilder.ToString()));
+                }
+                Utils.DisplayDescriptiveList(displayList);
+
+                Console.WriteLine("Press any key to continue...");
+                _ = Console.ReadKey(true);
             }
         }
 

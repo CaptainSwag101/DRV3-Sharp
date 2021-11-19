@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 {
-    record UnknownBlock : ISrdBlock
+    public record UnknownBlock : ISrdBlock
     {
         public readonly string Type;
         public readonly byte[] MainData;

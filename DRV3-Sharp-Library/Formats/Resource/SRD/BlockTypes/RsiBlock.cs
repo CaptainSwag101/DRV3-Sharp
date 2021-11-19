@@ -24,20 +24,20 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 {
-    enum ResourceDataLocation
+    public enum ResourceDataLocation
     {
         Local = 0x00000000,
         Srdi = 0x20000000,
         Srdv = 0x40000000
     }
 
-    record ExternalResourceInfo(int Address, int Length, int Unknown1, int Unknown2);
-    record LocalResourceInfo(int Address1, int Address2, int Length, int Unknown);
+    public record ExternalResourceInfo(int Address, int Length, int Unknown1, int Unknown2);
+    public record LocalResourceInfo(int Address1, int Address2, int Length, int Unknown);
 
     /// <summary>
     /// Resource Information Block
     /// </summary>
-    record RsiBlock : ISrdBlock
+    public record RsiBlock : ISrdBlock
     {
         public List<(string Name, byte[] Data)> LocalResourceData = new();
         public List<(byte[] Data, ResourceDataLocation Location)> ExternalResourceData = new();
