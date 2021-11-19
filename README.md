@@ -1,10 +1,10 @@
 # DRV3-Sharp: A tool and library for working with various formats from Danganrronpa V3 for PC (PS Vita/PS4 are not supported currently!)
 
 ## How do I use these tools?
-These tools are intended to be run from the command line, such as Windows Command Prompt, PowerShell, or the Linux terminal of your choice. You can also just drag and drop files ending in the proper extension onto the tool with the same name in most cases. You will, however, need to extract the CPK archives that the game ships with in order to access said data, I recommend using a tool like YACpkTool or CriPakGUI.
+These tools are intended to be run from the command line, such as Windows Command Prompt, PowerShell, or the Linux terminal of your choice. You can also just drag and drop files from the game data onto the executable file in most cases. However, you will need to extract the CPK archives that the game ships with in order to access said data; I recommend using a tool like YACpkTool or CriPakGUI.
 
 ## Where can I obtain pre-built copies of these tools to run?
-These tools are in a constant state of rewrites and adjustments, so I currently do not provide pre-built copies, since they would most likely be missing features or have serious bugs. If you'd like to build them, you'll need Visual Studio Code, or Microsoft Visual Studio 2019 if you're using Windows, or the command-line `dotnet` SDK if you're familiar with how to use that.
+These tools are in a constant state of rewrites and adjustments, so I currently do not provide pre-built copies, since they would most likely be missing features or have serious bugs. If you'd like to build them, you'll need Visual Studio Code, or Microsoft Visual Studio 2022 if you're using Windows, or the command-line `dotnet` SDK if you're familiar with how to use that.
 
 ## Why don't you provide any instructions on how to use these tools?
 Well... frankly, it's because I'm constantly rewriting these tools and have changed how they work drastically several times. These tools are by no means stable (I'm currently working on the second major overhaul as I write this, which will COMPLETELY change how they're structured and how they will be invoked), so I can't easily provide a good guide for other people to use them when I myself still haven't decided on how they should be used.
