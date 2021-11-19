@@ -19,6 +19,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 using System.Threading.Tasks;
 using DRV3_Sharp_Library.Formats.Text.STX;
 
@@ -39,6 +42,7 @@ namespace DRV3_Sharp.Contexts
                 // Add always-available operations
                 operationList.Add(new NewStxOperation());
                 operationList.Add(new LoadStxOperation());
+                operationList.Add(new ConvertFromJsonOperation());
                 operationList.Add(new HelpOperation());
                 operationList.Add(new BackOperation());
 
@@ -46,6 +50,7 @@ namespace DRV3_Sharp.Contexts
                 if (loadedData is not null)
                 {
                     operationList.Insert(2, new SaveStxOperation());
+                    operationList.Insert(4, new ConvertToJsonOperation());
                 }
 
                 return operationList;
@@ -123,26 +128,8 @@ namespace DRV3_Sharp.Contexts
                 if (!context.ConfirmIfUnsavedChanges()) return;
 
                 // Get the file path
-                Console.WriteLine("Enter the full path of the file to load (or drag and drop it) and press Enter:");
-                string? path = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(path))
-                {
-                    Console.WriteLine("The specified path is null or invalid.");
-                    Console.WriteLine("Press any key to continue...");
-                    _ = Console.ReadKey(true);
-                    return;
-                }
-
-                // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
-                path = path.Trim('"');
-
-                if (!File.Exists(path))
-                {
-                    Console.WriteLine("The specified file does not exist.");
-                    Console.WriteLine("Press any key to continue...");
-                    _ = Console.ReadKey(true);
-                    return;
-                }
+                string? path = Utils.GetPathFromUser("Enter the full path of the file to load (or drag and drop it) and press Enter:");
+                if (path is null) return;
 
                 // Load the file now that we've verified it exists
                 using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -165,27 +152,8 @@ namespace DRV3_Sharp.Contexts
                 // Save the file now
                 if (string.IsNullOrWhiteSpace(context.loadedDataPath))
                 {
-                    Console.WriteLine("Enter the full path where the file should be saved (or drag and drop it) and press Enter:");
-                    string? path = Console.ReadLine();
-                    if (path is null)
-                    {
-                        Console.WriteLine("The specified path is null.");
-                        Console.WriteLine("Press any key to continue...");
-                        _ = Console.ReadKey(true);
-                        return;
-                    }
-
-                    // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
-                    path = path.Trim('"');
-
-                    // Ensure the path isn't a directory
-                    if (new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory))
-                    {
-                        Console.WriteLine("The specified path is a directory.");
-                        Console.WriteLine("Press any key to continue...");
-                        _ = Console.ReadKey(true);
-                        return;
-                    }
+                    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:");
+                    if (path is null) return;
 
                     context.loadedDataPath = path;
                 }
@@ -195,6 +163,66 @@ namespace DRV3_Sharp.Contexts
                 fs.Flush();
 
                 context.unsavedChanges = false;
+            }
+        }
+
+        internal class ConvertFromJsonOperation : IOperation
+        {
+            public string Name => "Convert From JSON";
+
+            public string Description => "Parses a properly-formatted JSON file and creates STX data based on its contents.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                var context = GetVerifiedContext(rawContext);
+
+                if (!context.ConfirmIfUnsavedChanges()) return;
+
+                context.loadedData = new();
+                context.loadedDataPath = null;
+
+                throw new NotImplementedException();
+
+                context.unsavedChanges = false;
+            }
+        }
+
+        internal class ConvertToJsonOperation : IOperation
+        {
+            public string Name => "Convert To JSON";
+
+            public string Description => "Creates a human-readable JSON file containing the STX text strings and other data.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                var context = GetVerifiedContext(rawContext);
+
+                List<List<List<string>>> tableStringParagraphList = new();
+                foreach (var table in context.loadedData!.Tables)
+                {
+                    List<List<string>> stringParagraphList = new();
+                    foreach (string line in table.Strings)
+                    {
+                        List<string> paragraphList = new();
+                        string[] split = line.Split('\n');
+                        foreach (string p in split)
+                        {
+                            paragraphList.Add(p.TrimEnd('\r'));
+                        }
+                        stringParagraphList.Add(paragraphList);
+                    }
+                    tableStringParagraphList.Add(stringParagraphList);
+                }
+
+                JsonSerializerOptions jsonOptions = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+                string jsonString = JsonSerializer.Serialize(tableStringParagraphList, jsonOptions);
+
+                string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:");
+                if (path is null) return;
+
+                using FileStream fs = new(path, FileMode.Create, FileAccess.Write, FileShare.None);
+                using StreamWriter writer = new(fs, Encoding.UTF8);
+                writer.Write(jsonString);
             }
         }
 

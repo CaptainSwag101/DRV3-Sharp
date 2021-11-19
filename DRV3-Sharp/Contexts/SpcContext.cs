@@ -126,15 +126,8 @@ namespace DRV3_Sharp.Contexts
                 if (!context.ConfirmIfUnsavedChanges()) return;
 
                 // Get the file path
-                Console.WriteLine("Enter the full path of the file to load (or drag and drop it) and press Enter:");
-                string? path = Console.ReadLine();
-                if (string.IsNullOrWhiteSpace(path))
-                {
-                    Console.WriteLine("The specified path is null or invalid.");
-                    Console.WriteLine("Press any key to continue...");
-                    _ = Console.ReadKey(true);
-                    return;
-                }
+                string? path = Utils.GetPathFromUser("Enter the full path of the file to load (or drag and drop it) and press Enter:");
+                if (path is null) return;
 
                 // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
                 path = path.Trim('"');
@@ -168,27 +161,8 @@ namespace DRV3_Sharp.Contexts
                 // Save the file now
                 if (string.IsNullOrWhiteSpace(context.loadedDataPath))
                 {
-                    Console.WriteLine("Enter the full path where the file should be saved (or drag and drop it) and press Enter:");
-                    string? path = Console.ReadLine();
-                    if (path is null)
-                    {
-                        Console.WriteLine("The specified path is null.");
-                        Console.WriteLine("Press any key to continue...");
-                        _ = Console.ReadKey(true);
-                        return;
-                    }
-
-                    // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
-                    path = path.Trim('"');
-
-                    // Ensure the path isn't a directory
-                    if (new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory))
-                    {
-                        Console.WriteLine("The specified path is a directory.");
-                        Console.WriteLine("Press any key to continue...");
-                        _ = Console.ReadKey(true);
-                        return;
-                    }
+                    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:");
+                    if (path is null) return;
 
                     context.loadedDataPath = path;
                 }
@@ -255,27 +229,8 @@ namespace DRV3_Sharp.Contexts
                 var context = GetVerifiedContext(rawContext);
 
                 // Get the file path to insert
-                Console.WriteLine("Enter the full path of the file to insert (or drag and drop it) and press Enter:");
-                string? path = Console.ReadLine();
-                if (path is null)
-                {
-                    Console.WriteLine("The specified path is null.");
-                    Console.WriteLine("Press any key to continue...");
-                    _ = Console.ReadKey(true);
-                    return;
-                }
-
-                // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
-                path = path.Trim('"');
-
-                // Ensure the path isn't a directory
-                if (new FileInfo(path).Attributes.HasFlag(FileAttributes.Directory))
-                {
-                    Console.WriteLine("The specified path is a directory.");
-                    Console.WriteLine("Press any key to continue...");
-                    _ = Console.ReadKey(true);
-                    return;
-                }
+                string? path = Utils.GetPathFromUser("Enter the full path of the file to insert (or drag and drop it) and press Enter:");
+                if (path is null) return;
 
                 // Check if a file by that name already exists in the archive
                 string fileName = new FileInfo(path).Name;
