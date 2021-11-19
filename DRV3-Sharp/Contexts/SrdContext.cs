@@ -175,6 +175,32 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
+        internal class ListBlocksOperation : IOperation
+        {
+            public string Name => "List Blocks";
+
+            public string Description => "Display a descriptive list of all discrete data blocks in this resource archive.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        internal class ExtractTexturesOperation : IOperation
+        {
+            public string Name => "Extract Textures";
+
+            public string Description => "Extract one or more textures from the resource container.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                var context = GetVerifiedContext(rawContext);
+
+                throw new NotImplementedException();
+            }
+        }
+
         internal class HelpOperation : IOperation
         {
             public string Name => "Help";
@@ -186,17 +212,12 @@ namespace DRV3_Sharp.Contexts
                 var context = GetVerifiedContext(rawContext);
 
                 var operations = context.PossibleOperations;
+                List<(string name, string description)> displayList = new();
                 foreach (IOperation op in operations)
                 {
-                    // Preserve original foreground color in the case of a custom-themed terminal
-                    ConsoleColor origForeground = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine(op.Name);
-                    Console.ForegroundColor = origForeground;
-                    Console.Write("\t");
-                    Console.Write(op.Description);
-                    Console.WriteLine();
+                    displayList.Add((op.Name, $"\t{op.Description}"));
                 }
+                Utils.DisplayDescriptiveList(displayList);
 
                 Console.WriteLine("Press any key to continue...");
                 _ = Console.ReadKey(true);

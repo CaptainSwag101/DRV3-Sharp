@@ -188,25 +188,20 @@ namespace DRV3_Sharp.Contexts
                 int maxFiles = context.loadedData!.FileCount;
                 if (maxFiles > 0)
                 {
+                    List<(string name, string description)> displayList = new();
                     for (int i = 0; i < maxFiles; ++i)
                     {
                         ArchivedFile entry = context.loadedData.Files[i];
 
-                        // Preserve original foreground color in the case of a custom-themed terminal
-                        ConsoleColor origForeground = Console.ForegroundColor;
-                        Console.ForegroundColor = ConsoleColor.Blue;
-                        Console.WriteLine(entry.Name);
-                        Console.ForegroundColor = origForeground;
-                        Console.Write("\tIs Compressed: ");
-                        Console.WriteLine(entry.IsCompressed);
-                        Console.Write("\tOriginal Size: ");
-                        Console.WriteLine(entry.OriginalSize);
-                        Console.Write("\tArchived Size: ");
-                        Console.WriteLine(entry.Data.Length);
-                        Console.Write("\tUnknown Flag: ");
-                        Console.WriteLine(entry.UnknownFlag);
-                        Console.WriteLine();
+                        StringBuilder descriptionBuilder = new();
+                        descriptionBuilder.Append($"\tIs Compressed: {entry.IsCompressed}\n");
+                        descriptionBuilder.Append($"\tOriginal Size: {entry.OriginalSize}\n");
+                        descriptionBuilder.Append($"\tArchived Size: {entry.Data.Length}\n");
+                        descriptionBuilder.Append($"\tUnknown Flag: {entry.UnknownFlag}\n");
+
+                        displayList.Add((entry.Name, descriptionBuilder.ToString()));
                     }
+                    Utils.DisplayDescriptiveList(displayList);
                 }
                 else
                 {
@@ -309,17 +304,12 @@ namespace DRV3_Sharp.Contexts
                 var context = GetVerifiedContext(rawContext);
 
                 var operations = context.PossibleOperations;
+                List<(string name, string description)> displayList = new();
                 foreach (IOperation op in operations)
                 {
-                    // Preserve original foreground color in the case of a custom-themed terminal
-                    ConsoleColor origForeground = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine(op.Name);
-                    Console.ForegroundColor = origForeground;
-                    Console.Write("\t");
-                    Console.Write(op.Description);
-                    Console.WriteLine();
+                    displayList.Add((op.Name, $"\t{op.Description}"));
                 }
+                Utils.DisplayDescriptiveList(displayList);
 
                 Console.WriteLine("Press any key to continue...");
                 _ = Console.ReadKey(true);

@@ -23,6 +23,6 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 {
-    interface ISrdBlock
+    public interface ISrdBlock
     { }
 }

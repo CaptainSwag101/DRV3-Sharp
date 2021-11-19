@@ -15,17 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using DRV3_Sharp_Library.Formats.Resource.SRD.ResourceTypes;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD
 {
     public class SrdData : IDanganV3Data
     {
-        List<AbstractResource> Resources = new();
+        public readonly List<ISrdBlock> Blocks = new();
     }
 }

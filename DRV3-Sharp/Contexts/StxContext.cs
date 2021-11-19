@@ -260,17 +260,12 @@ namespace DRV3_Sharp.Contexts
                 var context = GetVerifiedContext(rawContext);
 
                 var operations = context.PossibleOperations;
+                List<(string name, string description)> displayList = new();
                 foreach (IOperation op in operations)
                 {
-                    // Preserve original foreground color in the case of a custom-themed terminal
-                    ConsoleColor origForeground = Console.ForegroundColor;
-                    Console.ForegroundColor = ConsoleColor.Blue;
-                    Console.WriteLine(op.Name);
-                    Console.ForegroundColor = origForeground;
-                    Console.Write("\t");
-                    Console.Write(op.Description);
-                    Console.WriteLine();
+                    displayList.Add((op.Name, $"\t{op.Description}"));
                 }
+                Utils.DisplayDescriptiveList(displayList);
 
                 Console.WriteLine("Press any key to continue...");
                 _ = Console.ReadKey(true);

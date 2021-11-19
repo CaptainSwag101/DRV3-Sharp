@@ -38,5 +38,18 @@ namespace DRV3_Sharp
 
             return path;
         }
+
+        public static void DisplayDescriptiveList(List<(string Name, string Description)> list)
+        {
+            foreach (var (Name, Description) in list)
+            {
+                // Preserve original foreground color in the case of a custom-themed terminal
+                ConsoleColor origForeground = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.Blue;
+                Console.WriteLine(Name);
+                Console.ForegroundColor = origForeground;
+                Console.WriteLine(Description);
+            }
+        }
     }
 }

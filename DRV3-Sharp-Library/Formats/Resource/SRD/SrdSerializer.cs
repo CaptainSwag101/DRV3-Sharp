@@ -32,30 +32,31 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
     {
         public static void Deserialize(Stream inputSrdStream, Stream? inputSrdvStream, Stream? inputSrdiStream, out SrdData outputData)
         {
+            outputData = new();
+
             // Step 1: Read in all blocks
-            List<ISrdBlock> blocks = new();
             while (inputSrdStream.Position < inputSrdStream.Length)
             {
                 BlockSerializer.Deserialize(inputSrdStream, inputSrdvStream, inputSrdiStream, out ISrdBlock block);
-                blocks.Add(block);
+                outputData.Blocks.Add(block);
             }
 
             // Step 2: Abstract blocks into their respective resource types
-            outputData = new();
+            //outputData = new();
 
-            List<ISrdBlock> cfhBlocks = blocks.Where(block => block is CfhBlock).ToList();
-            Debug.Assert(cfhBlocks.Count == 1);
-            List<ISrdBlock> rsfBlocks = blocks.Where(block => block is RsfBlock).ToList();
-            Debug.Assert(rsfBlocks.Count <= 1);
-            List<ISrdBlock> txrBlocks = blocks.Where(block => block is TxrBlock).ToList();
-            List<ISrdBlock> txiBlocks = blocks.Where(block => block is TxiBlock).ToList();
-            List<ISrdBlock> vtxBlocks = blocks.Where(block => block is VtxBlock).ToList();
-            List<ISrdBlock> mshBlocks = blocks.Where(block => block is MshBlock).ToList();
-            List<ISrdBlock> matBlocks = blocks.Where(block => block is MatBlock).ToList();
-            List<ISrdBlock> scnBlocks = blocks.Where(block => block is ScnBlock).ToList();
-            //List<ISrdBlock> treBlocks = blocks.Where(block => block is TreBlock).ToList();
-            //List<ISrdBlock> sklBlocks = blocks.Where(block => block is SklBlock).ToList();
-            //List<ISrdBlock> anmBlocks = blocks.Where(block => block is AnmBlock).ToList();
+            //List<ISrdBlock> cfhBlocks = outputData.Blocks.Where(block => block is CfhBlock).ToList();
+            //Debug.Assert(cfhBlocks.Count == 1);
+            //List<ISrdBlock> rsfBlocks = outputData.Blocks.Where(block => block is RsfBlock).ToList();
+            //Debug.Assert(rsfBlocks.Count <= 1);
+            //List<ISrdBlock> txrBlocks = outputData.Blocks.Where(block => block is TxrBlock).ToList();
+            //List<ISrdBlock> txiBlocks = outputData.Blocks.Where(block => block is TxiBlock).ToList();
+            //List<ISrdBlock> vtxBlocks = outputData.Blocks.Where(block => block is VtxBlock).ToList();
+            //List<ISrdBlock> mshBlocks = outputData.Blocks.Where(block => block is MshBlock).ToList();
+            //List<ISrdBlock> matBlocks = outputData.Blocks.Where(block => block is MatBlock).ToList();
+            //List<ISrdBlock> scnBlocks = outputData.Blocks.Where(block => block is ScnBlock).ToList();
+            //List<ISrdBlock> treBlocks = outputData.Blocks.Where(block => block is TreBlock).ToList();
+            //List<ISrdBlock> sklBlocks = outputData.Blocks.Where(block => block is SklBlock).ToList();
+            //List<ISrdBlock> anmBlocks = outputData.Blocks.Where(block => block is AnmBlock).ToList();
         }
 
         public static void Serialize(SrdData inputData, Stream outputSrdStream, Stream outputSrdvStream, Stream outputSrdiStream)
