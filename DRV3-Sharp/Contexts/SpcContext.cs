@@ -129,17 +129,6 @@ namespace DRV3_Sharp.Contexts
                 string? path = Utils.GetPathFromUser("Enter the full path of the file to load (or drag and drop it) and press Enter:", true);
                 if (path is null) return;
 
-                // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
-                path = path.Trim('"');
-
-                if (!File.Exists(path))
-                {
-                    Console.WriteLine("The specified file does not exist.");
-                    Console.WriteLine("Press any key to continue...");
-                    _ = Console.ReadKey(true);
-                    return;
-                }
-
                 // Load the file now that we've verified it exists
                 using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 SpcSerializer.Deserialize(fs, out context.loadedData);
