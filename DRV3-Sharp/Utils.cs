@@ -9,7 +9,7 @@ namespace DRV3_Sharp
 {
     internal static class Utils
     {
-        public static string? GetPathFromUser(string? promptMessage)
+        public static string? GetPathFromUser(string? promptMessage, bool fileMustExist)
         {
             if (promptMessage is not null)
                 Console.WriteLine(promptMessage);
@@ -26,8 +26,15 @@ namespace DRV3_Sharp
             // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
             path = path.Trim('"');
 
-            // Ensure the path isn't a directory, if it exists
             FileInfo fi = new(path);
+
+            if (!fi.Exists && fileMustExist)
+            {
+                Console.WriteLine("The specified path does not exist.");
+                return null;
+            }
+
+            // Ensure the path isn't a directory, if it exists
             if (fi.Exists && fi.Attributes.HasFlag(FileAttributes.Directory))
             {
                 Console.WriteLine("The specified path is a directory.");

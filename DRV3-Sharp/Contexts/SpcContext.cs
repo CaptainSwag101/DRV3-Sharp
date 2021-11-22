@@ -126,7 +126,7 @@ namespace DRV3_Sharp.Contexts
                 if (!context.ConfirmIfUnsavedChanges()) return;
 
                 // Get the file path
-                string? path = Utils.GetPathFromUser("Enter the full path of the file to load (or drag and drop it) and press Enter:");
+                string? path = Utils.GetPathFromUser("Enter the full path of the file to load (or drag and drop it) and press Enter:", true);
                 if (path is null) return;
 
                 // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
@@ -161,7 +161,7 @@ namespace DRV3_Sharp.Contexts
                 // Save the file now
                 if (string.IsNullOrWhiteSpace(context.loadedDataPath))
                 {
-                    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:");
+                    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:", false);
                     if (path is null) return;
 
                     context.loadedDataPath = path;
@@ -224,7 +224,7 @@ namespace DRV3_Sharp.Contexts
                 var context = GetVerifiedContext(rawContext);
 
                 // Get the file path to insert
-                string? path = Utils.GetPathFromUser("Enter the full path of the file to insert (or drag and drop it) and press Enter:");
+                string? path = Utils.GetPathFromUser("Enter the full path of the file to insert (or drag and drop it) and press Enter:", true);
                 if (path is null) return;
 
                 // Check if a file by that name already exists in the archive
