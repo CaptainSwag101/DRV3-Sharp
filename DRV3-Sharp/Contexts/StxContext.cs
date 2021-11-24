@@ -160,8 +160,6 @@ namespace DRV3_Sharp.Contexts
 
                 using FileStream fs = new(context.loadedDataPath, FileMode.Create, FileAccess.Write, FileShare.None);
                 StxSerializer.Serialize(context.loadedData!, fs);   // It shouldn't be possible to invoke this operation while context.loadedData is null
-                fs.Flush();
-
                 context.unsavedChanges = false;
             }
         }
@@ -181,31 +179,17 @@ namespace DRV3_Sharp.Contexts
                 string? path = Utils.GetPathFromUser("Enter the full path of the file to load (or drag and drop it) and press Enter:", true);
                 if (path is null) return;
 
-                context.loadedData = new();
-                context.loadedDataPath = null;
-
                 using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using StreamReader reader = new(fs, Encoding.UTF8);
                 string jsonIn = reader.ReadToEnd();
-                var tableStringParagraphList = JsonSerializer.Deserialize<List<List<List<string>>>>(jsonIn);
-                if (tableStringParagraphList is null)
+                JsonSerializerOptions jsonOptions = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+                context.loadedData = JsonSerializer.Deserialize<StxData>(jsonIn, jsonOptions);
+                context.loadedDataPath = null;
+                if (context.loadedData is null)
                 {
                     Console.WriteLine("Something went wrong while deserializing the JSON file!");
                     return;
                 }
-
-                foreach (var tableEntry in tableStringParagraphList)
-                {
-                    StringTable table = new(8, new());  // TODO: This value of 8 for the UnknownData is just a guess!
-                    foreach (var paragraphList in tableEntry)
-                    {
-                        StringBuilder lineBuilder = new();
-                        lineBuilder.AppendJoin("\n", paragraphList);
-                        table.Strings.Add(lineBuilder.ToString());
-                    }
-                    context.loadedData.Tables.Add(table);
-                }
-
                 context.unsavedChanges = false;
             }
         }
@@ -220,25 +204,8 @@ namespace DRV3_Sharp.Contexts
             {
                 var context = GetVerifiedContext(rawContext);
 
-                List<List<List<string>>> tableStringParagraphList = new();
-                foreach (var table in context.loadedData!.Tables)
-                {
-                    List<List<string>> stringParagraphList = new();
-                    foreach (string line in table.Strings)
-                    {
-                        List<string> paragraphList = new();
-                        string[] split = line.Split('\n');
-                        foreach (string p in split)
-                        {
-                            paragraphList.Add(p.TrimEnd('\r')); // Some languages use carriage returns, others don't. Screw consistency, amirite?
-                        }
-                        stringParagraphList.Add(paragraphList);
-                    }
-                    tableStringParagraphList.Add(stringParagraphList);
-                }
-
                 JsonSerializerOptions jsonOptions = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
-                string jsonString = JsonSerializer.Serialize(tableStringParagraphList, jsonOptions);
+                string jsonString = JsonSerializer.Serialize(context.loadedData!, jsonOptions);
 
                 string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:", false);
                 if (path is null) return;

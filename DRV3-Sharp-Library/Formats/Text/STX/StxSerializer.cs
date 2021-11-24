@@ -18,6 +18,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace DRV3_Sharp_Library.Formats.Text.STX
@@ -55,7 +56,7 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
             reader.BaseStream.Seek(tableOffset, SeekOrigin.Begin);
             foreach (var (unknown, stringCount) in tableInfo)
             {
-                List<string> strings = new();
+                List<SegmentedString> strings = new();
 
                 for (int s = 0; s < stringCount; ++s)
                 {
@@ -67,7 +68,9 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
                     reader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
 
                     // C# does not include a way to read null-terminated strings, so we'll have to do it manually.
-                    strings.Add(Utils.ReadNullTerminatedString(reader, Encoding.Unicode));
+                    // Also, some languages use carriage returns, others don't. Screw consistency, amirite?
+                    string rawString = Utils.ReadNullTerminatedString(reader, Encoding.Unicode).Replace("\r","");
+                    strings.Add(new SegmentedString(rawString.Split('\n')));
 
                     // Check if the string ID does not line up with the position it was given in the list, just in case.
                     if (stringId != (strings.Count - 1)) throw new InvalidDataException($"String #{s} has a reported ID of {stringId}, this list is not sorted correctly!");
@@ -115,13 +118,18 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
             {
                 uint strId = 0;
                 List<(int, string)> writtenStrings = new();
-                foreach (string str in table.Strings)
+                foreach (SegmentedString str in table.Strings)
                 {
+                    // Convert segmented string to a full string
+                    StringBuilder sb = new();
+                    sb.AppendJoin('\n', str.Segments);
+                    string wholeString = sb.ToString();
+
                     // De-duplicate strings by re-using offsets
                     int? foundOffset = null;
                     foreach (var (offset, text) in writtenStrings)
                     {
-                        if (text == str)
+                        if (text == wholeString)
                         {
                             foundOffset = offset;
                             break;
@@ -132,9 +140,14 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
 
                     int strPos;
                     if (foundOffset is not null)
+                    {
                         strPos = (int)foundOffset;
+                    }
                     else
+                    {
                         strPos = latestPos;
+                        writtenStrings.Add((strPos, wholeString));  // If the string is not already present, add it to the de-duplication list
+                    }
 
                     // Write ID/offset pair
                     writer.BaseStream.Seek(infoPairPos, SeekOrigin.Begin);
@@ -148,7 +161,7 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
                     // Write string data if there are no existing duplicates
                     if (foundOffset is null)
                     {
-                        byte[] strData = Encoding.Unicode.GetBytes(str);
+                        byte[] strData = Encoding.Unicode.GetBytes(wholeString);
                         writer.Write(strData);
                         writer.Write((ushort)0);
                     }
