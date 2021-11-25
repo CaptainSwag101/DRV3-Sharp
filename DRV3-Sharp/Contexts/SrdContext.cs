@@ -49,6 +49,8 @@ namespace DRV3_Sharp.Contexts
                 {
                     operationList.Insert(2, new SaveSrdOperation());
                     operationList.Insert(3, new ListBlocksOperation());
+                    operationList.Insert(4, new ExtractTexturesOperation());
+                    operationList.Insert(5, new ExtractFontOperation());
                 }
 
                 return operationList;
@@ -171,8 +173,6 @@ namespace DRV3_Sharp.Contexts
                 using FileStream srdiStream = new(srdiPath, FileMode.Create, FileAccess.Write, FileShare.None);
                 using FileStream srdvStream = new(srdvPath, FileMode.Create, FileAccess.Write, FileShare.None);
                 SrdSerializer.Serialize(context.loadedData!, srdStream, srdvStream, srdiStream);    // It shouldn't be possible to invoke this operation while context.loadedData is null
-                srdStream.Flush();
-
                 context.unsavedChanges = false;
             }
         }
@@ -294,7 +294,89 @@ namespace DRV3_Sharp.Contexts
             {
                 var context = GetVerifiedContext(rawContext);
 
-                throw new NotImplementedException();
+                List<ISrdBlock> txrBlocks = context.loadedData!.Blocks.Where(block => block is TxrBlock).ToList();
+                if (txrBlocks.Count == 0)
+                {
+                    Console.WriteLine("This file contains no textures.");
+                    return;
+                }
+
+                // Save the textures in the same location as the SRD file
+                if (string.IsNullOrWhiteSpace(context.loadedDataPath))
+                {
+                    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:", false);
+                    if (path is null) return;
+
+                    context.loadedDataPath = path;
+                }
+                string srdDirPath = Utils.GetEnclosingDirectory(context.loadedDataPath!)!;
+
+                // Check if there is an RSF block in the file. If so, extract contents to an inner folder
+                string extractDirPath;
+                List<ISrdBlock> rsfBlocks = context.loadedData!.Blocks.Where(block => block is RsfBlock).ToList();
+                if (rsfBlocks.Count > 0)
+                {
+                    RsfBlock rsf = (rsfBlocks.First() as RsfBlock)!;
+                    extractDirPath = Path.Combine(srdDirPath, rsf.FolderName);
+                }
+                else
+                {
+                    extractDirPath = srdDirPath;
+                }
+
+                // Iterate through all TXR blocks and extract their contents
+                foreach (TxrBlock block in txrBlocks)
+                {
+                    
+                }
+            }
+        }
+
+        internal class ExtractFontOperation : IOperation
+        {
+            public string Name => "Extract Font";
+
+            public string Description => "Extract font bounding box table and character mapping info from the resource container.";
+
+            public void Perform(IOperationContext rawContext)
+            {
+                var context = GetVerifiedContext(rawContext);
+
+                List<ISrdBlock> txrBlocks = context.loadedData!.Blocks.Where(block => block is TxrBlock).ToList();
+                if (txrBlocks.Count == 0)
+                {
+                    Console.WriteLine("This file contains no fonts.");
+                    return;
+                }
+
+                // Save the fonts in the same location as the SRD file
+                if (string.IsNullOrWhiteSpace(context.loadedDataPath))
+                {
+                    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:", false);
+                    if (path is null) return;
+
+                    context.loadedDataPath = path;
+                }
+                string srdDirPath = Utils.GetEnclosingDirectory(context.loadedDataPath!)!;
+
+                // Check if there is an RSF block in the file. If so, extract contents to an inner folder
+                string extractDirPath;
+                List<ISrdBlock> rsfBlocks = context.loadedData!.Blocks.Where(block => block is RsfBlock).ToList();
+                if (rsfBlocks.Count > 0)
+                {
+                    RsfBlock rsf = (rsfBlocks.First() as RsfBlock)!;
+                    extractDirPath = Path.Combine(srdDirPath, rsf.FolderName);
+                }
+                else
+                {
+                    extractDirPath = srdDirPath;
+                }
+
+                // Iterate through all TXR blocks and extract their font mapping data, if it is present
+                foreach (TxrBlock block in txrBlocks)
+                {
+
+                }
             }
         }
 

@@ -158,8 +158,6 @@ namespace DRV3_Sharp.Contexts
 
                 using FileStream fs = new(context.loadedDataPath, FileMode.Create, FileAccess.Write, FileShare.None);
                 SpcSerializer.Serialize(context.loadedData!, fs);   // It shouldn't be possible to invoke this operation while context.loadedData is null
-                fs.Flush();
-
                 context.unsavedChanges = false;
             }
         }

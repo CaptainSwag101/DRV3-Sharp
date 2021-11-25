@@ -46,6 +46,19 @@ namespace DRV3_Sharp
             return path;
         }
 
+        public static string? GetEnclosingDirectory(string filePath, bool bypassExistenceCheck = false)
+        {
+            FileInfo fi = new(filePath);
+
+            if (!bypassExistenceCheck && !fi.Exists)
+            {
+                Console.WriteLine("The specified file does not exist; unable to get enclosing directory path.");
+                return null;
+            }
+
+            return fi.DirectoryName;
+        }
+
         public static void DisplayDescriptiveList(List<(string Name, string Description)> list)
         {
             foreach (var (Name, Description) in list)
