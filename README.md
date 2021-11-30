@@ -1,4 +1,4 @@
-# DRV3-Sharp: A tool and library for working with various formats from Danganrronpa V3 for PC (PS Vita/PS4 are not supported currently!)
+# DRV3-Sharp: A tool and library for working with various formats from Danganronpa V3 for PC (PS Vita/PS4 are not supported currently!)
 
 ## How do I use these tools?
 These tools are intended to be run from the command line, such as Windows Command Prompt, PowerShell, or the Linux terminal of your choice. You can also just drag and drop files from the game data onto the executable file in most cases. However, you will need to extract the CPK archives that the game ships with in order to access said data; I recommend using a tool like YACpkTool or CriPakGUI.
