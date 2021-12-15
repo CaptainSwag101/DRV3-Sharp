@@ -26,7 +26,26 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\DRV3-Sharp-Library\DRV3-Sharp-Library.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Scarlet">
+      <HintPath>..\dependencies\Scarlet.dll</HintPath>
+    </Reference>
+    <Reference Include="Scarlet.IO.CompressionFormats">
+      <HintPath>..\dependencies\Scarlet.IO.CompressionFormats.dll</HintPath>
+    </Reference>
+    <Reference Include="Scarlet.IO.ContainerFormats">
+      <HintPath>..\dependencies\Scarlet.IO.ContainerFormats.dll</HintPath>
+    </Reference>
+    <Reference Include="Scarlet.IO.ImageFormats">
+      <HintPath>..\dependencies\Scarlet.IO.ImageFormats.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

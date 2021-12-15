@@ -23,6 +23,9 @@ using System.Text;
 using System.Threading.Tasks;
 using DRV3_Sharp_Library.Formats.Resource.SRD;
 using DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes;
+using Scarlet;
+using Scarlet.IO;
+using SixLabors.ImageSharp;
 
 namespace DRV3_Sharp.Contexts
 {
@@ -327,7 +330,13 @@ namespace DRV3_Sharp.Contexts
                 // Iterate through all TXR blocks and extract their contents
                 foreach (TxrBlock block in txrBlocks)
                 {
-                    
+                    Console.WriteLine($"Extracting {block.TextureFilename}");
+
+                    // Here's the hard part: Converting the texture format into something we can work with
+                    if (block.Format == TextureFormat.ARGB8888)
+                    {
+                        // Do stuff
+                    }
                 }
             }
         }
