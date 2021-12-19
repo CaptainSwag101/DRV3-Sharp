@@ -110,7 +110,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                 ArchivedFile entry = inputData.Files[i];
 
                 string name = entry.Name;
-                writer.Write(entry.IsCompressed ? 2 : 1);
+                writer.Write((short)(entry.IsCompressed ? 2 : 1));
                 writer.Write(entry.UnknownFlag);
                 writer.Write(entry.Data.Length);
                 writer.Write(entry.OriginalSize);
