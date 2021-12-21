@@ -37,7 +37,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
     /// <summary>
     /// Resource Information Block
     /// </summary>
-    public record RsiBlock : ISrdBlock
+    public class RsiBlock : ISrdBlock
     {
         public List<(string Name, byte[] Data)> LocalResourceData = new();
         public List<(byte[] Data, ResourceDataLocation Location)> ExternalResourceData = new();

@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 {
-    public record ScnBlock : ISrdBlock
+    public class ScnBlock : ISrdBlock
     {
         public uint Unknown00;
         public List<string> SceneRootNodes = new();

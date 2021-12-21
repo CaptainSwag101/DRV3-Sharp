@@ -24,19 +24,19 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 {
-    public record UnknownBlock : ISrdBlock
+    public class UnknownBlock : ISrdBlock
     {
-        public readonly string Type;
+        public readonly string TypeCode;
         public readonly byte[] MainData;
-        public List<ISrdBlock> SubBlocks;
+        public readonly List<ISrdBlock> SubBlocks = new();
 
         public UnknownBlock(string type, byte[] mainData, byte[] subData, Stream? inputSrdvStream, Stream? inputSrdiStream)
         {
-            Type = type;
+            TypeCode = type;
             MainData = mainData;
 
-            // Decode sub-block data into discrete sub-blocks via recursion (should be +1 layer deep AT MOST in a non-malformed SRD)
-            SubBlocks = new();
+            // Decode sub-block data (if present) into discrete sub-blocks via recursion.
+            // Recursion should be +1 layer deep AT MOST in a non-malformed SRD.
             if (subData.Length > 0)
             {
                 using MemoryStream subStream = new(subData);

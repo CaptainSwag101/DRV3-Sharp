@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 {
-    public record MatBlock : ISrdBlock
+    public class MatBlock : ISrdBlock
     {
         public uint Unknown00;
         public float Unknown04;

@@ -17,6 +17,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -27,16 +28,16 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
     /// <summary>
     /// Texture Instance Block
     /// </summary>
-    public record TxiBlock : ISrdBlock
+    public class TxiBlock : ISrdBlock
     {
-        public int Unknown00;
-        public int Unknown04;
-        public int Unknown08;
-        public byte Unknown0C;
-        public byte Unknown0D;
-        public byte Unknown0E;
-        public byte Unknown0F;
-        public int Unknown10;
+        public int Unknown00;   // Always 1, like the value in $TXR blocks?
+        public int Unknown04;   // Always 16?
+        public int Unknown08;   // Always 0?
+        public byte Unknown0C;  // Always 1?
+        public byte Unknown0D;  // Always 1?
+        public byte Unknown0E;  // Always 1? (Nope, can sometimes be 2, too)
+        public byte Unknown0F;  // Always 5? (Nope, can sometimes be 1 and 3 and 4 and 6, too)
+        public int Unknown10;   // Always 20, is this a pointer to the immediately following data?
         public string TextureFilenameReference;
         public string MaterialNameReference;
 
@@ -46,14 +47,27 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
             using BinaryReader reader = new(new MemoryStream(mainData));
 
             Unknown00 = reader.ReadInt32();
+            Debug.Assert(Unknown00 == 1);
             Unknown04 = reader.ReadInt32();
+            Debug.Assert(Unknown04 == 16);
             Unknown08 = reader.ReadInt32();
+            Debug.Assert(Unknown08 == 0);
             Unknown0C = reader.ReadByte();
+            Debug.Assert(Unknown0C == 1);
             Unknown0D = reader.ReadByte();
+            Debug.Assert(Unknown0D == 1);
             Unknown0E = reader.ReadByte();
+            Debug.Assert(Unknown0E == 1 || Unknown0E == 2);
             Unknown0F = reader.ReadByte();
+            Debug.Assert(Unknown0F == 1 || Unknown0F == 3 || Unknown0F == 4 || Unknown0F == 5 || Unknown0F == 6);
             Unknown10 = reader.ReadInt32();
+            Debug.Assert(Unknown10 == 20);
             TextureFilenameReference = Utils.ReadNullTerminatedString(reader, Encoding.GetEncoding("shift-jis"));
+
+            // Is there more data after that texture filename reference?
+            // If so, it would lend credence to the idea that each $TXI could contain a LIST
+            // of texture instances rather than just one per block.
+            Debug.Assert(reader.BaseStream.Position == reader.BaseStream.Length);
 
             // Decode the RSI sub-block for later use
             RsiBlock rsi;

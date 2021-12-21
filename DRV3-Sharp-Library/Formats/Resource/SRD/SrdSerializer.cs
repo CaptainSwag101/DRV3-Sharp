@@ -42,8 +42,6 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
             }
 
             // Step 2: Abstract blocks into their respective resource types
-            //outputData = new();
-
             //List<ISrdBlock> cfhBlocks = outputData.Blocks.Where(block => block is CfhBlock).ToList();
             //Debug.Assert(cfhBlocks.Count == 1);
             //List<ISrdBlock> rsfBlocks = outputData.Blocks.Where(block => block is RsfBlock).ToList();
@@ -65,6 +63,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
             using BinaryWriter srdvWriter = new(outputSrdvStream, Encoding.ASCII, true);
             using BinaryWriter srdiWriter = new(outputSrdiStream, Encoding.ASCII, true);
 
+            throw new NotImplementedException();
         }
     }
 }

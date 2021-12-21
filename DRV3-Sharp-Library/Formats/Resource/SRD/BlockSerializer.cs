@@ -52,10 +52,10 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
                 "$RSI" => new RsiBlock(mainData, inputSrdvStream, inputSrdiStream),
                 "$TXR" => new TxrBlock(mainData, subData, inputSrdvStream),
                 "$TXI" => new TxiBlock(mainData, subData),
-                "$VTX" => new VtxBlock(mainData, subData, inputSrdiStream),
-                "$MSH" => new MshBlock(mainData, subData),
-                "$MAT" => new MatBlock(mainData, subData),
-                "$SCN" => new ScnBlock(mainData, subData),
+                //"$VTX" => new VtxBlock(mainData, subData, inputSrdiStream),
+                //"$MSH" => new MshBlock(mainData, subData),
+                //"$MAT" => new MatBlock(mainData, subData),
+                //"$SCN" => new ScnBlock(mainData, subData),
                 //"$TRE" => new TreBlock(),
                 //"$SKL" => new SklBlock(),
                 "$CT0" => new Ct0Block(),
@@ -65,7 +65,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
 
         public static void Serialize(ISrdBlock inputBlock, Stream outputSrdStream, Stream outputSrdvStream, Stream outputSrdiStream)
         {
-
+            throw new NotImplementedException();
         }
     }
 }

@@ -261,6 +261,8 @@ namespace DRV3_Sharp.Contexts
                         blockTypeName = "TXI (Texture Instance, used to link other blocks to TXR blocks)";
                         descriptionBuilder.Append($"\tAssociated Texture Name: {txi.TextureFilenameReference}\n");
                         descriptionBuilder.Append($"\tAssociated Material Name: {txi.MaterialNameReference}\n");
+                        descriptionBuilder.Append($"\tUnknown0E: {txi.Unknown0E}\n");
+                        descriptionBuilder.Append($"\tUnknown0F: {txi.Unknown0F}\n");
                     }
                     else if (block is ScnBlock scn)
                     {
@@ -274,7 +276,7 @@ namespace DRV3_Sharp.Contexts
                     }
                     else if (block is UnknownBlock unk)
                     {
-                        blockTypeName = $"{unk.Type.TrimStart('$')} (Unknown Block Purpose or Unimplemented Block Type)";
+                        blockTypeName = $"{unk.TypeCode.TrimStart('$')} (Unknown Block Purpose or Unimplemented Block Type)";
                         descriptionBuilder.Append($"\tData Size (excluding sub-blocks): {unk.MainData.Length}\n");
                     }
 

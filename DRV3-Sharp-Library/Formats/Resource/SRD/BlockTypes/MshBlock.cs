@@ -24,7 +24,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
 {
-    public record MshBlock : ISrdBlock
+    public class MshBlock : ISrdBlock
     {
         public uint Unknown00;
         public ushort Unknown0A;

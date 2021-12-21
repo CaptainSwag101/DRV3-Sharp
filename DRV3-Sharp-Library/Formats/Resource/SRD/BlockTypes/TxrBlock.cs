@@ -54,28 +54,31 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
     /// <summary>
     /// Texture Resource Block
     /// </summary>
-    public record TxrBlock : ISrdBlock
+    public class TxrBlock : ISrdBlock
     {
-        public int Unknown00;
+        // Block data
+        public int Unknown00;   // Always 1, like the value in $TXI blocks?
         public ushort Swizzle;
         public ushort DisplayWidth;
         public ushort DisplayHeight;
         public ushort Scanline;
         public TextureFormat Format;
-        public byte Unknown0D;
+        public byte Unknown0D;  // Might be based on the Format byte? Is Format actually a 2-byte value?
         public byte Palette;
         public byte PaletteId;
         public string TextureFilename;
 
+        // Resource data
         public List<byte[]> TextureData = new();
         public Dictionary<char, GlyphBoundingBox>? FontGlyphs = null;
 
         public TxrBlock(byte[] mainData, byte[] subData, Stream? inputSrdvStream)
         {
-            // Read main data
+            // Read block data
             using BinaryReader reader = new(new MemoryStream(mainData));
 
             Unknown00 = reader.ReadInt32();
+            Debug.Assert(Unknown00 == 1);
             Swizzle = reader.ReadUInt16();
             DisplayWidth = reader.ReadUInt16();
             DisplayHeight = reader.ReadUInt16();
@@ -86,17 +89,13 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
             PaletteId = reader.ReadByte();
 
             // Decode the RSI sub-block
-            RsiBlock rsi;
             using MemoryStream subBlockStream = new(subData);
-            BlockSerializer.Deserialize(subBlockStream, inputSrdvStream, null, out ISrdBlock block);
-            if (block is RsiBlock) rsi = (RsiBlock)block;
-            else throw new InvalidDataException("The first sub-block was not an RSI block.");
+            BlockSerializer.Deserialize(subBlockStream, inputSrdvStream, null, out ISrdBlock firstSubBlock);
+            if (firstSubBlock is not RsiBlock rsi) throw new InvalidDataException("The first sub-block was not an RSI block.");
 
             // Read texture filename
-            if (rsi.ResourceStrings.Count > 0)
-                TextureFilename = rsi.ResourceStrings[0];
-            else
-                throw new InvalidDataException("The TXR's resource sub-block did not contain the texture filename.");
+            if (rsi.ResourceStrings.Count <= 0) throw new InvalidDataException("The TXR's resource sub-block did not contain the texture filename.");
+            TextureFilename = rsi.ResourceStrings[0]; 
 
             // Read texture/mipmap data
             foreach (var (data, location) in rsi.ExternalResourceData)
@@ -104,16 +103,17 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
                 if (location == ResourceDataLocation.Srdv) TextureData.Add(data);
             }
 
-            // Read font table, if present
+            // Read local resource data
             foreach (var (name, data) in rsi.LocalResourceData)
             {
+                // Read font table, if present
                 if (name == "font_table")
                 {
                     // Decode font table
                     using BinaryReader fontReader = new(new MemoryStream(data));
 
                     string fontMagic = Encoding.ASCII.GetString(fontReader.ReadBytes(4));
-                    Debug.Assert(fontMagic == "SpFt");
+                    if (fontMagic != "SpFt") throw new InvalidDataException("The font table magic value was incorrect.");
                     int unknown04 = fontReader.ReadInt32();
                     int potentialGlyphCount = fontReader.ReadInt32();
                     int unknown0C = fontReader.ReadInt32(); // Starting glyph ID?
@@ -160,7 +160,8 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes
                         //int groupOffset = glyphGroupOffsets[glyphNum / 32];
                         if (glyphFlags[glyphNum]) glyphsPresent.Add(Encoding.Unicode.GetChars(BitConverter.GetBytes(glyphNum)).First());
                     }
-                    // Debug only: output a Unicode text file with all glyphs in the font
+
+                    // DEBUG ONLY: output a Unicode text file with all glyphs in the font
 #if DEBUG
                     using StreamWriter debugGlyphWriter = new(new FileStream("glyph_debug.txt", FileMode.Create), Encoding.UTF8);
                     for (int g = 0; g < glyphsPresent.Count; ++g)
