@@ -75,7 +75,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
             mainDataStream.Dispose();
         }
 
-        public static void Serialize(SrdData inputData, Stream outputSrd, Stream? outputSrdi, Stream? outputSrdv)
+        public static void Serialize(SrdData inputData, Stream outputSrd, Stream outputSrdi, Stream outputSrdv)
         {
             // Remember to check if outputSrdi and outputSrdv exist for each block,
             // and create it if it is needed and doesn't already exist.
@@ -85,7 +85,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
             }
         }
 
-        public static void SerializeBlock(ISrdBlock block, Stream outputSrd, Stream? outputSrdi, Stream? outputSrdv)
+        public static void SerializeBlock(ISrdBlock block, Stream outputSrd, Stream outputSrdi, Stream outputSrdv)
         {
             using BinaryWriter srdWriter = new(outputSrd, Encoding.ASCII, true);
 
@@ -101,6 +101,9 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
                 UnknownBlock.Serialize(unk, mainDataStream, subDataStream, outputSrdi, outputSrdv);
                 typeString = unk.BlockType;
             }
+
+            // Sanity checks
+            Debug.Assert(typeString.Length == 4);   // The block type magic string must be exactly 4 characters
 
             // Write block header
             srdWriter.Write(Encoding.ASCII.GetBytes(typeString));

@@ -171,21 +171,19 @@ namespace DRV3_Sharp.Contexts
                 }
 
                 using FileStream srdStream = new(context.loadedDataPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                using MemoryStream? srdiStream = null;
-                using MemoryStream? srdvStream = null;
+                using MemoryStream srdiStream = new();
+                using MemoryStream srdvStream = new();
                 SrdSerializer.Serialize(context.loadedData!, srdStream, srdvStream, srdiStream);    // It shouldn't be possible to invoke this operation while context.loadedData is null
 
                 // If we need SRDI or SRDV, create and write them too
-                if (srdiStream is not null)
+                if (srdiStream.Length > 0)
                 {
-                    Debug.Assert(srdiStream.Length > 0);
                     string srdiPath = Path.ChangeExtension(context.loadedDataPath, "srdi");
                     using FileStream srdiFile = new(srdiPath, FileMode.Create, FileAccess.Write, FileShare.None);
                     srdiFile.Write(srdiStream.ToArray());
                 }
-                if (srdvStream is not null)
+                if (srdvStream.Length > 0)
                 {
-                    Debug.Assert(srdvStream.Length > 0);
                     string srdvPath = Path.ChangeExtension(context.loadedDataPath, "srdv");
                     using FileStream srdvFile = new(srdvPath, FileMode.Create, FileAccess.Write, FileShare.None);
                     srdvFile.Write(srdvStream.ToArray());

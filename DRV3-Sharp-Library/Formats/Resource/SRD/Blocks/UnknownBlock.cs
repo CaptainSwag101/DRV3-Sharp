@@ -93,7 +93,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
             outputBlock = new(type, inputMainData.ToArray(), subBlocks);
         }
 
-        public static void Serialize(UnknownBlock inputBlock, Stream outputMainData, Stream outputSubData, Stream? outputSrdi, Stream? outputSrdv)
+        public static void Serialize(UnknownBlock inputBlock, Stream outputMainData, Stream outputSubData, Stream outputSrdi, Stream outputSrdv)
         {
             using BinaryWriter mainDataWriter = new(outputMainData, Encoding.ASCII, true);
 
