@@ -28,7 +28,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
     public class CfhBlock : ISrdBlock
     {
         #region Public Properties
-        public string BlockType { get { return "$CFH"; } }
+        public string BlockType { get { return @"$CFH"; } }
         #endregion
 
         #region Public Methods
@@ -53,7 +53,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
             // No data to deserialize
         }
 
-        public static void Serialize(CfhBlock inputBlock, Stream outputMainData, Stream outputSubData, Stream outputSrdi, Stream outputSrdv)
+        public static void Serialize()
         {
             // No data to serialize
         }

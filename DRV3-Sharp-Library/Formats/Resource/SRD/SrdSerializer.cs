@@ -62,9 +62,14 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
             Utils.SkipToNearest(srdReader, 16);
 
             // Deserialize data based on block type
-            if (blockType == "$CFH")
+            if (blockType == @"$CFH")
             {
                 outputBlock = new CfhBlock();   // We don't even need to bother serializing it
+            }
+            else if (blockType == @"$RSI")
+            {
+                RsiBlock.Deserialize(mainDataStream, inputSrdi, inputSrdv, out RsiBlock rsi);
+                outputBlock = rsi;
             }
             else
             {
@@ -103,9 +108,12 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
             }
             else if (block is CfhBlock cfh)
             {
-                CfhBlock.Serialize(cfh, mainDataStream, subDataStream, outputSrdi, outputSrdv);
                 typeString = @"$CFH";
                 unknownVal = 1;
+            }
+            else if (block is RsiBlock rsi)
+            {
+                RsiBlock.Serialize(rsi, mainDataStream, outputSrdi, outputSrdv);
             }
 
             // Sanity checks
