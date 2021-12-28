@@ -15,17 +15,17 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DRV3_Sharp_Library.Formats.Resource.SRD.ResourceTypes
+namespace DRV3_Sharp_Library.Formats.Resource.SRD
 {
-    public class TextureResource : AbstractResource
-    { }
+    public interface ISrdBlock
+    {
+        public abstract List<string> GetBlockInfo();
+    }
 }

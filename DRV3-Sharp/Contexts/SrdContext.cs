@@ -17,12 +17,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using DRV3_Sharp_Library.Formats.Resource.SRD;
-using DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes;
 using Scarlet;
 using Scarlet.IO;
 using SixLabors.ImageSharp;
@@ -52,8 +52,8 @@ namespace DRV3_Sharp.Contexts
                 {
                     operationList.Insert(2, new SaveSrdOperation());
                     operationList.Insert(3, new ListBlocksOperation());
-                    operationList.Insert(4, new ExtractTexturesOperation());
-                    operationList.Insert(5, new ExtractFontOperation());
+                    //operationList.Insert(4, new ExtractTexturesOperation());
+                    //operationList.Insert(5, new ExtractFontOperation());
                 }
 
                 return operationList;
@@ -142,7 +142,7 @@ namespace DRV3_Sharp.Contexts
                 FileStream? srdvStream = null;
                 if (File.Exists(srdiPath)) srdiStream = new(srdiPath, FileMode.Open, FileAccess.Read, FileShare.Read);
                 if (File.Exists(srdvPath)) srdvStream = new(srdvPath, FileMode.Open, FileAccess.Read, FileShare.Read);
-                SrdSerializer.Deserialize(srdStream, srdvStream, srdiStream, out context.loadedData);
+                SrdSerializer.Deserialize(srdStream, srdiStream, srdvStream, out context.loadedData);
                 srdiStream?.Close();
                 srdvStream?.Close();
 
@@ -170,12 +170,27 @@ namespace DRV3_Sharp.Contexts
                     context.loadedDataPath = path;
                 }
 
-                string srdiPath = Path.ChangeExtension(context.loadedDataPath, "srdi");
-                string srdvPath = Path.ChangeExtension(context.loadedDataPath, "srdv");
                 using FileStream srdStream = new(context.loadedDataPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                using FileStream srdiStream = new(srdiPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                using FileStream srdvStream = new(srdvPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                using MemoryStream? srdiStream = null;
+                using MemoryStream? srdvStream = null;
                 SrdSerializer.Serialize(context.loadedData!, srdStream, srdvStream, srdiStream);    // It shouldn't be possible to invoke this operation while context.loadedData is null
+
+                // If we need SRDI or SRDV, create and write them too
+                if (srdiStream is not null)
+                {
+                    Debug.Assert(srdiStream.Length > 0);
+                    string srdiPath = Path.ChangeExtension(context.loadedDataPath, "srdi");
+                    using FileStream srdiFile = new(srdiPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    srdiFile.Write(srdiStream.ToArray());
+                }
+                if (srdvStream is not null)
+                {
+                    Debug.Assert(srdvStream.Length > 0);
+                    string srdvPath = Path.ChangeExtension(context.loadedDataPath, "srdv");
+                    using FileStream srdvFile = new(srdvPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                    srdvFile.Write(srdvStream.ToArray());
+                }
+
                 context.unsavedChanges = false;
             }
         }
@@ -190,99 +205,7 @@ namespace DRV3_Sharp.Contexts
             {
                 var context = GetVerifiedContext(rawContext);
 
-                List<(string name, string description)> displayList = new();
-                foreach (var block in context.loadedData!.Blocks)
-                {
-                    string blockTypeName = "";
-                    StringBuilder descriptionBuilder = new();
-
-                    if (block is CfhBlock)
-                    {
-                        blockTypeName = "CFH (Header)";
-                        // Empty description
-                    }
-                    else if (block is RsfBlock rsf)
-                    {
-                        blockTypeName = "RSF (Sub-Header)";
-                        descriptionBuilder.Append($"\tResource Name: {rsf.FolderName}\n");
-                    }
-                    else if (block is VtxBlock vtx)
-                    {
-                        blockTypeName = "VTX (Vertex Group)";
-                        descriptionBuilder.Append($"\tVertex Group Name: {vtx.VertexGroupName}\n");
-                        descriptionBuilder.Append($"\tVertex Count: {vtx.VertexCount}\n");
-                        descriptionBuilder.Append($"\tMesh Type: {vtx.MeshType}\n");
-                        descriptionBuilder.Append($"\tUnknown04: {vtx.Unknown04}\n");
-                        descriptionBuilder.Append($"\tUnknown0C: {vtx.Unknown0C}\n");
-                        descriptionBuilder.Append($"\tUnknown0E: {vtx.Unknown0E}\n");
-                        descriptionBuilder.Append($"\tUnknown18: {vtx.Unknown18}\n");
-                    }
-                    else if (block is MshBlock msh)
-                    {
-                        blockTypeName = "MSH (Geometry Mesh)";
-                        descriptionBuilder.Append($"\tMesh Name: {msh.MeshName}\n");
-                        descriptionBuilder.Append($"\tAssociated Vertex Group Name: {msh.VertexBlockName}\n");
-                        descriptionBuilder.Append($"\tAssociated Material Name: {msh.MaterialNameReference}\n");
-                        descriptionBuilder.Append($"\tUnknown String: {msh.UnknownString}\n");
-                        descriptionBuilder.Append($"\tUnknown00: {msh.Unknown00}\n");
-                        descriptionBuilder.Append($"\tUnknown0A: {msh.Unknown0A}\n");
-                        descriptionBuilder.Append($"\tUnknown0C: {msh.Unknown0C}\n");
-                        descriptionBuilder.Append($"\tUnknown10: {msh.Unknown10}\n");
-                        descriptionBuilder.Append($"\tUnknown11: {msh.Unknown11}\n");
-                        descriptionBuilder.Append($"\tUnknown12: {msh.Unknown12}\n");
-                        descriptionBuilder.Append($"\tUnknown13: {msh.Unknown13}\n");
-                    }
-                    else if (block is MatBlock mat)
-                    {
-                        blockTypeName = "MAT (Material)";
-                        descriptionBuilder.Append($"\tMaterial Name: {mat.MaterialName}\n");
-                        descriptionBuilder.Append("\tShader References: [");
-                        descriptionBuilder.AppendJoin(", ", mat.MaterialShaderReferences);
-                        descriptionBuilder.Append("]\n");
-                        descriptionBuilder.Append($"\tUnknown00: {mat.Unknown00}\n");
-                        descriptionBuilder.Append($"\tUnknown04: {mat.Unknown04}\n");
-                        descriptionBuilder.Append($"\tUnknown08: {mat.Unknown04}\n");
-                        descriptionBuilder.Append($"\tUnknown0C: {mat.Unknown08}\n");
-                        descriptionBuilder.Append($"\tUnknown10: {mat.Unknown10}\n");
-                        descriptionBuilder.Append($"\tUnknown12: {mat.Unknown12}\n");
-                    }
-                    else if (block is TxrBlock txr)
-                    {
-                        blockTypeName = "TXR (Texture Resource)";
-                        descriptionBuilder.Append($"\tTexture Filename: {txr.TextureFilename}\n");
-                        descriptionBuilder.Append($"\tTexture Format: {txr.Format}\n");
-                        descriptionBuilder.Append($"\tWidth: {txr.DisplayWidth}\n");
-                        descriptionBuilder.Append($"\tHeight: {txr.DisplayHeight}\n");
-                        descriptionBuilder.Append($"\tUnknown00: {txr.Unknown00}\n");
-                        descriptionBuilder.Append($"\tUnknown0D: {txr.Unknown0D}\n");
-                    }
-                    else if (block is TxiBlock txi)
-                    {
-                        blockTypeName = "TXI (Texture Instance, used to link other blocks to TXR blocks)";
-                        descriptionBuilder.Append($"\tAssociated Texture Name: {txi.TextureFilenameReference}\n");
-                        descriptionBuilder.Append($"\tAssociated Material Name: {txi.MaterialNameReference}\n");
-                        descriptionBuilder.Append($"\tUnknown0E: {txi.Unknown0E}\n");
-                        descriptionBuilder.Append($"\tUnknown0F: {txi.Unknown0F}\n");
-                    }
-                    else if (block is ScnBlock scn)
-                    {
-                        blockTypeName = "SCN (3D Scene)";
-                        descriptionBuilder.Append($"\tScene Name: {scn.SceneName}\n");
-                    }
-                    else if (block is Ct0Block)
-                    {
-                        blockTypeName = "CT0 (Section Terminator)";
-                        // Empty description
-                    }
-                    else if (block is UnknownBlock unk)
-                    {
-                        blockTypeName = $"{unk.TypeCode.TrimStart('$')} (Unknown Block Purpose or Unimplemented Block Type)";
-                        descriptionBuilder.Append($"\tData Size (excluding sub-blocks): {unk.MainData.Length}\n");
-                    }
-
-                    displayList.Add((blockTypeName, descriptionBuilder.ToString()));
-                }
-                Utils.DisplayDescriptiveList(displayList);
+                Console.WriteLine("Not yet implemented...");
 
                 Console.WriteLine("Press any key to continue...");
                 _ = Console.ReadKey(true);
@@ -299,47 +222,52 @@ namespace DRV3_Sharp.Contexts
             {
                 var context = GetVerifiedContext(rawContext);
 
-                List<ISrdBlock> txrBlocks = context.loadedData!.Blocks.Where(block => block is TxrBlock).ToList();
-                if (txrBlocks.Count == 0)
-                {
-                    Console.WriteLine("This file contains no textures.");
-                    return;
-                }
+                Console.WriteLine("Not yet implemented...");
 
-                // Save the textures in the same location as the SRD file
-                if (string.IsNullOrWhiteSpace(context.loadedDataPath))
-                {
-                    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:", false);
-                    if (path is null) return;
+                Console.WriteLine("Press any key to continue...");
+                _ = Console.ReadKey(true);
 
-                    context.loadedDataPath = path;
-                }
-                string srdDirPath = Utils.GetEnclosingDirectory(context.loadedDataPath!)!;
+                //List<ISrdBlock> txrBlocks = context.loadedData!.Blocks.Where(block => block is TxrBlock).ToList();
+                //if (txrBlocks.Count == 0)
+                //{
+                //    Console.WriteLine("This file contains no textures.");
+                //    return;
+                //}
 
-                // Check if there is an RSF block in the file. If so, extract contents to an inner folder
-                string extractDirPath;
-                List<ISrdBlock> rsfBlocks = context.loadedData!.Blocks.Where(block => block is RsfBlock).ToList();
-                if (rsfBlocks.Count > 0)
-                {
-                    RsfBlock rsf = (rsfBlocks.First() as RsfBlock)!;
-                    extractDirPath = Path.Combine(srdDirPath, rsf.FolderName);
-                }
-                else
-                {
-                    extractDirPath = srdDirPath;
-                }
+                //// Save the textures in the same location as the SRD file
+                //if (string.IsNullOrWhiteSpace(context.loadedDataPath))
+                //{
+                //    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:", false);
+                //    if (path is null) return;
 
-                // Iterate through all TXR blocks and extract their contents
-                foreach (TxrBlock block in txrBlocks)
-                {
-                    Console.WriteLine($"Extracting {block.TextureFilename}");
+                //    context.loadedDataPath = path;
+                //}
+                //string srdDirPath = Utils.GetEnclosingDirectory(context.loadedDataPath!)!;
 
-                    // Here's the hard part: Converting the texture format into something we can work with
-                    if (block.Format == TextureFormat.ARGB8888)
-                    {
-                        // Do stuff
-                    }
-                }
+                //// Check if there is an RSF block in the file. If so, extract contents to an inner folder
+                //string extractDirPath;
+                //List<ISrdBlock> rsfBlocks = context.loadedData!.Blocks.Where(block => block is RsfBlock).ToList();
+                //if (rsfBlocks.Count > 0)
+                //{
+                //    RsfBlock rsf = (rsfBlocks.First() as RsfBlock)!;
+                //    extractDirPath = Path.Combine(srdDirPath, rsf.FolderName);
+                //}
+                //else
+                //{
+                //    extractDirPath = srdDirPath;
+                //}
+
+                //// Iterate through all TXR blocks and extract their contents
+                //foreach (TxrBlock block in txrBlocks)
+                //{
+                //    Console.WriteLine($"Extracting {block.TextureFilename}");
+
+                //    // Here's the hard part: Converting the texture format into something we can work with
+                //    if (block.Format == TextureFormat.ARGB8888)
+                //    {
+                //        // Do stuff
+                //    }
+                //}
             }
         }
 
@@ -353,41 +281,46 @@ namespace DRV3_Sharp.Contexts
             {
                 var context = GetVerifiedContext(rawContext);
 
-                List<ISrdBlock> txrBlocks = context.loadedData!.Blocks.Where(block => block is TxrBlock).ToList();
-                if (txrBlocks.Count == 0)
-                {
-                    Console.WriteLine("This file contains no fonts.");
-                    return;
-                }
+                Console.WriteLine("Not yet implemented...");
 
-                // Save the fonts in the same location as the SRD file
-                if (string.IsNullOrWhiteSpace(context.loadedDataPath))
-                {
-                    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:", false);
-                    if (path is null) return;
+                Console.WriteLine("Press any key to continue...");
+                _ = Console.ReadKey(true);
 
-                    context.loadedDataPath = path;
-                }
-                string srdDirPath = Utils.GetEnclosingDirectory(context.loadedDataPath!)!;
+                //List<ISrdBlock> txrBlocks = context.loadedData!.Blocks.Where(block => block is TxrBlock).ToList();
+                //if (txrBlocks.Count == 0)
+                //{
+                //    Console.WriteLine("This file contains no fonts.");
+                //    return;
+                //}
 
-                // Check if there is an RSF block in the file. If so, extract contents to an inner folder
-                string extractDirPath;
-                List<ISrdBlock> rsfBlocks = context.loadedData!.Blocks.Where(block => block is RsfBlock).ToList();
-                if (rsfBlocks.Count > 0)
-                {
-                    RsfBlock rsf = (rsfBlocks.First() as RsfBlock)!;
-                    extractDirPath = Path.Combine(srdDirPath, rsf.FolderName);
-                }
-                else
-                {
-                    extractDirPath = srdDirPath;
-                }
+                //// Save the fonts in the same location as the SRD file
+                //if (string.IsNullOrWhiteSpace(context.loadedDataPath))
+                //{
+                //    string? path = Utils.GetPathFromUser("Enter the full path where the file should be saved (or drag and drop it) and press Enter:", false);
+                //    if (path is null) return;
 
-                // Iterate through all TXR blocks and extract their font mapping data, if it is present
-                foreach (TxrBlock block in txrBlocks)
-                {
+                //    context.loadedDataPath = path;
+                //}
+                //string srdDirPath = Utils.GetEnclosingDirectory(context.loadedDataPath!)!;
 
-                }
+                //// Check if there is an RSF block in the file. If so, extract contents to an inner folder
+                //string extractDirPath;
+                //List<ISrdBlock> rsfBlocks = context.loadedData!.Blocks.Where(block => block is RsfBlock).ToList();
+                //if (rsfBlocks.Count > 0)
+                //{
+                //    RsfBlock rsf = (rsfBlocks.First() as RsfBlock)!;
+                //    extractDirPath = Path.Combine(srdDirPath, rsf.FolderName);
+                //}
+                //else
+                //{
+                //    extractDirPath = srdDirPath;
+                //}
+
+                //// Iterate through all TXR blocks and extract their font mapping data, if it is present
+                //foreach (TxrBlock block in txrBlocks)
+                //{
+
+                //}
             }
         }
 

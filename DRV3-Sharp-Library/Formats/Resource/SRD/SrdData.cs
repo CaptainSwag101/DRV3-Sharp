@@ -20,12 +20,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using DRV3_Sharp_Library.Formats.Resource.SRD.BlockTypes;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD
 {
     public class SrdData : IDanganV3Data
     {
-        public readonly List<ISrdBlock> Blocks = new();
+        public List<ISrdBlock> Blocks { get; }
+
+        public SrdData()
+        {
+            Blocks = new();
+        }
     }
 }

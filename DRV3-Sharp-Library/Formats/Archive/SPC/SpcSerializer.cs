@@ -31,11 +31,16 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
         {
             using BinaryReader reader = new(inputStream, Encoding.ASCII, true);
 
+            // Read and verify SPC header magic string
             string fileMagic = Encoding.ASCII.GetString(reader.ReadBytes(4));
+
+            // For Vita files, do Vita decompression and then recursively decompress,
+            // then short-circuit and return for convenience.
             if (fileMagic == CONST_VITA_COMPRESSED_MAGIC)
             {
-                // For Vita files, do Vita decompression and then recursively decompress,
-                // then short-circuit and return for convenience.
+                Console.WriteLine("You are attempting to decompress a file from the PS Vita version of the game.");
+                Console.WriteLine("This is not fully supported, and the results may be totally broken.");
+
                 reader.BaseStream.Seek(0, SeekOrigin.Begin);
                 byte[] vitaData = reader.ReadBytes((int)reader.BaseStream.Length);
                 byte[] fixedData = SpcCompressor.VitaDecompressWhole(vitaData);
@@ -49,6 +54,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                 Deserialize(fixedStream, out outputData);
                 return;
             }
+
             if (fileMagic != CONST_FILE_MAGIC) throw new InvalidDataException($"Invalid file magic, expected {CONST_FILE_MAGIC} but got {fileMagic}.");
 
             byte[] unknown1 = reader.ReadBytes(0x24);
@@ -60,11 +66,14 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
             outputData = new();
             outputData.Unknown2C = unknown2;
 
+            // Read and verify file table header
             string tableHeader = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (tableHeader != CONST_TABLE_HEADER) throw new InvalidDataException($"Invalid file table header, expected {CONST_TABLE_HEADER} but got {tableHeader}.");
 
+            // Skip 12 bytes of padding
             reader.BaseStream.Seek(0x0C, SeekOrigin.Current);
 
+            // Read file data
             for (int i = 0; i < fileCount; ++i)
             {
                 short compressionFlag = reader.ReadInt16();
@@ -93,18 +102,17 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
             writer.Write(Encoding.ASCII.GetBytes(CONST_FILE_MAGIC));
             // Write unknown data 1 (24 bytes, possibly padding?)
             writer.Write((int)0);
-            byte[] padding1 = new byte[8];
-            Array.Fill<byte>(padding1, 0xFF);
-            byte[] padding2 = new byte[0x18];
-            Array.Fill<byte>(padding2, 0x00);
-            writer.Write(padding1);
-            writer.Write(padding2);
+            byte[] paddingFF = new byte[8]; // 8 bytes of 0xFF padding
+            Array.Fill<byte>(paddingFF, 0xFF);
+            writer.Write(paddingFF);
+            writer.Write(new byte[0x18]);   // Padding
             writer.Write(inputData.FileCount);
             writer.Write(inputData.Unknown2C);
-            writer.Write(new byte[0x10]);
+            writer.Write(new byte[0x10]);   // Padding
             writer.Write(Encoding.ASCII.GetBytes(CONST_TABLE_HEADER));
-            writer.Write(new byte[0x0C]);
+            writer.Write(new byte[0x0C]);   // Padding
 
+            // Write file entries
             for (int i = 0; i < inputData.FileCount; ++i)
             {
                 ArchivedFile entry = inputData.Files[i];
@@ -115,7 +123,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                 writer.Write(entry.Data.Length);
                 writer.Write(entry.OriginalSize);
                 writer.Write(name.Length);
-                writer.Write(new byte[0x10]);
+                writer.Write(new byte[0x10]);   // Padding
 
                 int namePadding = (0x10 - (name.Length + 1) % 0x10) % 0x10;
                 writer.Write(Encoding.GetEncoding("shift-jis").GetBytes(name));
