@@ -52,7 +52,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
         {
             List<string> infoList = new();
 
-            infoList.Add($"Block Type String: {BlockType}");
+            infoList.Add($"Block Type (Unknown): {BlockType}");
             infoList.Add($"Main Data Size: {MainData.Length}");
 
             if (SubBlocks is not null)
