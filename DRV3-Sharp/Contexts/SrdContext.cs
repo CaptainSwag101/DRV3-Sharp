@@ -205,7 +205,16 @@ namespace DRV3_Sharp.Contexts
             {
                 var context = GetVerifiedContext(rawContext);
 
-                Console.WriteLine("Not yet implemented...");
+                StringBuilder sb = new();
+                foreach (ISrdBlock block in context.loadedData!.Blocks)
+                {
+                    foreach (string line in block.GetBlockInfo())
+                    {
+                        sb.Append($"{line}\n");
+                    }
+                    sb.Append('\n');
+                }
+                Console.WriteLine(sb.ToString());
 
                 Console.WriteLine("Press any key to continue...");
                 _ = Console.ReadKey(true);

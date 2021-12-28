@@ -65,6 +65,9 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
                     {
                         infoList.Add($"\t{line}");
                     }
+
+                    if (SubBlocks.IndexOf(subBlock) != (SubBlocks.Count - 1))
+                        infoList.Add("");
                 }
             }
 
