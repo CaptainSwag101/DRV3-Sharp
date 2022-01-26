@@ -40,7 +40,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
         public string BlockType { get { return @"$RSI"; } }
         public byte Unknown00 { get; private set; }
         public byte Unknown01 { get; private set; }
-        public sbyte ResourceInfoEntryLength { get; private set; }
+        public sbyte Unknown02 { get; private set; }
         public short Unknown06 { get; private set; }
         public List<(string Name, byte[] Data, int UnknownValue)> LocalResourceData { get; }
         public List<(ResourceDataLocation Location, byte[] Data, int UnknownValue1, int UnknownValue2)> ExternalResourceData { get; }
@@ -64,6 +64,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
             infoList.Add($"Block Type: {BlockType}");
             infoList.Add($"{nameof(Unknown00)}: {Unknown00}");
             infoList.Add($"{nameof(Unknown01)}: {Unknown01}");
+            infoList.Add($"{nameof(Unknown02)}: {Unknown02}");
             infoList.Add($"{nameof(Unknown06)}: {Unknown06}");
 
             if (LocalResourceData.Count > 0)
@@ -109,12 +110,11 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
 
             outputBlock.Unknown00 = reader.ReadByte();  // 0x06 or 0x04 in some cases like $MAT blocks, this may be tied to Unknown0A?
             outputBlock.Unknown01 = reader.ReadByte();  // 0x05
-            sbyte resourceInfoEntryLen = reader.ReadSByte();    // usually 0x04 or 0xFF
-            if (resourceInfoEntryLen != -1 && resourceInfoEntryLen != 4)
-                throw new NotImplementedException($"Encountered an unusual value for ResourceInfoEntryLength, expected -1 or 4 but got {resourceInfoEntryLen}.\nPlease send this file to the developer!");
-            outputBlock.ResourceInfoEntryLength = resourceInfoEntryLen;
+            outputBlock.Unknown02 = reader.ReadSByte(); // usually 0x04 or 0xFF, but seems to be 0x30 on PS4?
+            //if (outputBlock.Unknown02 != -1 && outputBlock.Unknown02 != 4)
+            //    throw new NotImplementedException($"Encountered an unusual value for Unknown02, expected -1 or 4 but got {outputBlock.Unknown02}.\nPlease send this file to the developer!");
             byte externalResourceInfoCount = reader.ReadByte();
-            Debug.Assert((resourceInfoEntryLen == -1 && externalResourceInfoCount == 0) || (resourceInfoEntryLen == 4 && externalResourceInfoCount > 0));
+            //Debug.Assert((outputBlock.Unknown02 == -1 && externalResourceInfoCount == 0) || (outputBlock.Unknown02 == 4 && externalResourceInfoCount > 0));
             short localResourceInfoCount = reader.ReadInt16();
             outputBlock.Unknown06 = reader.ReadInt16();
             short localResourceInfoOffset = reader.ReadInt16();
@@ -204,17 +204,34 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
         {
             using BinaryWriter mainDataWriter = new(outputMainData, Encoding.ASCII, true);
 
-            // Write external resource data
-            using BinaryWriter externalResourceDataWriter = new(new MemoryStream());
+            // Write external resource data and info
+            List<ExternalResourceInfo> extResourceInfo = new();
+            foreach (var externalResource in inputBlock.ExternalResourceData)
+            {
+                int address;
+                if (externalResource.Location == ResourceDataLocation.Srdi)
+                {
+                    address = (int)outputSrdi.Position | (int)externalResource.Location;
+                    outputSrdi.Write(externalResource.Data);
+                }
+                else if (externalResource.Location == ResourceDataLocation.Srdv)
+                {
+                    address = (int)outputSrdv.Position | (int)externalResource.Location;
+                    outputSrdv.Write(externalResource.Data);
+                }
+                else
+                    throw new InvalidDataException($"No defined ExternalResourceLocation for value {externalResource.Location:X8}");
 
-            // Write external resource info
-            using BinaryWriter externalResourceInfoWriter = new(new MemoryStream());
+                extResourceInfo.Add(new(address, externalResource.Data.Length, externalResource.UnknownValue1, externalResource.UnknownValue2));
+            }
 
-            // Write local resource data
+            // Write local resource data and info (using placeholder addresses)
+            List<LocalResourceInfo> locResourceInfo = new();
             using BinaryWriter localResourceDataWriter = new(new MemoryStream());
-
-            // Write local resource info
-            using BinaryWriter localResourceInfoWriter = new(new MemoryStream());
+            foreach (var localResource in inputBlock.LocalResourceData)
+            {
+                
+            }
 
             // Write unknown int list
             using BinaryWriter unknownIntWriter = new(new MemoryStream());
@@ -226,7 +243,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
                 }
             }
 
-            // Finally, write header
+            // Finally, write everything in its final order
             if (unknownIntWriter.BaseStream.Length > 0)
             {
                 mainDataWriter.Write((byte)4);
@@ -236,10 +253,13 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
                 mainDataWriter.Write((byte)6);
             }
             mainDataWriter.Write(inputBlock.Unknown01);
-            mainDataWriter.Write(inputBlock.ResourceInfoEntryLength);
+            mainDataWriter.Write(inputBlock.Unknown02);
             mainDataWriter.Write((byte)inputBlock.ExternalResourceData.Count);
             mainDataWriter.Write((short)inputBlock.LocalResourceData.Count);
             mainDataWriter.Write(inputBlock.Unknown06);
+
+            // Write ExternalResourceInfo
+            using BinaryWriter externalResourceInfoWriter = new(new MemoryStream());
 
             throw new NotImplementedException();
         }
