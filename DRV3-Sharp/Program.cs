@@ -123,10 +123,12 @@ namespace DRV3_Sharp
                         else if (highlightedOperation < (operations.Count - 1)) highlightedOperation = (operations.Count - 1);
                         break;
 
+                    // Confirm selection
                     case ConsoleKey.Enter:
                         operations[highlightedOperation].Perform(currentContext);
                         break;
-
+                    
+                    // Any other keys: don't update the screen next pass, we didn't do anything!
                     default:
                         needRefresh = false;
                         break;
