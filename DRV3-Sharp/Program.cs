@@ -27,6 +27,7 @@ namespace DRV3_Sharp
     {
         private static readonly Stack<IOperationContext> contextStack = new();
         private static int highlightedOperation = 0;
+        private static bool needRefresh = true;
 
         static void Main(string[] args)
         {
@@ -40,12 +41,16 @@ namespace DRV3_Sharp
             // and show the user what can be performed.
             while (contextStack.Count > 0)
             {
-                Console.Clear();
+                if (needRefresh) Console.Clear();
 
                 var currentContext = contextStack.Peek();
-                Console.WriteLine($"Current context is {currentContext.GetType()}, context stack depth is {contextStack.Count}.");
 
-                Console.WriteLine("You can perform the following operations:");
+                if (needRefresh)
+                {
+                    Console.WriteLine($"Current context is {currentContext.GetType()}, context stack depth is {contextStack.Count}.");
+                    Console.WriteLine("You can perform the following operations:");
+                }
+
                 var operations = currentContext.PossibleOperations;
 
                 // Only display (Console.WindowHeight - 3) operations on screen at any given time,
@@ -67,30 +72,35 @@ namespace DRV3_Sharp
                 operationsListUpperBound = Math.Min(operations.Count, operationsListUpperBound);
 
                 Range operationsListRange = operationsListLowerBound .. operationsListUpperBound;
-                for (int opNum = operationsListRange.Start.Value; opNum < operationsListRange.End.Value; ++opNum)
+
+                if (needRefresh)
                 {
-                    if (highlightedOperation == opNum)
+                    for (int opNum = operationsListRange.Start.Value; opNum < operationsListRange.End.Value; ++opNum)
                     {
-                        // Swap the foreground and background colors to highlight the operation
-                        ConsoleColor fgColor = Console.ForegroundColor;
-                        ConsoleColor bgColor = Console.BackgroundColor;
+                        if (highlightedOperation == opNum)
+                        {
+                            // Swap the foreground and background colors to highlight the operation
+                            ConsoleColor fgColor = Console.ForegroundColor;
+                            ConsoleColor bgColor = Console.BackgroundColor;
 
-                        Console.ForegroundColor = bgColor;
-                        Console.BackgroundColor = fgColor;
+                            Console.ForegroundColor = bgColor;
+                            Console.BackgroundColor = fgColor;
 
-                        Console.Write(">");
-                        Console.WriteLine(operations[opNum].Name);
+                            Console.Write(">");
+                            Console.WriteLine(operations[opNum].Name);
 
-                        Console.ForegroundColor = fgColor;
-                        Console.BackgroundColor = bgColor;
-                    }
-                    else
-                    {
-                        Console.Write(" ");
-                        Console.WriteLine(operations[opNum].Name);
+                            Console.ForegroundColor = fgColor;
+                            Console.BackgroundColor = bgColor;
+                        }
+                        else
+                        {
+                            Console.Write(" ");
+                            Console.WriteLine(operations[opNum].Name);
+                        }
                     }
                 }
 
+                needRefresh = true;
                 var keyPress = Console.ReadKey(true);
                 const int FAST_SCROLL_AMOUNT = 10;
                 switch (keyPress.Key)
@@ -115,6 +125,10 @@ namespace DRV3_Sharp
 
                     case ConsoleKey.Enter:
                         operations[highlightedOperation].Perform(currentContext);
+                        break;
+
+                    default:
+                        needRefresh = false;
                         break;
                 }
             }
