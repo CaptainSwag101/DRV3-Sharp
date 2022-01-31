@@ -28,6 +28,7 @@ namespace DRV3_Sharp
         private static readonly Stack<IOperationContext> contextStack = new();
         private static int highlightedOperation = 0;
         private static bool needRefresh = true;
+        private static readonly int HEADER_LINES = 3;
 
         static void Main(string[] args)
         {
@@ -35,28 +36,36 @@ namespace DRV3_Sharp
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             // Do initial startup
-            contextStack.Push(new RootContext());
+            PushContext(new RootContext());
 
-            // While there exists a valid context, loop through its possible operations
-            // and show the user what can be performed.
+            // Start the main program loop
+            MainLoop();
+        }
+
+        /// <summary>
+        /// While there exists a valid context, loop through its possible operations and show the user what can be performed.
+        /// </summary>
+        private static void MainLoop()
+        {
             while (contextStack.Count > 0)
             {
-                if (needRefresh) Console.Clear();
-
                 var currentContext = contextStack.Peek();
 
+                // If we are refreshing the screen, clear the screen and refresh the header
                 if (needRefresh)
                 {
+                    Console.Clear();
                     Console.WriteLine($"Current context is {currentContext.GetType()}, context stack depth is {contextStack.Count}.");
                     Console.WriteLine("You can perform the following operations:");
                 }
 
+                // Query the context for what operations are currently possible
                 var operations = currentContext.PossibleOperations;
 
-                // Only display (Console.WindowHeight - 3) operations on screen at any given time,
-                // otherwise for large lists (like SPC extraction) we'll scroll the screen at a rapid pace.
+                // Only display (Console.WindowHeight - HEADER_LINES) operations on screen at any given time,
+                // otherwise for large lists (like SPC extraction) we'll run out of screen space.
                 // The highlight should be centered on the screen as best as possible.
-                int operationsListSize = (Console.WindowHeight - 3);
+                int operationsListSize = (Console.WindowHeight - HEADER_LINES);
                 int halfSize = (operationsListSize / 2);
                 int operationsListLowerBound = highlightedOperation - halfSize;
                 int operationsListUpperBound = highlightedOperation + halfSize;
@@ -70,9 +79,9 @@ namespace DRV3_Sharp
                 // Final clamp to ensure in-bounds
                 operationsListLowerBound = Math.Max(0, operationsListLowerBound);
                 operationsListUpperBound = Math.Min(operations.Count, operationsListUpperBound);
+                Range operationsListRange = operationsListLowerBound..operationsListUpperBound;
 
-                Range operationsListRange = operationsListLowerBound .. operationsListUpperBound;
-
+                // If we are refreshing the screen, draw the list of operations
                 if (needRefresh)
                 {
                     for (int opNum = operationsListRange.Start.Value; opNum < operationsListRange.End.Value; ++opNum)
@@ -101,6 +110,8 @@ namespace DRV3_Sharp
                 }
 
                 needRefresh = true;
+
+                // Process input regardless of whether we need to refresh the screen or not
                 var keyPress = Console.ReadKey(true);
                 const int FAST_SCROLL_AMOUNT = 10;
                 switch (keyPress.Key)
@@ -127,7 +138,7 @@ namespace DRV3_Sharp
                     case ConsoleKey.Enter:
                         operations[highlightedOperation].Perform(currentContext);
                         break;
-                    
+
                     // Any other keys: don't update the screen next pass, we didn't do anything!
                     default:
                         needRefresh = false;
@@ -136,12 +147,21 @@ namespace DRV3_Sharp
             }
         }
 
+        /// <summary>
+        /// Pushes a new context onto the top of the context stack, thereby making it the new focus.
+        /// Also resets the highlighted operation to the first position.
+        /// </summary>
+        /// <param name="context"></param>
         public static void PushContext(IOperationContext context)
         {
             contextStack.Push(context);
             highlightedOperation = 0;
         }
 
+        /// <summary>
+        /// Pops the top context off the top of the context stack, causing the context underneath to take focus.
+        /// Also resets the highlighted operation to the first position.
+        /// </summary>
         public static void PopContext()
         {
             contextStack.Pop();
