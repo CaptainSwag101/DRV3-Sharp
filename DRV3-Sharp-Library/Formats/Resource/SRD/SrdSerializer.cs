@@ -66,6 +66,11 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
             {
                 outputBlock = new CfhBlock();   // We don't even need to bother serializing it
             }
+            else if (blockType == @"$RSF")
+            {
+                RsfBlock.Deserialize(mainDataStream, out RsfBlock rsf);
+                outputBlock = rsf;
+            }
             else if (blockType == @"$RSI")
             {
                 RsiBlock.Deserialize(mainDataStream, inputSrdi, inputSrdv, out RsiBlock rsi);
