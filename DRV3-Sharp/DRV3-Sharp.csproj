@@ -11,6 +11,7 @@
     <AssemblyVersion>3.0.0.0</AssemblyVersion>
     <FileVersion>3.0.0.0</FileVersion>
     <PackageLicenseFile>D:\jpmac\Documents\GitHub\DRV3-Sharp\LICENSE.txt</PackageLicenseFile>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -53,5 +54,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="git rev-parse HEAD &gt; $(OutDir)/VERSION_INFO_FOR_DEBUGGING.txt&#xD;&#xA;echo v$(Version) (Configuration: $(Configuration), $(Platform)) &gt;&gt; $(OutDir)/VERSION_INFO_FOR_DEBUGGING.txt" />
+  </Target>
 
 </Project>
