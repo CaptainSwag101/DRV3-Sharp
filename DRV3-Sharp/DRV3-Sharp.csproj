@@ -56,7 +56,7 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="git rev-parse HEAD &gt; $(OutDir)/VERSION_INFO_FOR_DEBUGGING.txt&#xD;&#xA;echo v$(Version) (Configuration: $(Configuration), $(Platform)) &gt;&gt; $(OutDir)/VERSION_INFO_FOR_DEBUGGING.txt" />
+    <Exec Command="git rev-parse HEAD &gt; $(OutDir)/VERSION_INFO_FOR_DEBUGGING.txt&#xD;&#xA;echo v$(Version) Configuration: $(Configuration), $(Platform) &gt;&gt; $(OutDir)/VERSION_INFO_FOR_DEBUGGING.txt" />
   </Target>
 
 </Project>
