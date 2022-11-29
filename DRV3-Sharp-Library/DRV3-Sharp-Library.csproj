@@ -8,4 +8,8 @@
     <PackageLicenseFile>D:\jpmac\Documents\GitHub\DRV3-Sharp\LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.2" />
+  </ItemGroup>
+
 </Project>
