@@ -29,7 +29,7 @@ namespace DRV3_Sharp
         private static List<IOperation>? cachedOperations = null;   // Cache for operations so that we're not querying them every keyinput but only when we perform an actual refresh of the text.
         private static int highlightedOperation = 0;    // Which entry on the list is currently highlighted/selected?
         private static bool needRefresh = true; // Do we need to redraw the text on the screen?
-        private static readonly int HEADER_LINES = 3;   // How much header/footer space do we need to account for to avoid drawing over it?
+        private const int HEADER_LINES = 3;   // How much header/footer space do we need to account for to avoid drawing over it?
 
         static void Main(string[] args)
         {
