@@ -23,9 +23,9 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Text.STX
 {
-    public class SegmentedString
+    public sealed class SegmentedString
     {
-        public List<string> Segments { get; set; }
+        public List<string> Segments { get; }
 
         public SegmentedString()
         {
@@ -38,7 +38,7 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
             Segments.AddRange(initSegments);
         }
     }
-    public class StringTable
+    public sealed class StringTable
     {
         public int UnknownData { get; set; }
         public List<SegmentedString> Strings { get; set; }
@@ -62,7 +62,7 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
         }
     }
 
-    public class StxData : IDanganV3Data
+    public sealed class StxData : IDanganV3Data
     {
         public List<StringTable> Tables { get; set; }
 

@@ -29,7 +29,7 @@ using SixLabors.ImageSharp;
 
 namespace DRV3_Sharp.Contexts
 {
-    internal class SrdContext : IOperationContext
+    internal sealed class SrdContext : IOperationContext
     {
         private SrdData? loadedData;
         private string? loadedDataPath;
@@ -69,7 +69,7 @@ namespace DRV3_Sharp.Contexts
             loadedDataPath = initialDataPath;
         }
 
-        protected static SrdContext GetVerifiedContext(IOperationContext compare)
+        private static SrdContext GetVerifiedContext(IOperationContext compare)
         {
             // Ensure that this is not somehow being called from the wrong context
             if (compare.GetType() != typeof(SrdContext))
@@ -100,7 +100,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class NewSrdOperation : IOperation
+        private sealed class NewSrdOperation : IOperation
         {
             public string Name => "New SRD";
 
@@ -118,7 +118,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class LoadSrdOperation : IOperation
+        private sealed class LoadSrdOperation : IOperation
         {
             public string Name => "Load SRD";
 
@@ -151,7 +151,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class SaveSrdOperation : IOperation
+        private sealed class SaveSrdOperation : IOperation
         {
             public string Name => "Save SRD";
 
@@ -193,7 +193,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ListBlocksOperation : IOperation
+        private sealed class ListBlocksOperation : IOperation
         {
             public string Name => "List Blocks";
 
@@ -219,7 +219,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ExtractTexturesOperation : IOperation
+        private sealed class ExtractTexturesOperation : IOperation
         {
             public string Name => "Extract Textures";
 
@@ -278,7 +278,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ExtractFontOperation : IOperation
+        private sealed class ExtractFontOperation : IOperation
         {
             public string Name => "Extract Font";
 
@@ -331,7 +331,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class HelpOperation : IOperation
+        private sealed class HelpOperation : IOperation
         {
             public string Name => "Help";
 
@@ -354,7 +354,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class BackOperation : IOperation
+        private sealed class BackOperation : IOperation
         {
             public string Name => "Back";
 

@@ -31,10 +31,10 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
         Srdv = 0x40000000
     }
 
-    public record ExternalResourceInfo(int Address, int Length, int Unknown1, int Unknown2);
-    public record LocalResourceInfo(int Address1, int Address2, int Length, int Unknown);
+    public sealed record ExternalResourceInfo(int Address, int Length, int Unknown1, int Unknown2);
+    public sealed record LocalResourceInfo(int Address1, int Address2, int Length, int Unknown);
 
-    public class RsiBlock : ISrdBlock
+    public sealed class RsiBlock : ISrdBlock
     {
         #region Public Properties
         public string BlockType { get { return @"$RSI"; } }

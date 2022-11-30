@@ -25,7 +25,7 @@ using DRV3_Sharp_Library.Formats.Archive.SPC;
 
 namespace DRV3_Sharp.Contexts
 {
-    internal class SpcExtractContext : IOperationContext
+    internal sealed class SpcExtractContext : IOperationContext
     {
         private readonly SpcData loadedData;
 
@@ -53,7 +53,7 @@ namespace DRV3_Sharp.Contexts
             loadedData = spc;
         }
 
-        protected static SpcExtractContext GetVerifiedContext(IOperationContext compare)
+        private static SpcExtractContext GetVerifiedContext(IOperationContext compare)
         {
             // Ensure that this is not somehow being called from the wrong context
             if (compare.GetType() != typeof(SpcExtractContext))
@@ -62,7 +62,7 @@ namespace DRV3_Sharp.Contexts
             return (SpcExtractContext)compare;
         }
 
-        internal class BackOperation : IOperation
+        private sealed class BackOperation : IOperation
         {
             public string Name => "Back";
 
@@ -76,7 +76,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ExtractAllOperation : IOperation
+        private sealed class ExtractAllOperation : IOperation
         {
             public string Name => "Extract All";
 
@@ -107,7 +107,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ExtractFileOperation : IOperation
+        private sealed class ExtractFileOperation : IOperation
         {
             private readonly ArchivedFile fileToExtract;
 

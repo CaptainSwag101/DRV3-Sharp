@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
 {
-    public class RsfBlock : ISrdBlock
+    public sealed class RsfBlock : ISrdBlock
     {
         #region Block Constants
         private const int MAGIC_1 = 20110331;

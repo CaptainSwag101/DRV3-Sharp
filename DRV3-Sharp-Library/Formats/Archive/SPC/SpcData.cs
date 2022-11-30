@@ -21,7 +21,7 @@ using System.Linq;
 
 namespace DRV3_Sharp_Library.Formats.Archive.SPC
 {
-    public class ArchivedFile
+    public sealed class ArchivedFile
     {
         public string Name { get; set; }
         public byte[] Data { get; private set; }
@@ -46,7 +46,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
         }
     }
 
-    public class SpcData : IDanganV3Data
+    public sealed class SpcData : IDanganV3Data
     {
         public int Unknown2C { get; set; }
         public int FileCount { get { return Files.Count; } }

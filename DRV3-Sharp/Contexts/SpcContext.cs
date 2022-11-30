@@ -24,7 +24,7 @@ using DRV3_Sharp_Library.Formats.Archive.SPC;
 
 namespace DRV3_Sharp.Contexts
 {
-    internal class SpcContext : IOperationContext
+    internal sealed class SpcContext : IOperationContext
     {
         private SpcData? loadedData;
         private string? loadedDataPath;
@@ -64,7 +64,7 @@ namespace DRV3_Sharp.Contexts
             loadedDataPath = initialDataPath;
         }
 
-        protected static SpcContext GetVerifiedContext(IOperationContext compare)
+        private static SpcContext GetVerifiedContext(IOperationContext compare)
         {
             // Ensure that this is not somehow being called from the wrong context
             if (compare.GetType() != typeof(SpcContext))
@@ -95,7 +95,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class NewSpcOperation : IOperation
+        private sealed class NewSpcOperation : IOperation
         {
             public string Name => "New SPC";
 
@@ -113,7 +113,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class LoadSpcOperation : IOperation
+        private sealed class LoadSpcOperation : IOperation
         {
             public string Name => "Load SPC";
 
@@ -137,7 +137,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class SaveSpcOperation : IOperation
+        private sealed class SaveSpcOperation : IOperation
         {
             public string Name => "Save SPC";
 
@@ -162,7 +162,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ListFileOperation : IOperation
+        private sealed class ListFileOperation : IOperation
         {
             public string Name => "List Files";
 
@@ -200,7 +200,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class InsertFileOperation : IOperation
+        private sealed class InsertFileOperation : IOperation
         {
             public string Name => "Insert File";
 
@@ -238,7 +238,7 @@ namespace DRV3_Sharp.Contexts
 
                 using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 byte[] fileData = new byte[fs.Length];
-                fs.Read(fileData, 0, (int)fs.Length);
+                _ = fs.Read(fileData, 0, (int)fs.Length);
 
                 // Try to compress the file
                 byte[] compressedData = SpcCompressor.Compress(fileData);
@@ -266,7 +266,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ExtractFileOperation : IOperation
+        private sealed class ExtractFileOperation : IOperation
         {
             public string Name => "Extract File";
 
@@ -280,7 +280,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class HelpOperation : IOperation
+        private sealed class HelpOperation : IOperation
         {
             public string Name => "Help";
 
@@ -303,7 +303,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class BackOperation : IOperation
+        private sealed class BackOperation : IOperation
         {
             public string Name => "Back";
 

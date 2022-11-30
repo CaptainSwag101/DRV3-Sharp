@@ -23,24 +23,25 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp.Contexts
 {
-    internal class RootContext : IOperationContext
+    internal sealed class RootContext : IOperationContext
     {
         public List<IOperation> PossibleOperations
         {
             get
             {
-                List<IOperation> operationList = new();
-
-                // Add always-available operations
-                operationList.Add(new SelectContextOperation());
-                operationList.Add(new HelpOperation());
-                operationList.Add(new ExitOperation());
+                List<IOperation> operationList = new()
+                {
+                    // Add always-available operations
+                    new SelectContextOperation(),
+                    new HelpOperation(),
+                    new ExitOperation()
+                };
 
                 return operationList;
             }
         }
 
-        protected static RootContext GetVerifiedContext(IOperationContext compare)
+        private static RootContext GetVerifiedContext(IOperationContext compare)
         {
             // Ensure that this is not somehow being called from the wrong context
             if (compare.GetType() != typeof(RootContext))
@@ -49,7 +50,7 @@ namespace DRV3_Sharp.Contexts
             return (RootContext)compare;
         }
 
-        internal class SelectContextOperation : IOperation
+        private sealed class SelectContextOperation : IOperation
         {
             public string Name => "Select Initial Context";
 
@@ -63,7 +64,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class HelpOperation : IOperation
+        private sealed class HelpOperation : IOperation
         {
             public string Name => "Help";
 
@@ -86,7 +87,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ExitOperation : IOperation
+        private sealed class ExitOperation : IOperation
         {
             public string Name => "Exit";
 

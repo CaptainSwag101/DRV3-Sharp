@@ -27,7 +27,7 @@ using DRV3_Sharp_Library.Formats.Text.STX;
 
 namespace DRV3_Sharp.Contexts
 {
-    internal class StxContext : IOperationContext
+    internal sealed class StxContext : IOperationContext
     {
         private StxData? loadedData;
         private string? loadedDataPath;
@@ -66,7 +66,7 @@ namespace DRV3_Sharp.Contexts
             loadedDataPath = initialDataPath;
         }
 
-        protected static StxContext GetVerifiedContext(IOperationContext compare)
+        private static StxContext GetVerifiedContext(IOperationContext compare)
         {
             // Ensure that this is not somehow being called from the wrong context
             if (compare.GetType() != typeof(StxContext))
@@ -97,7 +97,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class NewStxOperation : IOperation
+        private sealed class NewStxOperation : IOperation
         {
             public string Name => "New STX";
 
@@ -115,7 +115,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class LoadStxOperation : IOperation
+        private sealed class LoadStxOperation : IOperation
         {
             public string Name => "Load STX";
 
@@ -139,7 +139,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class SaveStxOperation : IOperation
+        private sealed class SaveStxOperation : IOperation
         {
             public string Name => "Save STX";
 
@@ -164,7 +164,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ConvertFromJsonOperation : IOperation
+        private sealed class ConvertFromJsonOperation : IOperation
         {
             public string Name => "Convert From JSON";
 
@@ -194,7 +194,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class ConvertToJsonOperation : IOperation
+        private sealed class ConvertToJsonOperation : IOperation
         {
             public string Name => "Convert To JSON";
 
@@ -216,7 +216,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class HelpOperation : IOperation
+        private sealed class HelpOperation : IOperation
         {
             public string Name => "Help";
 
@@ -239,7 +239,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class BackOperation : IOperation
+        private sealed class BackOperation : IOperation
         {
             public string Name => "Back";
 

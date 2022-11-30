@@ -23,7 +23,7 @@ using System.Text;
 
 namespace DRV3_Sharp
 {
-    internal class Program
+    internal sealed class Program
     {
         private static readonly Stack<IOperationContext> contextStack = new();  // Stack which holds the contexts, which determines what operations can be performed, and how.
         private static List<IOperation>? cachedOperations = null;   // Cache for operations so that we're not querying them every keyinput but only when we perform an actual refresh of the text.

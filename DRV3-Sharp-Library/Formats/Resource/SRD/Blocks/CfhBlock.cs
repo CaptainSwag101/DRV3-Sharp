@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
 {
-    public class CfhBlock : ISrdBlock
+    public sealed class CfhBlock : ISrdBlock
     {
         #region Public Properties
         public string BlockType { get { return @"$CFH"; } }

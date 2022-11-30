@@ -25,7 +25,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
 {
-    public class UnknownBlock : ISrdBlock
+    public sealed class UnknownBlock : ISrdBlock
     {
         #region Public Properties
         public string BlockType { get; private set; }

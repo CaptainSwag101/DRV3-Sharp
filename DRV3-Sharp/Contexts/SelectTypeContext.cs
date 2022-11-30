@@ -23,7 +23,7 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp.Contexts
 {
-    internal class SelectTypeContext : IOperationContext
+    internal sealed class SelectTypeContext : IOperationContext
     {
         public List<IOperation> PossibleOperations
         {
@@ -42,7 +42,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        protected static SelectTypeContext GetVerifiedContext(IOperationContext compare)
+        private static SelectTypeContext GetVerifiedContext(IOperationContext compare)
         {
             // Ensure that this is not somehow being called from the wrong context
             if (compare.GetType() != typeof(SelectTypeContext))
@@ -51,7 +51,7 @@ namespace DRV3_Sharp.Contexts
             return (SelectTypeContext)compare;
         }
 
-        internal class SpcOperation : IOperation
+        private sealed class SpcOperation : IOperation
         {
             public string Name => "SPC";
 
@@ -66,7 +66,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
         
-        internal class StxOperation : IOperation
+        private sealed class StxOperation : IOperation
         {
             public string Name => "STX";
 
@@ -81,7 +81,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
         
-        internal class SrdOperation : IOperation
+        private sealed class SrdOperation : IOperation
         {
             public string Name => "SRD";
 
@@ -96,7 +96,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class HelpOperation : IOperation
+        private sealed class HelpOperation : IOperation
         {
             public string Name => "Help";
 
@@ -119,7 +119,7 @@ namespace DRV3_Sharp.Contexts
             }
         }
 
-        internal class CancelOperation : IOperation
+        private sealed class CancelOperation : IOperation
         {
             public string Name => "Cancel";
 
