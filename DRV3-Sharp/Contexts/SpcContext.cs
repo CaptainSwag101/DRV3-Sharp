@@ -34,13 +34,14 @@ namespace DRV3_Sharp.Contexts
         {
             get
             {
-                List<IOperation> operationList = new();
-
-                // Add always-available operations
-                operationList.Add(new NewSpcOperation());
-                operationList.Add(new LoadSpcOperation());
-                operationList.Add(new HelpOperation());
-                operationList.Add(new BackOperation());
+                List<IOperation> operationList = new()
+                {
+                    // Add always-available operations
+                    new NewSpcOperation(),
+                    new LoadSpcOperation(),
+                    new HelpOperation(),
+                    new BackOperation()
+                };
 
                 // If an SPC file is loaded, add file-related operations
                 if (loadedData is not null)

@@ -39,13 +39,14 @@ namespace DRV3_Sharp.Contexts
         {
             get
             {
-                List<IOperation> operationList = new();
-
-                // Add always-available operations
-                operationList.Add(new NewSrdOperation());
-                operationList.Add(new LoadSrdOperation());
-                operationList.Add(new HelpOperation());
-                operationList.Add(new BackOperation());
+                List<IOperation> operationList = new()
+                {
+                    // Add always-available operations
+                    new NewSrdOperation(),
+                    new LoadSrdOperation(),
+                    new HelpOperation(),
+                    new BackOperation()
+                };
 
                 // If an SRD file is loaded, add file-related operations
                 if (loadedData is not null)

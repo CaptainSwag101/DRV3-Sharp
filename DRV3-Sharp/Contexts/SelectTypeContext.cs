@@ -29,14 +29,15 @@ namespace DRV3_Sharp.Contexts
         {
             get
             {
-                List<IOperation> operationList = new();
-
-                // Populate with file types (and help and exit options)
-                operationList.Add(new SpcOperation());
-                operationList.Add(new StxOperation());
-                operationList.Add(new SrdOperation());
-                operationList.Add(new HelpOperation());
-                operationList.Add(new CancelOperation());
+                List<IOperation> operationList = new()
+                {
+                    // Populate with file types (and help and exit options)
+                    new SpcOperation(),
+                    new StxOperation(),
+                    new SrdOperation(),
+                    new HelpOperation(),
+                    new CancelOperation()
+                };
 
                 return operationList;
             }

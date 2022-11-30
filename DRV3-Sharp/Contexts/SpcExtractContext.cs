@@ -33,11 +33,12 @@ namespace DRV3_Sharp.Contexts
         {
             get
             {
-                List<IOperation> operationList = new();
-
-                // Add "back" and "extract all" operations first
-                operationList.Add(new BackOperation());
-                operationList.Add(new ExtractAllOperation());
+                List<IOperation> operationList = new()
+                {
+                    // Add "back" and "extract all" operations first
+                    new BackOperation(),
+                    new ExtractAllOperation()
+                };
 
                 foreach (ArchivedFile file in loadedData.Files)
                 {

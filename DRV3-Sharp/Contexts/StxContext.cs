@@ -37,14 +37,15 @@ namespace DRV3_Sharp.Contexts
         {
             get
             {
-                List<IOperation> operationList = new();
-
-                // Add always-available operations
-                operationList.Add(new NewStxOperation());
-                operationList.Add(new LoadStxOperation());
-                operationList.Add(new ConvertFromJsonOperation());
-                operationList.Add(new HelpOperation());
-                operationList.Add(new BackOperation());
+                List<IOperation> operationList = new()
+                {
+                    // Add always-available operations
+                    new NewStxOperation(),
+                    new LoadStxOperation(),
+                    new ConvertFromJsonOperation(),
+                    new HelpOperation(),
+                    new BackOperation()
+                };
 
                 // If an STX file is loaded, add file-related operations
                 if (loadedData is not null)
