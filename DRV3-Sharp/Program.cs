@@ -26,7 +26,7 @@ namespace DRV3_Sharp
     internal sealed class Program
     {
         private static readonly Stack<IMenu> menuStack = new();  // Stack which holds the menus, which determines what entries can be performed, and how.
-        private static List<MenuEntry>? cachedEntries = null;   // Cache for entries so that we're not querying them every keyinput but only when we perform an actual refresh of the text.
+        private static MenuEntry[]? cachedEntries = null;   // Cache for entries so that we're not querying them every keyinput but only when we perform an actual refresh of the text.
         private static int highlightedEntry = 0;    // Which entry on the list is currently highlighted/selected?
         private static bool needRefresh = true; // Do we need to redraw the text on the screen?
         private const int HEADER_LINES = 3;   // How much header/footer space do we need to account for to avoid drawing over it?
@@ -57,7 +57,7 @@ namespace DRV3_Sharp
                 {
                     Console.Clear();
                     Console.WriteLine($"Current menu is {currentMenu.GetType()}, menu stack depth is {menuStack.Count}.");
-                    Console.WriteLine("You can perform the following entries:");
+                    Console.WriteLine("You can choose from the following options:");
                 }
 
                 // Query the menu for what entries are currently possible.
@@ -75,13 +75,13 @@ namespace DRV3_Sharp
 
                 // Compensate for non-centered highlight when at either end of the list
                 int lowerDifference = Math.Max(0, 0 - entriesListLowerBound);
-                int upperDifference = Math.Max(0, entriesListUpperBound - cachedEntries.Count);
+                int upperDifference = Math.Max(0, entriesListUpperBound - cachedEntries.Length);
                 entriesListLowerBound -= upperDifference;
                 entriesListUpperBound += lowerDifference;
 
                 // Final clamp to ensure in-bounds
                 entriesListLowerBound = Math.Max(0, entriesListLowerBound);
-                entriesListUpperBound = Math.Min(cachedEntries.Count, entriesListUpperBound);
+                entriesListUpperBound = Math.Min(cachedEntries.Length, entriesListUpperBound);
                 Range entriesListRange = entriesListLowerBound..entriesListUpperBound;
 
                 // If we are refreshing the screen, draw the list of entries
@@ -124,7 +124,7 @@ namespace DRV3_Sharp
                         if (highlightedEntry > 0) --highlightedEntry;
                         break;
                     case ConsoleKey.DownArrow:
-                        if (highlightedEntry < (cachedEntries.Count - 1)) ++highlightedEntry;
+                        if (highlightedEntry < (cachedEntries.Length - 1)) ++highlightedEntry;
                         break;
 
                     // Fast scroll
@@ -133,8 +133,8 @@ namespace DRV3_Sharp
                         else if (highlightedEntry > 0) highlightedEntry = 0;
                         break;
                     case ConsoleKey.PageDown:
-                        if (highlightedEntry < (cachedEntries.Count - FAST_SCROLL_AMOUNT - 1)) highlightedEntry += FAST_SCROLL_AMOUNT;
-                        else if (highlightedEntry < (cachedEntries.Count - 1)) highlightedEntry = (cachedEntries.Count - 1);
+                        if (highlightedEntry < (cachedEntries.Length - FAST_SCROLL_AMOUNT - 1)) highlightedEntry += FAST_SCROLL_AMOUNT;
+                        else if (highlightedEntry < (cachedEntries.Length - 1)) highlightedEntry = (cachedEntries.Length - 1);
                         break;
 
                     // Confirm selection

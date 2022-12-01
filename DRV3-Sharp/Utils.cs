@@ -9,7 +9,7 @@ namespace DRV3_Sharp
 {
     internal static class Utils
     {
-        public static string? GetPathFromUser(string? promptMessage, bool fileMustExist)
+        public static FileInfo? GetPathFromUser(string? promptMessage, bool fileMustExist, bool canBeDirectory)
         {
             if (promptMessage is not null)
                 Console.WriteLine(promptMessage);
@@ -34,8 +34,8 @@ namespace DRV3_Sharp
                 return null;
             }
 
-            // Ensure the path isn't a directory, if it exists
-            if (fi.Exists && fi.Attributes.HasFlag(FileAttributes.Directory))
+            // Unless specified, ensure the path isn't a directory, if it exists
+            if (!canBeDirectory && fi.Exists && fi.Attributes.HasFlag(FileAttributes.Directory))
             {
                 Console.WriteLine("The specified path is a directory.");
                 Console.WriteLine("Press any key to continue...");
@@ -43,7 +43,7 @@ namespace DRV3_Sharp
                 return null;
             }
 
-            return path;
+            return fi;
         }
 
         public static string? GetEnclosingDirectory(string filePath, bool bypassExistenceCheck = false)
@@ -61,15 +61,18 @@ namespace DRV3_Sharp
 
         public static void PrintMenuDescriptions(IEnumerable<MenuEntry> entries)
         {
+            Console.Clear();
             foreach (var entry in entries)
             {
                 // Preserve original foreground color in the case of a custom-themed terminal
-                ConsoleColor origForeground = Console.ForegroundColor;
+                var origForeground = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.Blue;
                 Console.WriteLine(entry.Name);
                 Console.ForegroundColor = origForeground;
                 Console.WriteLine($"\t{entry.Description}");
             }
+            Console.WriteLine("Press ENTER to return to the menu...");
+            Console.ReadLine();
         }
     }
 }
