@@ -39,7 +39,7 @@ internal sealed class SpcMenu : IMenu
         if (info is null) return;
         
         // If the path is a directory, load all SPC files within it
-        if (info.Attributes.HasFlag(FileAttribute.Directory))
+        if (info.Attributes.HasFlag(FileAttributes.Directory))
         {
             string[] contents = Directory.GetFiles(info.FullName, "*.spc");
 

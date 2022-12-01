@@ -28,9 +28,11 @@ namespace DRV3_Sharp
 
             FileInfo fi = new(path);
 
-            if (!fi.Exists && fileMustExist)
+            if (!fi.Attributes.HasFlag(FileAttributes.Directory) && !fi.Exists && fileMustExist)
             {
                 Console.WriteLine("The specified path does not exist.");
+                Console.WriteLine("Press any key to continue...");
+                _ = Console.ReadKey(true);
                 return null;
             }
 
