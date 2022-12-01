@@ -21,35 +21,18 @@ using System.Linq;
 
 namespace DRV3_Sharp_Library.Formats.Archive.SPC
 {
-    public sealed class ArchivedFile
-    {
-        public string Name { get; set; }
-        public byte[] Data { get; private set; }
-        public short UnknownFlag { get; set; }
-        public bool IsCompressed { get; private set; }
-        public int OriginalSize { get; set; }
-        public int ArchivedSize { get { return Data.Length; } }
-
-        public ArchivedFile(string name, byte[] data, short unkFlag, bool isCompressed, int origSize)
-        {
-            Name = name;
-            Data = data;
-            UnknownFlag = unkFlag;
-            IsCompressed = isCompressed;
-            OriginalSize = origSize;
-        }
-
-        public void ReplaceData(byte[] newData, bool compressed)
-        {
-            Data = newData;
-            IsCompressed = compressed;
-        }
-    }
+    public sealed record ArchivedFile(
+        string Name,
+        byte[] Data, 
+        short UnknownFlag, 
+        bool IsCompressed, 
+        int OriginalSize
+        );
 
     public sealed class SpcData : IDanganV3Data
     {
         public int Unknown2C { get; set; }
-        public int FileCount { get { return Files.Count; } }
+        public int FileCount => Files.Count;
         public List<ArchivedFile> Files { get; }
 
         public SpcData()
