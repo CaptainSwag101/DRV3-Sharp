@@ -24,8 +24,10 @@ using DRV3_Sharp_Library.Formats;
 
 namespace DRV3_Sharp
 {
-    internal interface IOperationContext
+    internal interface IMenu
     {
-        public List<IOperation> PossibleOperations { get; } // This is dynamic based on the current state of the current context
+        public List<MenuEntry> AvailableEntries { get; } // This is dynamic based on the current state of the current context
     }
+    
+    internal sealed record MenuEntry(string Name, string Description, Action Operation);
 }

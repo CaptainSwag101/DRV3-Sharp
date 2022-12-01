@@ -15,7 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using DRV3_Sharp.Contexts;
+using DRV3_Sharp.Menus;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,9 +25,9 @@ namespace DRV3_Sharp
 {
     internal sealed class Program
     {
-        private static readonly Stack<IOperationContext> contextStack = new();  // Stack which holds the contexts, which determines what operations can be performed, and how.
-        private static List<IOperation>? cachedOperations = null;   // Cache for operations so that we're not querying them every keyinput but only when we perform an actual refresh of the text.
-        private static int highlightedOperation = 0;    // Which entry on the list is currently highlighted/selected?
+        private static readonly Stack<IMenu> menuStack = new();  // Stack which holds the menus, which determines what entries can be performed, and how.
+        private static List<MenuEntry>? cachedEntries = null;   // Cache for entries so that we're not querying them every keyinput but only when we perform an actual refresh of the text.
+        private static int highlightedEntry = 0;    // Which entry on the list is currently highlighted/selected?
         private static bool needRefresh = true; // Do we need to redraw the text on the screen?
         private const int HEADER_LINES = 3;   // How much header/footer space do we need to account for to avoid drawing over it?
 
@@ -37,61 +37,61 @@ namespace DRV3_Sharp
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             // Do initial startup.
-            PushContext(new RootContext());
+            PushMenu(new RootMenu());
 
             // Start the main program loop.
             MainLoop();
         }
 
         /// <summary>
-        /// While there exists a valid context, loop through its possible operations and show the user what can be performed.
+        /// While there exists a valid menu, loop through its possible entries and show the user what can be performed.
         /// </summary>
         private static void MainLoop()
         {
-            while (contextStack.Count > 0)
+            while (menuStack.Count > 0)
             {
-                var currentContext = contextStack.Peek();
+                var currentMenu = menuStack.Peek();
 
                 // If we are refreshing the screen, clear the screen and refresh the header.
                 if (needRefresh)
                 {
                     Console.Clear();
-                    Console.WriteLine($"Current context is {currentContext.GetType()}, context stack depth is {contextStack.Count}.");
-                    Console.WriteLine("You can perform the following operations:");
+                    Console.WriteLine($"Current menu is {currentMenu.GetType()}, menu stack depth is {menuStack.Count}.");
+                    Console.WriteLine("You can perform the following entries:");
                 }
 
-                // Query the context for what operations are currently possible.
+                // Query the menu for what entries are currently possible.
                 // Only update this if we are asking for a refresh or if it has not yet been populated.
-                if (cachedOperations is null || needRefresh)
-                    cachedOperations = currentContext.PossibleOperations;
+                if (cachedEntries is null || needRefresh)
+                    cachedEntries = currentMenu.AvailableEntries;
 
-                // Only display (Console.WindowHeight - HEADER_LINES) operations on screen at any given time,
+                // Only display (Console.WindowHeight - HEADER_LINES) entries on screen at any given time,
                 // otherwise for large lists (like SPC extraction) we'll run out of screen space.
                 // The highlight should be centered on the screen as best as possible.
-                int operationsListSize = (Console.WindowHeight - HEADER_LINES);
-                int halfSize = (operationsListSize / 2);
-                int operationsListLowerBound = highlightedOperation - halfSize;
-                int operationsListUpperBound = highlightedOperation + halfSize;
+                int entriesListSize = (Console.WindowHeight - HEADER_LINES);
+                int halfSize = (entriesListSize / 2);
+                int entriesListLowerBound = highlightedEntry - halfSize;
+                int entriesListUpperBound = highlightedEntry + halfSize;
 
                 // Compensate for non-centered highlight when at either end of the list
-                int lowerDifference = Math.Max(0, 0 - operationsListLowerBound);
-                int upperDifference = Math.Max(0, operationsListUpperBound - cachedOperations.Count);
-                operationsListLowerBound -= upperDifference;
-                operationsListUpperBound += lowerDifference;
+                int lowerDifference = Math.Max(0, 0 - entriesListLowerBound);
+                int upperDifference = Math.Max(0, entriesListUpperBound - cachedEntries.Count);
+                entriesListLowerBound -= upperDifference;
+                entriesListUpperBound += lowerDifference;
 
                 // Final clamp to ensure in-bounds
-                operationsListLowerBound = Math.Max(0, operationsListLowerBound);
-                operationsListUpperBound = Math.Min(cachedOperations.Count, operationsListUpperBound);
-                Range operationsListRange = operationsListLowerBound..operationsListUpperBound;
+                entriesListLowerBound = Math.Max(0, entriesListLowerBound);
+                entriesListUpperBound = Math.Min(cachedEntries.Count, entriesListUpperBound);
+                Range entriesListRange = entriesListLowerBound..entriesListUpperBound;
 
-                // If we are refreshing the screen, draw the list of operations
+                // If we are refreshing the screen, draw the list of entries
                 if (needRefresh)
                 {
-                    for (int opNum = operationsListRange.Start.Value; opNum < operationsListRange.End.Value; ++opNum)
+                    for (int opNum = entriesListRange.Start.Value; opNum < entriesListRange.End.Value; ++opNum)
                     {
-                        if (highlightedOperation == opNum)
+                        if (highlightedEntry == opNum)
                         {
-                            // Swap the foreground and background colors to highlight the operation
+                            // Swap the foreground and background colors to highlight the entry
                             ConsoleColor fgColor = Console.ForegroundColor;
                             ConsoleColor bgColor = Console.BackgroundColor;
 
@@ -99,7 +99,7 @@ namespace DRV3_Sharp
                             Console.BackgroundColor = fgColor;
 
                             Console.Write(">");
-                            Console.WriteLine(cachedOperations[opNum].Name);
+                            Console.WriteLine(cachedEntries[opNum].Name);
 
                             Console.ForegroundColor = fgColor;
                             Console.BackgroundColor = bgColor;
@@ -107,7 +107,7 @@ namespace DRV3_Sharp
                         else
                         {
                             Console.Write(" ");
-                            Console.WriteLine(cachedOperations[opNum].Name);
+                            Console.WriteLine(cachedEntries[opNum].Name);
                         }
                     }
                 }
@@ -121,25 +121,25 @@ namespace DRV3_Sharp
                 {
                     // Single-entry scroll
                     case ConsoleKey.UpArrow:
-                        if (highlightedOperation > 0) --highlightedOperation;
+                        if (highlightedEntry > 0) --highlightedEntry;
                         break;
                     case ConsoleKey.DownArrow:
-                        if (highlightedOperation < (cachedOperations.Count - 1)) ++highlightedOperation;
+                        if (highlightedEntry < (cachedEntries.Count - 1)) ++highlightedEntry;
                         break;
 
                     // Fast scroll
                     case ConsoleKey.PageUp:
-                        if (highlightedOperation > FAST_SCROLL_AMOUNT) highlightedOperation -= FAST_SCROLL_AMOUNT;
-                        else if (highlightedOperation > 0) highlightedOperation = 0;
+                        if (highlightedEntry > FAST_SCROLL_AMOUNT) highlightedEntry -= FAST_SCROLL_AMOUNT;
+                        else if (highlightedEntry > 0) highlightedEntry = 0;
                         break;
                     case ConsoleKey.PageDown:
-                        if (highlightedOperation < (cachedOperations.Count - FAST_SCROLL_AMOUNT - 1)) highlightedOperation += FAST_SCROLL_AMOUNT;
-                        else if (highlightedOperation < (cachedOperations.Count - 1)) highlightedOperation = (cachedOperations.Count - 1);
+                        if (highlightedEntry < (cachedEntries.Count - FAST_SCROLL_AMOUNT - 1)) highlightedEntry += FAST_SCROLL_AMOUNT;
+                        else if (highlightedEntry < (cachedEntries.Count - 1)) highlightedEntry = (cachedEntries.Count - 1);
                         break;
 
                     // Confirm selection
                     case ConsoleKey.Enter:
-                        cachedOperations[highlightedOperation].Perform(currentContext);
+                        cachedEntries[highlightedEntry].Operation.Invoke();
                         break;
 
                     // Any other keys: don't update the screen next pass, we didn't do anything!
@@ -151,24 +151,24 @@ namespace DRV3_Sharp
         }
 
         /// <summary>
-        /// Pushes a new context onto the top of the context stack, thereby making it the new focus.
-        /// Also resets the highlighted operation to the first position.
+        /// Pushes a new menu onto the top of the menu stack, thereby making it the new focus.
+        /// Also resets the highlighted entry to the first position.
         /// </summary>
-        /// <param name="context"></param>
-        public static void PushContext(IOperationContext context)
+        /// <param name="menu"></param>
+        public static void PushMenu(IMenu menu)
         {
-            contextStack.Push(context);
-            highlightedOperation = 0;
+            menuStack.Push(menu);
+            highlightedEntry = 0;
         }
 
         /// <summary>
-        /// Pops the top context off the top of the context stack, causing the context underneath to take focus.
-        /// Also resets the highlighted operation to the first position.
+        /// Pops the top menu off the top of the menu stack, causing the menu underneath to take focus.
+        /// Also resets the highlighted entry to the first position.
         /// </summary>
-        public static void PopContext()
+        public static void PopMenu()
         {
-            contextStack.Pop();
-            highlightedOperation = 0;
+            menuStack.Pop();
+            highlightedEntry = 0;
         }
     }
 }

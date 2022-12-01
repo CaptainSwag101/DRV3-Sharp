@@ -59,16 +59,16 @@ namespace DRV3_Sharp
             return fi.DirectoryName;
         }
 
-        public static void DisplayDescriptiveList(List<(string Name, string Description)> list)
+        public static void PrintMenuDescriptions(IEnumerable<MenuEntry> entries)
         {
-            foreach (var (Name, Description) in list)
+            foreach (var entry in entries)
             {
                 // Preserve original foreground color in the case of a custom-themed terminal
                 ConsoleColor origForeground = Console.ForegroundColor;
                 Console.ForegroundColor = ConsoleColor.Blue;
-                Console.WriteLine(Name);
+                Console.WriteLine(entry.Name);
                 Console.ForegroundColor = origForeground;
-                Console.WriteLine(Description);
+                Console.WriteLine($"\t{entry.Description}");
             }
         }
     }
