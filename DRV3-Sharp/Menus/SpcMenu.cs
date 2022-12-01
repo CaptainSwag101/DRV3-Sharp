@@ -9,6 +9,7 @@ namespace DRV3_Sharp.Menus;
 internal sealed class SpcMenu : IMenu
 {
     private List<SpcData> loadedData = new();
+    private bool unsavedChanges = false;
 
     public MenuEntry[] AvailableEntries
     {
@@ -25,7 +26,7 @@ internal sealed class SpcMenu : IMenu
             // Add context-sensitive entries, if applicable
             if (loadedData.Count > 0)
             {
-                entries.Insert(2, new("Save", "Save the currently-loaded SPC file(s).", Save));
+                entries.Insert(1, new("Save", "Save the currently-loaded SPC file(s).", Save));
             }
 
             return entries.ToArray();
@@ -38,6 +39,9 @@ internal sealed class SpcMenu : IMenu
 
         if (info is null) return;
         
+        // TODO: Check with the user if there are existing loaded files before clearing the list
+        loadedData.Clear();
+        
         // If the path is a directory, load all SPC files within it
         if (info.Attributes.HasFlag(FileAttributes.Directory))
         {
@@ -45,12 +49,16 @@ internal sealed class SpcMenu : IMenu
 
             foreach (var file in contents)
             {
-                
+                using FileStream fs = new(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+                SpcSerializer.Deserialize(fs, out SpcData data);
+                loadedData.Add(data);
             }
         }
         else
         {
-            
+            using FileStream fs = new(info.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            SpcSerializer.Deserialize(fs, out SpcData data);
+            loadedData.Add(data);
         }
     }
 
