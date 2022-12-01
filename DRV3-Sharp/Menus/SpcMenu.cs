@@ -60,6 +60,9 @@ internal sealed class SpcMenu : IMenu
             SpcSerializer.Deserialize(fs, out SpcData data);
             loadedData.Add(data);
         }
+            
+        Console.WriteLine($"Loaded {loadedData.Count} SPC file(s). Press ENTER to continue...");
+        Console.ReadLine();
     }
 
     private void Save()
