@@ -2,20 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using DRV3_Sharp_Library.Formats.Archive.SPC;
-using Microsoft.VisualBasic;
 
 namespace DRV3_Sharp.Menus;
 
 internal sealed class SpcMenu : IMenu
 {
-    private List<SpcData> loadedData = new();
-    private bool unsavedChanges = false;
+    private List<(string name, SpcData data)> loadedData = new();
+    //private bool unsavedChanges = false;
 
     public MenuEntry[] AvailableEntries
     {
         get
         {
-            var entries = new List<MenuEntry>()
+            List<MenuEntry> entries = new()
             {
                 // Add always-available entries
                 new("Load", "Load an SPC file, or whole folder of SPC files.", Load),
@@ -27,6 +26,14 @@ internal sealed class SpcMenu : IMenu
             if (loadedData.Count > 0)
             {
                 entries.Insert(1, new("Save", "Save the currently-loaded SPC file(s).", Save));
+                entries.Insert(2, new("List Files", "List the contents of the currently-loaded SPC file(s).", ListFiles));
+                entries.Insert(3, new("Extract File(s)", "Extract one or more files from the currently-loaded SPC file(s).", ExtractFiles));
+                
+                // Add multi-file operations if we have more than one loaded at once
+                if (loadedData.Count > 1)
+                {
+                    
+                }
             }
 
             return entries.ToArray();
@@ -47,18 +54,18 @@ internal sealed class SpcMenu : IMenu
         {
             string[] contents = Directory.GetFiles(info.FullName, "*.spc");
 
-            foreach (var file in contents)
+            foreach (var path in contents)
             {
-                using FileStream fs = new(file, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using FileStream fs = new(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 SpcSerializer.Deserialize(fs, out SpcData data);
-                loadedData.Add(data);
+                loadedData.Add((path, data));
             }
         }
         else
         {
             using FileStream fs = new(info.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
             SpcSerializer.Deserialize(fs, out SpcData data);
-            loadedData.Add(data);
+            loadedData.Add((info.FullName, data));
         }
             
         Console.WriteLine($"Loaded {loadedData.Count} SPC file(s). Press ENTER to continue...");
@@ -66,6 +73,25 @@ internal sealed class SpcMenu : IMenu
     }
 
     private void Save()
+    {
+        
+    }
+
+    private void ListFiles()
+    {
+        Console.Clear();
+        foreach (var (name, data) in loadedData)
+        {
+            Console.WriteLine($"{name}:");
+            foreach (var file in data.Files)
+            {
+                Console.WriteLine($"\t{file}");
+            }
+        }
+        Console.ReadLine();
+    }
+
+    private void ExtractFiles()
     {
         
     }

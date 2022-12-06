@@ -21,23 +21,7 @@ using System.Linq;
 
 namespace DRV3_Sharp_Library.Formats.Archive.SPC
 {
-    public sealed record ArchivedFile(
-        string Name,
-        byte[] Data, 
-        short UnknownFlag, 
-        bool IsCompressed, 
-        int OriginalSize
-        );
+    public sealed record ArchivedFile(string Name, byte[] Data, short UnknownFlag, bool IsCompressed, int OriginalSize);
 
-    public sealed class SpcData : IDanganV3Data
-    {
-        public int Unknown2C { get; set; }
-        public int FileCount => Files.Count;
-        public List<ArchivedFile> Files { get; }
-
-        public SpcData()
-        {
-            Files = new();
-        }
-    }
+    public sealed record SpcData(int Unknown2C, List<ArchivedFile> Files) : IDanganV3Data;
 }

@@ -16,6 +16,7 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 
@@ -63,9 +64,6 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
             int unknown2 = reader.ReadInt32();
             reader.BaseStream.Seek(0x10, SeekOrigin.Current);
 
-            outputData = new();
-            outputData.Unknown2C = unknown2;
-
             // Read and verify file table header
             string tableHeader = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (tableHeader != CONST_TABLE_HEADER) throw new InvalidDataException($"Invalid file table header, expected {CONST_TABLE_HEADER} but got {tableHeader}.");
@@ -74,6 +72,7 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
             reader.BaseStream.Seek(0x0C, SeekOrigin.Current);
 
             // Read file data
+            List<ArchivedFile> readFiles = new();
             for (int i = 0; i < fileCount; ++i)
             {
                 short compressionFlag = reader.ReadInt16();
@@ -91,8 +90,10 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
                 byte[] data = reader.ReadBytes(currentSize);
                 reader.BaseStream.Seek(dataPadding, SeekOrigin.Current);
 
-                outputData.Files.Add(new ArchivedFile(name, data, unknownFlag, (compressionFlag == 2), originalSize));
+                readFiles.Add(new(name, data, unknownFlag, (compressionFlag == 2), originalSize));
             }
+
+            outputData = new(unknown2, readFiles);
         }
 
         public static void Serialize(SpcData inputData, Stream outputStream)
@@ -106,17 +107,15 @@ namespace DRV3_Sharp_Library.Formats.Archive.SPC
             Array.Fill<byte>(paddingFF, 0xFF);
             writer.Write(paddingFF);
             writer.Write(new byte[0x18]);   // Padding
-            writer.Write(inputData.FileCount);
+            writer.Write(inputData.Files.Count);
             writer.Write(inputData.Unknown2C);
             writer.Write(new byte[0x10]);   // Padding
             writer.Write(Encoding.ASCII.GetBytes(CONST_TABLE_HEADER));
             writer.Write(new byte[0x0C]);   // Padding
 
             // Write file entries
-            for (int i = 0; i < inputData.FileCount; ++i)
+            foreach (var entry in inputData.Files)
             {
-                ArchivedFile entry = inputData.Files[i];
-
                 string name = entry.Name;
                 writer.Write((short)(entry.IsCompressed ? 2 : 1));
                 writer.Write(entry.UnknownFlag);

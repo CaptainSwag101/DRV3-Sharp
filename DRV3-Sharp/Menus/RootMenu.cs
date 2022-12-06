@@ -21,9 +21,4 @@ internal sealed class RootMenu : IMenu
     {
         Utils.PrintMenuDescriptions(AvailableEntries);
     }
-    
-    private void Exit()
-    {
-        Program.PopMenu();
-    }
 }
