@@ -93,7 +93,26 @@ internal sealed class SpcMenu : IMenu
 
     private void ExtractFiles()
     {
-        
+        foreach (var (name, data) in loadedData)
+        {
+            foreach (var file in data.Files)
+            {
+                string outputDir = name.Remove(name.Length - (".SPC".Length));
+                
+                // Create output directory if it does not exist
+                Directory.CreateDirectory(outputDir);
+                using BinaryWriter writer = new(new FileStream(Path.Combine(outputDir, file.Name), FileMode.Create, FileAccess.ReadWrite, FileShare.Read));
+
+                byte[] fileContents = file.Data;
+                if (file.IsCompressed)
+                {
+                    fileContents = SpcCompressor.Decompress(fileContents);
+                }
+            
+                writer.Write(fileContents);
+                writer.Close();
+            }
+        }
     }
 
     private void Help()
