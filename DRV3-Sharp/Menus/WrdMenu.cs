@@ -37,7 +37,12 @@ internal sealed class WrdMenu : IMenu
         WrdSerializer.Deserialize(fs, out WrdData data);
         loadedData = data;
             
-        Console.WriteLine($"Loaded the WRD file successfully.\n{data}\nPress ENTER to continue...");
+        Console.WriteLine($"Loaded the WRD file successfully.");
+        foreach (var command in loadedData.commands)
+        {
+            Console.WriteLine(command);
+        }
+        Console.WriteLine("Press ENTER to continue...");
         Console.ReadLine();
     }
 

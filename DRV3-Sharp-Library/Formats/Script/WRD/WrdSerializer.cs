@@ -78,8 +78,8 @@ public static class WrdSerializer
             while ((reader.BaseStream.Position + 1) < localBranchDataPtr)
             {
                 ushort data = reader.ReadUInt16();
-                // If the data contains hex 0x70 in the upper byte, it is the next opcode.
-                if ((data & 0xFF00) == 0x7000)
+                // If the data contains hex 0x70 in the first byte, it is the next opcode.
+                if ((data & 0x00FF) == 0x0070)
                 {
                     // Backtrack two bytes and then break out so those bytes can
                     // be interpreted as an opcode.
