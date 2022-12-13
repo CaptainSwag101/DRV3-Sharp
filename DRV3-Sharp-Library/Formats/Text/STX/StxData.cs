@@ -23,57 +23,10 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Text.STX
 {
-    public sealed class SegmentedString
-    {
-        public List<string> Segments { get; }
+    public sealed record StxData(StringTable[] Tables) : IDanganV3Data;
 
-        public SegmentedString()
-        {
-            Segments = new();
-        }
+    public sealed record StringTable(int UnknownData, SegmentedString[] Strings);
+    
+    public sealed record SegmentedString(string[] Segments);
 
-        public SegmentedString(IEnumerable<string> initSegments)
-        {
-            Segments = new();
-            Segments.AddRange(initSegments);
-        }
-    }
-    public sealed class StringTable
-    {
-        public int UnknownData { get; set; }
-        public List<SegmentedString> Strings { get; set; }
-
-        public StringTable()
-        {
-            UnknownData = 0;
-            Strings = new();
-        }
-
-        public StringTable(int unknown)
-        {
-            UnknownData = unknown;
-            Strings = new();
-        }
-
-        public StringTable(int unknown, List<SegmentedString> initStrings)
-        {
-            UnknownData = unknown;
-            Strings = initStrings;
-        }
-    }
-
-    public sealed class StxData : IDanganV3Data
-    {
-        public List<StringTable> Tables { get; set; }
-
-        public StxData()
-        {
-            Tables = new();
-        }
-
-        public StxData(List<StringTable> initTables)
-        {
-            Tables = initTables;
-        }
-    }
 }

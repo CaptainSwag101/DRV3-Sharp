@@ -51,12 +51,12 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
                 reader.BaseStream.Seek(8, SeekOrigin.Current);
             }
 
-            outputData = new();
-
             reader.BaseStream.Seek(tableOffset, SeekOrigin.Begin);
-            foreach (var (unknown, stringCount) in tableInfo)
+            var tables = new StringTable[tableCount];
+            for (int t = 0; t < tableCount; ++t)
             {
-                List<SegmentedString> strings = new();
+                var (unknown, stringCount) = tableInfo[t];
+                var strings = new SegmentedString[stringCount];
 
                 for (int s = 0; s < stringCount; ++s)
                 {
@@ -68,18 +68,20 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
                     reader.BaseStream.Seek(stringOffset, SeekOrigin.Begin);
 
                     // C# does not include a way to read null-terminated strings, so we'll have to do it manually.
-                    // Also, some languages use carriage returns, others don't. Screw consistency, amirite?
+                    // Also, some languages for this game use carriage returns, others don't. Screw consistency, am I right?
                     string rawString = Utils.ReadNullTerminatedString(reader, Encoding.Unicode).Replace("\r","");
-                    strings.Add(new SegmentedString(rawString.Split('\n')));
+                    strings[s] = new SegmentedString(rawString.Split('\n'));
 
                     // Check if the string ID does not line up with the position it was given in the list, just in case.
-                    if (stringId != (strings.Count - 1)) throw new InvalidDataException($"String #{s} has a reported ID of {stringId}, this list is not sorted correctly!");
+                    if (stringId != (strings.Length - 1)) throw new InvalidDataException($"String #{s} has a reported ID of {stringId}, this list is not sorted correctly!");
 
                     reader.BaseStream.Seek(returnPos, SeekOrigin.Begin);
                 }
 
-                outputData.Tables.Add(new StringTable(unknown, strings));
+                tables[t] = new StringTable(unknown, strings);
             }
+
+            outputData = new(tables);
         }
 
         public static void Serialize(StxData inputData, Stream outputStream)
@@ -89,14 +91,14 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
             writer.Write(Encoding.ASCII.GetBytes(CONST_FILE_MAGIC));
             writer.Write(Encoding.ASCII.GetBytes(CONST_LANG_MAGIC));
 
-            writer.Write(inputData.Tables.Count);
+            writer.Write(inputData.Tables.Length);
             writer.Write((int)0);   // tableOffset, to be written later
 
             // Write table info
             foreach (var table in inputData.Tables)
             {
                 writer.Write(table.UnknownData);
-                writer.Write(table.Strings.Count);
+                writer.Write(table.Strings.Length);
                 writer.Write((ulong)0); // Pad to nearest 16-byte boundary
             }
 
@@ -109,7 +111,7 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
             // Write temporary padding for string IDs/offset
             foreach (var table in inputData.Tables)
             {
-                writer.Write(new byte[(8 * table.Strings.Count)]);  // (4 * 2) bytes per string entry
+                writer.Write(new byte[(8 * table.Strings.Length)]); // (4 * 2) bytes per string entry
             }
 
             // Write string data & corresponding ID/offset pair
