@@ -23,13 +23,5 @@ using System.Threading.Tasks;
 
 namespace DRV3_Sharp_Library.Formats.Resource.SRD
 {
-    public sealed class SrdData : IDanganV3Data
-    {
-        public List<ISrdBlock> Blocks { get; }
-
-        public SrdData()
-        {
-            Blocks = new();
-        }
-    }
+    public sealed record SrdData(ISrdBlock[] Blocks) : IDanganV3Data;
 }

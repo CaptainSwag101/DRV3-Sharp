@@ -31,14 +31,15 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD
     {
         public static void Deserialize(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv, out SrdData outputData)
         {
-            outputData = new();
-
             // Read through the SRD stream and deserialize all blocks
+            List<ISrdBlock> blocks = new();
             while (inputSrd.Position < inputSrd.Length)
             {
                 DeserializeBlock(inputSrd, inputSrdi, inputSrdv, out var currentBlock);
-                outputData.Blocks.Add(currentBlock);
+                blocks.Add(currentBlock);
             }
+
+            outputData = new(blocks.ToArray());
         }
 
         public static void DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv, out ISrdBlock outputBlock)

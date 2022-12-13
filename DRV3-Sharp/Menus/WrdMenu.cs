@@ -38,7 +38,7 @@ internal sealed class WrdMenu : IMenu
         loadedData = data;
             
         Console.WriteLine($"Loaded the WRD file successfully.");
-        foreach (var command in loadedData.commands)
+        foreach (var command in loadedData.Commands)
         {
             Console.WriteLine(command);
         }

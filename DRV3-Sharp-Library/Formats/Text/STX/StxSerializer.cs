@@ -32,6 +32,8 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
         {
             using BinaryReader reader = new(inputStream, Encoding.ASCII, true);
 
+            
+            // Read header data
             string fileMagic = Encoding.ASCII.GetString(reader.ReadBytes(4));
             if (fileMagic != CONST_FILE_MAGIC) throw new InvalidDataException($"Invalid file magic, expected {CONST_FILE_MAGIC} but got {fileMagic}.");
 
@@ -43,6 +45,8 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
 
             uint tableOffset = reader.ReadUInt32();
 
+            
+            // Read table info
             List<(int Unknown, int StringCount)> tableInfo = new();
             for (int t = 0; t < tableCount; ++t)
             {
@@ -51,6 +55,9 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
                 reader.BaseStream.Seek(8, SeekOrigin.Current);
             }
 
+            
+            // For each table, read its data and split strings by newline
+            // so we can export them in a more readable fashion.
             reader.BaseStream.Seek(tableOffset, SeekOrigin.Begin);
             var tables = new StringTable[tableCount];
             for (int t = 0; t < tableCount; ++t)
@@ -81,6 +88,8 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
                 tables[t] = new StringTable(unknown, strings);
             }
 
+            
+            // Finally, construct the output record
             outputData = new(tables);
         }
 
@@ -88,6 +97,8 @@ namespace DRV3_Sharp_Library.Formats.Text.STX
         {
             using BinaryWriter writer = new(outputStream, Encoding.ASCII, true);
 
+            
+            // Write header data
             writer.Write(Encoding.ASCII.GetBytes(CONST_FILE_MAGIC));
             writer.Write(Encoding.ASCII.GetBytes(CONST_LANG_MAGIC));
 
