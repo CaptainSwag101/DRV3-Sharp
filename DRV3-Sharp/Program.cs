@@ -25,15 +25,16 @@ namespace DRV3_Sharp
 {
     internal sealed class Program
     {
-        private static readonly Stack<IMenu> menuStack = new();  // Stack which holds the menus, which determines what entries can be performed, and how.
+        private static readonly Stack<IMenu> menuStack = new(); // Stack which holds the menus, which determines what entries can be performed, and how.
         private static MenuEntry[]? cachedEntries = null;   // Cache for entries so that we're not querying them every keyinput but only when we perform an actual refresh of the text.
         private static int highlightedEntry = 0;    // Which entry on the list is currently highlighted/selected?
-        private static bool needRefresh = true; // Do we need to redraw the text on the screen?
-        private const int HEADER_LINES = 3;   // How much header/footer space do we need to account for to avoid drawing over it?
-
+        private static bool needRefresh = true;     // Do we need to redraw the text on the screen?
+        private const int HEADER_LINES = 3;         // How much header/footer space do we need to account for to avoid drawing over it?
+        private const int FAST_SCROLL_AMOUNT = 10;  // Speed at which the menus scroll when using Page Up/Page Down
+        
         static void Main(string[] args)
         {
-            // Setup text encoding so we can use Shift-JIS encoding for certain files later on
+            // Setup text encoding so we can use Shift-JIS encoding for certain files later on.
             Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
             // Do initial startup.
@@ -116,7 +117,6 @@ namespace DRV3_Sharp
 
                 // Process input regardless of whether we need to refresh the screen or not
                 var keyPress = Console.ReadKey(true);
-                const int FAST_SCROLL_AMOUNT = 10;
                 switch (keyPress.Key)
                 {
                     // Single-entry scroll
