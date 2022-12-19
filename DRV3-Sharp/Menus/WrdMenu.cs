@@ -28,14 +28,16 @@ internal sealed class WrdMenu : IMenu
 
     private void Load()
     {
-        FileInfo? info = Utils.GetPathFromUser("Type the file/directory you wish to load, or drag-and-drop it onto this window: ", true, true);
+        var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window: ", true, true);
 
-        if (info is null) return;
+        if (paths is null) return;
+
+        if (paths[0] is not FileInfo fileInfo) return;
         
         // TODO: Check with the user if there are existing loaded files before clearing the list
         loadedData = null;
         
-        using FileStream fs = new(info.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using FileStream fs = new(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
         WrdSerializer.Deserialize(fs, out WrdData data);
         loadedData = data;
             

@@ -3,49 +3,59 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace DRV3_Sharp;
 
 internal static class Utils
 {
-    public static FileInfo? GetPathFromUser(string? promptMessage, bool fileMustExist, bool canBeDirectory)
+    public static FileSystemInfo[]? ParsePathsFromConsole(string? promptMessage, bool mustExist, bool canBeDirectory)
     {
         if (promptMessage is not null)
             Console.WriteLine(promptMessage);
 
-        string? path = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(path))
+        string? input = Console.ReadLine();
+        if (string.IsNullOrWhiteSpace(input))
         {
             Console.WriteLine("The specified path is null.");
             Console.WriteLine("Press any key to continue...");
             _ = Console.ReadKey(true);
             return null;
         }
-
-        // Trim leading and trailing quotation marks (which are often added during drag-and-drop)
-        path = path.Trim('"');
-
-        FileInfo fi = new(path);
-
-        if (!fi.Exists && !(new DirectoryInfo(fi.FullName).Exists) && fileMustExist)
+        
+        // Use regex to match quoted paths and then split any unquoted paths by space.
+        // For a breakdown of this regex: https://regex101.com/r/zy7rY2/1
+        Regex pathRegex = new(@"""(?<quoted>.*?)""|(?<unquoted>\w.*)", RegexOptions.Multiline);
+        var matches = pathRegex.Matches(input);
+        
+        // Iterate through all matches and process based on quoted or unquoted
+        List<FileSystemInfo> foundPaths = new();
+        foreach (Match m in matches)
         {
-            Console.WriteLine("The specified path does not exist.");
-            Console.WriteLine("Press any key to continue...");
-            _ = Console.ReadKey(true);
-            return null;
+            if (string.IsNullOrWhiteSpace(m.Value)) continue;
+            
+            // Trim the whitespace if it's a quoted string
+            string path = m.Value;
+            if (m.Groups["quoted"].Success)
+            {
+                path = path.Trim('"');
+            }
+
+            FileInfo fi = new(path);
+            DirectoryInfo di = new(path);
+
+            if (fi.Exists || !mustExist)
+            {
+                foundPaths.Add(fi);
+            }
+            else if (canBeDirectory && di.Exists)
+            {
+                foundPaths.Add(di);
+            }
         }
 
-        // Unless specified, ensure the path isn't a directory, if it exists
-        if (!canBeDirectory && fi.Exists && fi.Attributes.HasFlag(FileAttributes.Directory))
-        {
-            Console.WriteLine("The specified path is a directory.");
-            Console.WriteLine("Press any key to continue...");
-            _ = Console.ReadKey(true);
-            return null;
-        }
-
-        return fi;
+        return foundPaths.ToArray();
     }
 
     public static string? GetEnclosingDirectory(string filePath, bool bypassExistenceCheck = false)
