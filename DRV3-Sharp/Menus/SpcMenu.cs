@@ -40,7 +40,7 @@ internal sealed class SpcMenu : IMenu
         }
     }
     
-    public int HighlightedEntry { get; set; }
+    public int FocusedEntry { get; set; }
 
     private void Load()
     {

@@ -12,7 +12,7 @@ internal sealed class RootMenu : IMenu
         new("Exit", "Exits the program.", Program.PopMenu)
     };
     
-    public int HighlightedEntry { get; set; }
+    public int FocusedEntry { get; set; }
 
     private void SelectContext()
     {
