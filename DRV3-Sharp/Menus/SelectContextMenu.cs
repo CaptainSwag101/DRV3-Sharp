@@ -12,6 +12,8 @@ internal sealed class SelectContextMenu : IMenu
         new("Help", "View descriptions of currently-available operations.", Help),
         new("Back", "Return to the previous menu.", Program.PopMenu)
     };
+    
+    public int HighlightedEntry { get; set; }
 
     private void SPC()
     {

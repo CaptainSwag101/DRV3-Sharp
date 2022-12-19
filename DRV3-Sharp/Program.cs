@@ -27,7 +27,6 @@ namespace DRV3_Sharp
     {
         private static readonly Stack<IMenu> menuStack = new(); // Stack which holds the menus, which determines what entries can be performed, and how.
         private static MenuEntry[]? cachedEntries = null;   // Cache for entries so that we're not querying them every keyinput but only when we perform an actual refresh of the text.
-        private static int highlightedEntry = 0;    // Which entry on the list is currently highlighted/selected?
         private static bool needRefresh = true;     // Do we need to redraw the text on the screen?
         private const int HEADER_LINES = 3;         // How much header/footer space do we need to account for to avoid drawing over it?
         private const int FAST_SCROLL_AMOUNT = 10;  // Speed at which the menus scroll when using Page Up/Page Down
@@ -71,8 +70,8 @@ namespace DRV3_Sharp
                 // The highlight should be centered on the screen as best as possible.
                 int entriesListSize = (Console.WindowHeight - HEADER_LINES);
                 int halfSize = (entriesListSize / 2);
-                int entriesListLowerBound = highlightedEntry - halfSize;
-                int entriesListUpperBound = highlightedEntry + halfSize;
+                int entriesListLowerBound = currentMenu.HighlightedEntry - halfSize;
+                int entriesListUpperBound = currentMenu.HighlightedEntry + halfSize;
 
                 // Compensate for non-centered highlight when at either end of the list
                 int lowerDifference = Math.Max(0, 0 - entriesListLowerBound);
@@ -90,7 +89,7 @@ namespace DRV3_Sharp
                 {
                     for (int opNum = entriesListRange.Start.Value; opNum < entriesListRange.End.Value; ++opNum)
                     {
-                        if (highlightedEntry == opNum)
+                        if (currentMenu.HighlightedEntry == opNum)
                         {
                             // Swap the foreground and background colors to highlight the entry
                             ConsoleColor fgColor = Console.ForegroundColor;
@@ -121,25 +120,25 @@ namespace DRV3_Sharp
                 {
                     // Single-entry scroll
                     case ConsoleKey.UpArrow:
-                        if (highlightedEntry > 0) --highlightedEntry;
+                        if (currentMenu.HighlightedEntry > 0) --currentMenu.HighlightedEntry;
                         break;
                     case ConsoleKey.DownArrow:
-                        if (highlightedEntry < (cachedEntries.Length - 1)) ++highlightedEntry;
+                        if (currentMenu.HighlightedEntry < (cachedEntries.Length - 1)) ++currentMenu.HighlightedEntry;
                         break;
 
                     // Fast scroll
                     case ConsoleKey.PageUp:
-                        if (highlightedEntry > FAST_SCROLL_AMOUNT) highlightedEntry -= FAST_SCROLL_AMOUNT;
-                        else if (highlightedEntry > 0) highlightedEntry = 0;
+                        if (currentMenu.HighlightedEntry > FAST_SCROLL_AMOUNT) currentMenu.HighlightedEntry -= FAST_SCROLL_AMOUNT;
+                        else if (currentMenu.HighlightedEntry > 0) currentMenu.HighlightedEntry = 0;
                         break;
                     case ConsoleKey.PageDown:
-                        if (highlightedEntry < (cachedEntries.Length - FAST_SCROLL_AMOUNT - 1)) highlightedEntry += FAST_SCROLL_AMOUNT;
-                        else if (highlightedEntry < (cachedEntries.Length - 1)) highlightedEntry = (cachedEntries.Length - 1);
+                        if (currentMenu.HighlightedEntry < (cachedEntries.Length - FAST_SCROLL_AMOUNT - 1)) currentMenu.HighlightedEntry += FAST_SCROLL_AMOUNT;
+                        else if (currentMenu.HighlightedEntry < (cachedEntries.Length - 1)) currentMenu.HighlightedEntry = (cachedEntries.Length - 1);
                         break;
 
                     // Confirm selection
                     case ConsoleKey.Enter:
-                        cachedEntries[highlightedEntry].Operation.Invoke();
+                        cachedEntries[currentMenu.HighlightedEntry].Operation.Invoke();
                         break;
 
                     // Any other keys: don't update the screen next pass, we didn't do anything!
@@ -158,7 +157,6 @@ namespace DRV3_Sharp
         public static void PushMenu(IMenu menu)
         {
             menuStack.Push(menu);
-            highlightedEntry = 0;
         }
 
         /// <summary>
@@ -168,7 +166,6 @@ namespace DRV3_Sharp
         public static void PopMenu()
         {
             menuStack.Pop();
-            highlightedEntry = 0;
         }
     }
 }

@@ -11,6 +11,8 @@ internal sealed class RootMenu : IMenu
         new("Help", "View descriptions of currently-available operations.", Help),
         new("Exit", "Exits the program.", Program.PopMenu)
     };
+    
+    public int HighlightedEntry { get; set; }
 
     private void SelectContext()
     {

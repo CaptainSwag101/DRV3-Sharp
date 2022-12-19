@@ -23,6 +23,8 @@ internal sealed class WrdMenu : IMenu
             return entries.ToArray();
         }
     }
+    
+    public int HighlightedEntry { get; set; }
 
     private void Load()
     {

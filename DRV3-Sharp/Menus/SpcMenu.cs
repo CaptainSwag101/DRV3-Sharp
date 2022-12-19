@@ -39,6 +39,8 @@ internal sealed class SpcMenu : IMenu
             return entries.ToArray();
         }
     }
+    
+    public int HighlightedEntry { get; set; }
 
     private void Load()
     {

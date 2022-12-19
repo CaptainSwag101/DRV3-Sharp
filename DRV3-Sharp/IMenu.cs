@@ -26,7 +26,8 @@ namespace DRV3_Sharp
 {
     internal interface IMenu
     {
-        public MenuEntry[] AvailableEntries { get; } // This is dynamic based on the current state of the current context
+        public MenuEntry[] AvailableEntries { get; }    // This is dynamic based on the current state of the current context
+        public int HighlightedEntry { get; set; }   // Which entry on the list is currently highlighted/selected?
     }
     
     internal sealed record MenuEntry(string Name, string Description, Action Operation);
