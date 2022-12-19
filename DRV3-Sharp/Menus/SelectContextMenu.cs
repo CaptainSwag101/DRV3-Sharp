@@ -9,7 +9,6 @@ internal sealed class SelectContextMenu : IMenu
     {
         new("SPC", "The primary data archive format, used to store most files in the game.", SPC),
         new("WRD", "The primary script format, used to control game behavior, map transitions, text displays, and more.", WRD),
-        new("Selectable Menu Test", "Opens a test menu for debugging selectable menu entries.", SelectableMenu),
         new("Help", "View descriptions of currently-available operations.", Help),
         new("Back", "Return to the previous menu.", Program.PopMenu)
     };
@@ -24,11 +23,6 @@ internal sealed class SelectContextMenu : IMenu
     private void WRD()
     {
         Program.PushMenu(new WrdMenu());
-    }
-
-    private void SelectableMenu()
-    {
-        Program.PushMenu(new SelectableMenuTest());
     }
 
     private void Help()
