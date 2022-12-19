@@ -23,40 +23,39 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks
+namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks;
+
+public sealed class CfhBlock : ISrdBlock
 {
-    public sealed class CfhBlock : ISrdBlock
+    #region Public Properties
+    public string BlockType { get { return @"$CFH"; } }
+    #endregion
+
+    #region Public Methods
+    public CfhBlock()
+    { }
+
+    public List<string> GetBlockInfo()
     {
-        #region Public Properties
-        public string BlockType { get { return @"$CFH"; } }
-        #endregion
+        List<string> infoList = new();
 
-        #region Public Methods
-        public CfhBlock()
-        { }
+        infoList.Add($"Block Type: {BlockType}");
 
-        public List<string> GetBlockInfo()
-        {
-            List<string> infoList = new();
-
-            infoList.Add($"Block Type: {BlockType}");
-
-            return infoList;
-        }
-        #endregion
-
-        #region Public Static Methods
-        public static void Deserialize(out CfhBlock outputBlock)
-        {
-            outputBlock = new();
-
-            // No data to deserialize
-        }
-
-        public static void Serialize()
-        {
-            // No data to serialize
-        }
-        #endregion
+        return infoList;
     }
+    #endregion
+
+    #region Public Static Methods
+    public static void Deserialize(out CfhBlock outputBlock)
+    {
+        outputBlock = new();
+
+        // No data to deserialize
+    }
+
+    public static void Serialize()
+    {
+        // No data to serialize
+    }
+    #endregion
 }

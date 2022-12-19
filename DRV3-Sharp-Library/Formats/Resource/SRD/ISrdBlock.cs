@@ -22,11 +22,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DRV3_Sharp_Library.Formats.Resource.SRD
+namespace DRV3_Sharp_Library.Formats.Resource.SRD;
+
+public interface ISrdBlock
 {
-    public interface ISrdBlock
-    {
-        public abstract string BlockType { get; }
-        public abstract List<string> GetBlockInfo();
-    }
+    public abstract string BlockType { get; }
+    public abstract List<string> GetBlockInfo();
 }
