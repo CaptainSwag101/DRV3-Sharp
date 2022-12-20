@@ -30,10 +30,11 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
     {
         Console.Clear();
         
-        Console.WriteLine($"{loadedData.Name}:");
         foreach (var file in loadedData.Data.Files)
         {
-            Console.WriteLine($"\t{file}");
+            string truncatedFileInfo = $"{file.Name}, True Size: {(decimal)file.OriginalSize / 1000} KB, Compressed: {file.IsCompressed}";
+            truncatedFileInfo = truncatedFileInfo.Substring(0, Math.Min(Console.WindowWidth - 1, truncatedFileInfo.Length));
+            Console.WriteLine(truncatedFileInfo);
         }
         
         Console.WriteLine("Press ENTER to continue...");
