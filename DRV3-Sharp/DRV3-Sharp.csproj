@@ -7,11 +7,14 @@
     <Nullable>enable</Nullable>
     <StartupObject>DRV3_Sharp.Program</StartupObject>
     <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
-    <Version>$(VersionPrefix)3.0.0-alpha1</Version>
+    <Version>3.0.0-alpha2</Version>
     <AssemblyVersion>3.0.0.0</AssemblyVersion>
     <FileVersion>3.0.0.0</FileVersion>
     <PackageLicenseFile>D:\jpmac\Documents\GitHub\DRV3-Sharp\LICENSE.txt</PackageLicenseFile>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <LangVersion>default</LangVersion>
+    <Authors>CaptainSwag101</Authors>
+    <Company>CaptainSwag101</Company>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
