@@ -51,21 +51,28 @@ internal static class Utils
         List<FileSystemInfo> results = new();
         foreach (string s in foundPaths)
         {
-            if (string.IsNullOrWhiteSpace(s)) continue;
-            
             // Trim the quotation marks, if any
             string path = s.Trim('"');
+            
+            if (string.IsNullOrWhiteSpace(s)) continue;
 
-            FileInfo fi = new(path);
-            DirectoryInfo di = new(path);
-
-            if (fi.Exists || !mustExist)
+            try
             {
-                results.Add(fi);
+                FileInfo fi = new(path);
+                DirectoryInfo di = new(path);
+
+                if (fi.Exists || !mustExist)
+                {
+                    results.Add(fi);
+                }
+                else if (canBeDirectory && di.Exists)
+                {
+                    results.Add(di);
+                }
             }
-            else if (canBeDirectory && di.Exists)
+            catch (Exception ex)
             {
-                results.Add(di);
+                Console.WriteLine($"An error occurred while trying to parse one of the path(s) provided: {ex}");
             }
         }
 

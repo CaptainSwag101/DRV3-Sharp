@@ -84,19 +84,42 @@ internal sealed class SpcRootMenu : IMenu
 
     private void DetailedOperations()
     {
-        var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window, separated by spaces and/or quotes: ", true, true);
-        if (paths is null) return;
-
-        // Load first non-directory path, then stop and load the detailed menu.
-        foreach (var info in paths)
+        var paths = Utils.ParsePathsFromConsole("Type the file/directory you wish to load, or drag-and-drop it onto this window, separated by spaces and/or quotes: ", true, true);
+        if (paths is null || paths.Length == 0)
         {
-            if (info is FileInfo)
+            Console.WriteLine("Unable to load any files from the provided path(s). Please ensure the files or directories exist.\nPress ENTER to continue...");
+            Console.ReadLine();
+            return;
+        }
+
+        // Load first path, then stop and load the detailed menu.
+        var info = paths[0];
+        if (info is FileInfo)
+        {
+            // If we're loading a file, open its SPC data.
+            using FileStream fs = new(info.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
+            SpcSerializer.Deserialize(fs, out SpcData data);
+            Console.WriteLine($"Loaded SPC archive {info.Name}. Press ENTER to continue...");
+            Console.ReadLine();
+            
+            Program.PushMenu(new SpcDetailedOperationsMenu((info.FullName, data)));
+        }
+        else if (info is DirectoryInfo dir)
+        {
+            // If we're loading a directory, generate a new SPC archive based on its contents.
+            List<ArchivedFile> archivedFiles = new();
+            var files = dir.GetFiles("*", SearchOption.AllDirectories);
+            foreach (var file in files)
             {
-                using FileStream fs = new(info.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
-                SpcSerializer.Deserialize(fs, out SpcData data);
-                Program.PushMenu(new SpcDetailedOperationsMenu((info.FullName, data)));
-                return;
+                // Load the data but do not compress it, that will be done when saving to save on performance.
+                var data = File.ReadAllBytes(file.FullName);
+                string shortenedName = file.FullName.Replace(dir.FullName + Path.DirectorySeparatorChar, "");
+                archivedFiles.Add(new(shortenedName, data, 0, false, data.Length));
             }
+            Console.WriteLine($"Loaded the directory {info.Name} as a new SPC archive, not yet saved. Press ENTER to continue...");
+            Console.ReadLine();
+            
+            Program.PushMenu(new SpcDetailedOperationsMenu((dir.FullName + ".spc", new SpcData(0, archivedFiles))));
         }
     }
 
