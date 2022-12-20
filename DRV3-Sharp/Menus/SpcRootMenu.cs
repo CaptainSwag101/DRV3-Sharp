@@ -114,7 +114,7 @@ internal sealed class SpcRootMenu : IMenu
                 // Load the data but do not compress it, that will be done when saving to save on performance.
                 var data = File.ReadAllBytes(file.FullName);
                 string shortenedName = file.FullName.Replace(dir.FullName + Path.DirectorySeparatorChar, "");
-                archivedFiles.Add(new(shortenedName, data, 0, false, data.Length));
+                archivedFiles.Add(new(shortenedName, data, 4, false, data.Length));
             }
             Console.WriteLine($"Loaded the directory {info.Name} as a new SPC archive, not yet saved. Press ENTER to continue...");
             Console.ReadLine();

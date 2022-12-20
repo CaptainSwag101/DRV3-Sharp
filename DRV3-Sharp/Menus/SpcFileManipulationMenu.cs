@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DRV3_Sharp_Library.Formats.Archive.SPC;
 
@@ -19,6 +20,7 @@ internal sealed class SpcFileManipulationMenu : IMenu
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
         new("Do Nothing", "Perform no action on the selected file.", DequeueFile),
+        new("Delete", "Remove the file from the archive.", Delete),
     };
 
     private void DequeueFile()
@@ -31,6 +33,17 @@ internal sealed class SpcFileManipulationMenu : IMenu
         {
             Program.PopMenu();
             Program.PopMenu();
+        }
+    }
+
+    private void Delete()
+    {
+        Console.Write("Are you sure you want to delete this? (y/N): ");
+        var response = Console.ReadLine();
+        if (response!.ToLowerInvariant() == "y")
+        {
+            spcReference.Files.Remove(fileQueue.Peek());
+            DequeueFile();
         }
     }
 }
