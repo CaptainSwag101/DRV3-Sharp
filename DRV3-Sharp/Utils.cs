@@ -22,8 +22,8 @@ internal static class Utils
         }
         
         // Use regex to match quoted paths and then split any unquoted paths by space.
-        // For a breakdown of this regex: https://regex101.com/r/tqKFpz/1
-        Regex pathRegex = new(@"""(.*?)""", RegexOptions.Singleline);
+        // For a breakdown of this regex: https://regex101.com/r/tqKFpz/2
+        Regex pathRegex = new(@"""(.*?)""|'(.*?)'", RegexOptions.Singleline);
         var matches = pathRegex.Matches(input);
         
         // Add the quoted matches to the list of strings
@@ -48,8 +48,8 @@ internal static class Utils
         List<FileSystemInfo> results = new();
         foreach (string s in foundPaths)
         {
-            // Trim the quotation marks, if any
-            string path = s.Trim('"');
+            // Trim single- or double-quotation marks, if any
+            string path = s.Trim('"').Trim('\'');
             
             if (string.IsNullOrWhiteSpace(s)) continue;
 
