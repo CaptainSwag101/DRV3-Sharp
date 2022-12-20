@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using DRV3_Sharp_Library.Formats.Archive.SPC;
 
 namespace DRV3_Sharp.Menus;
@@ -27,8 +28,12 @@ internal sealed class SpcFileSelectionMenu : ISelectableMenu
             // Add entries for each file
             foreach (var file in spcReference.Files)
             {
-                string truncatedFileInfo = $"{file.Name}, True Size: {(decimal)file.OriginalSize / 1000} KB, Compressed: {file.IsCompressed}";
-                truncatedFileInfo = truncatedFileInfo.Substring(0, Math.Min(Console.WindowWidth - 1, truncatedFileInfo.Length));
+                var sb = new StringBuilder();
+                sb.Append($"{file.Name}, ".PadRight(50));
+                sb.Append($"{(decimal)file.OriginalSize / 1000} KB, ".PadRight(17));
+                sb.Append($"{(file.IsCompressed ? "Compressed" : "Uncompressed")}");
+                string truncatedFileInfo = sb.ToString();
+                truncatedFileInfo = truncatedFileInfo[..Math.Min(Console.WindowWidth - 1, truncatedFileInfo.Length)];
                 entries.Add(new($"{truncatedFileInfo}", "", ManipulateSelectedFiles));
             }
             
