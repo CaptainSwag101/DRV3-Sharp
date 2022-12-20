@@ -25,37 +25,51 @@ internal static class Utils
         }
         
         // Use regex to match quoted paths and then split any unquoted paths by space.
-        // For a breakdown of this regex: https://regex101.com/r/zy7rY2/1
-        Regex pathRegex = new(@"""(?<quoted>.*?)""|(?<unquoted>\w.*)", RegexOptions.Multiline);
+        // For a breakdown of this regex: https://regex101.com/r/tqKFpz/1
+        Regex pathRegex = new(@"""(.*?)""", RegexOptions.Multiline);
         var matches = pathRegex.Matches(input);
         
-        // Iterate through all matches and process based on quoted or unquoted
-        List<FileSystemInfo> foundPaths = new();
+        // Add the quoted matches to the list of strings
+        List<string> foundPaths = new();
         foreach (Match m in matches)
         {
             if (string.IsNullOrWhiteSpace(m.Value)) continue;
+            foundPaths.Add(m.Value);
+        }
+        
+        // Now that we've found all quoted matches, remove them from the string to isolate any remaining unquoted paths.
+        foreach (string s in foundPaths)
+        {
+            input = input.Replace(s, "");
+        }
+        
+        // Trim any leading or trailing whitespace, then add all remaining string segments, split by spaces.
+        input.Trim(' ');
+        foundPaths.AddRange(input.Split());
+        
+        // Iterate through all matches
+        List<FileSystemInfo> results = new();
+        foreach (string s in foundPaths)
+        {
+            if (string.IsNullOrWhiteSpace(s)) continue;
             
-            // Trim the whitespace if it's a quoted string
-            string path = m.Value;
-            if (m.Groups["quoted"].Success)
-            {
-                path = path.Trim('"');
-            }
+            // Trim the quotation marks, if any
+            string path = s.Trim('"');
 
             FileInfo fi = new(path);
             DirectoryInfo di = new(path);
 
             if (fi.Exists || !mustExist)
             {
-                foundPaths.Add(fi);
+                results.Add(fi);
             }
             else if (canBeDirectory && di.Exists)
             {
-                foundPaths.Add(di);
+                results.Add(di);
             }
         }
 
-        return foundPaths.ToArray();
+        return results.ToArray();
     }
 
     public static string? GetEnclosingDirectory(string filePath, bool bypassExistenceCheck = false)

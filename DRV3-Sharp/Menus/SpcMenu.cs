@@ -44,7 +44,7 @@ internal sealed class SpcMenu : IMenu
 
     private void Load()
     {
-        var paths = Utils.ParsePathsFromConsole("Type the file/directory you wish to load, or drag-and-drop it onto this window: ", true, true);
+        var paths = Utils.ParsePathsFromConsole("Type the files/directories you wish to load, or drag-and-drop them onto this window, separated by spaces and/or quotes: ", true, true);
 
         if (paths is null) return;
         
@@ -72,7 +72,7 @@ internal sealed class SpcMenu : IMenu
                 loadedData.Add((info.FullName, data));
             }
         }
-            
+        
         Console.WriteLine($"Loaded {loadedData.Count} SPC file(s). Press ENTER to continue...");
         Console.ReadLine();
     }
