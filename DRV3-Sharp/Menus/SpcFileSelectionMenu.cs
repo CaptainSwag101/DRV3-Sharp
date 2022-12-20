@@ -52,6 +52,13 @@ internal sealed class SpcFileSelectionMenu : ISelectableMenu
             
             filesToManipulate.Enqueue(spcReference.Files[selection - 1]);
         }
+        
+        // If the user did not explicitly select any files, modify the currently focused one.
+        if (filesToManipulate.Count == 0)
+        {
+            filesToManipulate.Enqueue(spcReference.Files[FocusedEntry - 1]);
+        }
+        
         Program.PushMenu(new SpcFileManipulationMenu(spcReference, filesToManipulate));
     }
 }

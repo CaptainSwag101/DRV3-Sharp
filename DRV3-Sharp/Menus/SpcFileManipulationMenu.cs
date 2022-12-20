@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using DRV3_Sharp_Library.Formats.Archive.SPC;
 
 namespace DRV3_Sharp.Menus;
@@ -19,7 +21,9 @@ internal sealed class SpcFileManipulationMenu : IMenu
     
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
-        new("Do Nothing", "Perform no action on the selected file.", DequeueFile),
+        new("Done", "Finish performing actions on the selected file.", DequeueFile),
+        new("Rename", "Change the name of the current file.", Rename),
+        new("Replace Data", "Overwrite the data for the current file with something else.", ReplaceData),
         new("Delete", "Remove the file from the archive.", Delete),
     };
 
@@ -34,6 +38,32 @@ internal sealed class SpcFileManipulationMenu : IMenu
             Program.PopMenu();
             Program.PopMenu();
         }
+    }
+
+    private void Rename()
+    {
+        var file = fileQueue.Peek();
+        Console.WriteLine($"Enter the new name of the file (Original name: {file.Name})");
+        var newName = Console.ReadLine();
+        
+        if (string.IsNullOrWhiteSpace(newName) || newName is "." or "..") return;
+        
+        // Check for invalid path characters
+        var invalidChars = Path.GetInvalidFileNameChars();
+        if (invalidChars.Any(c => newName.Contains(c)))
+        {
+            Console.WriteLine("The specified name is invalid. Press ENTER to continue...");
+            Console.ReadLine();
+            return;
+        }
+
+        int index = spcReference.Files.IndexOf(file);
+        spcReference.Files[index] = file with { Name = newName };
+    }
+
+    private void ReplaceData()
+    {
+        
     }
 
     private void Delete()
