@@ -15,12 +15,6 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace DRV3_Sharp_Library.Formats.Text.STX;
 
 public sealed record StxData(StringTable[] Tables) : IDanganV3Data;
