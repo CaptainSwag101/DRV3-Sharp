@@ -17,7 +17,7 @@ internal sealed class SelectContextMenu : IMenu
 
     private void SPC()
     {
-        Program.PushMenu(new SpcMenu());
+        Program.PushMenu(new SpcRootMenu());
     }
 
     private void WRD()

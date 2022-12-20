@@ -37,7 +37,7 @@ internal sealed class Program
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 
         // Do initial startup.
-        PushMenu(new RootMenu());
+        PushMenu(new MainMenu());
 
         // Start the main program loop.
         MainLoop();

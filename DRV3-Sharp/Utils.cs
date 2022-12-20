@@ -26,7 +26,7 @@ internal static class Utils
         
         // Use regex to match quoted paths and then split any unquoted paths by space.
         // For a breakdown of this regex: https://regex101.com/r/tqKFpz/1
-        Regex pathRegex = new(@"""(.*?)""", RegexOptions.Multiline);
+        Regex pathRegex = new(@"""(.*?)""", RegexOptions.Singleline);
         var matches = pathRegex.Matches(input);
         
         // Add the quoted matches to the list of strings
@@ -72,17 +72,18 @@ internal static class Utils
         return results.ToArray();
     }
 
-    public static string? GetEnclosingDirectory(string filePath, bool bypassExistenceCheck = false)
+    [Obsolete]
+    public static DirectoryInfo? GetEnclosingDirectory(string filePath, bool mustExist = true)
     {
         FileInfo fi = new(filePath);
 
-        if (!bypassExistenceCheck && !fi.Exists)
+        if (!fi.Exists && mustExist)
         {
             Console.WriteLine("The specified file does not exist; unable to get enclosing directory path.");
             return null;
         }
 
-        return fi.DirectoryName;
+        return fi.Directory;
     }
 
     public static void PrintMenuDescriptions(IEnumerable<MenuEntry> entries)

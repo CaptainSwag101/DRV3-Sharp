@@ -4,7 +4,7 @@ using System.IO;
 
 namespace DRV3_Sharp.Menus;
 
-internal sealed class RootMenu : IMenu
+internal sealed class MainMenu : IMenu
 {
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
