@@ -55,8 +55,13 @@ internal sealed class Program
             if (needRefresh)
             {
                 Console.Clear();
-                Console.WriteLine($"Current menu is {currentMenu.GetType()}, menu stack depth is {menuStack.Count}.");
+                #if DEBUG
+                Console.WriteLine($"Current menu is {currentMenu.GetType().Name}, menu stack depth is {menuStack.Count}.");
                 Console.WriteLine(currentMenu.HeaderText);
+                #else
+                Console.WriteLine(currentMenu.HeaderText);
+                Console.WriteLine();
+                #endif
             }
 
             // Query the menu for what entries are currently possible.

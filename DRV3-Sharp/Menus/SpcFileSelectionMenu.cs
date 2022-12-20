@@ -29,9 +29,10 @@ internal sealed class SpcFileSelectionMenu : ISelectableMenu
             foreach (var file in spcReference.Files)
             {
                 var sb = new StringBuilder();
-                sb.Append($"{file.Name}, ".PadRight(50));
-                sb.Append($"{(decimal)file.OriginalSize / 1000} KB, ".PadRight(17));
-                sb.Append($"{(file.IsCompressed ? "Compressed" : "Uncompressed")}");
+                sb.Append($"{file.Name}, ".PadRight(52));
+                sb.Append($"{(decimal)file.OriginalSize / 1000} KB, ".PadRight(20));
+                sb.Append($"{file.UnknownFlag}, ");
+                sb.Append($"{(file.IsCompressed ? "C" : "U")}");
                 string truncatedFileInfo = sb.ToString();
                 truncatedFileInfo = truncatedFileInfo[..Math.Min(Console.WindowWidth - 1, truncatedFileInfo.Length)];
                 entries.Add(new($"{truncatedFileInfo}", "", ManipulateSelectedFiles));

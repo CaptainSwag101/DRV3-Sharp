@@ -35,9 +35,10 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
         foreach (var file in loadedData.Data.Files)
         {
             var sb = new StringBuilder();
-            sb.Append($"{file.Name}, ".PadRight(50));
-            sb.Append($"{(decimal)file.OriginalSize / 1000} KB, ".PadRight(17));
-            sb.Append($"{(file.IsCompressed ? "Compressed" : "Uncompressed")}");
+            sb.Append($"{file.Name}, ".PadRight(52));
+            sb.Append($"{(decimal)file.OriginalSize / 1000} KB, ".PadRight(20));
+            sb.Append($"{file.UnknownFlag}, ");
+            sb.Append($"{(file.IsCompressed ? "C" : "U")}");
             string truncatedFileInfo = sb.ToString();
             truncatedFileInfo = truncatedFileInfo[..Math.Min(Console.WindowWidth, truncatedFileInfo.Length)];
             Console.WriteLine(truncatedFileInfo);
