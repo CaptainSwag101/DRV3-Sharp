@@ -7,6 +7,7 @@ namespace DRV3_Sharp.Menus;
 
 internal sealed class SpcRootMenu : IMenu
 {
+    public string HeaderText => "You can choose from the following options:";
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
         // Add always-available entries

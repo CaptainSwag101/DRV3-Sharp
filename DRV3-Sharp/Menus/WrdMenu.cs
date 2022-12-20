@@ -7,7 +7,14 @@ namespace DRV3_Sharp.Menus;
 
 internal sealed class WrdMenu : IMenu
 {
-    private WrdData? loadedData = null;
+    public string HeaderText => "You can choose from the following options:";
+    public int FocusedEntry { get; set; }
+    private WrdData? loadedData { get; set; }
+
+    public WrdMenu()
+    {
+        loadedData = null;
+    }
     
     public MenuEntry[] AvailableEntries
     {
@@ -23,8 +30,6 @@ internal sealed class WrdMenu : IMenu
             return entries.ToArray();
         }
     }
-    
-    public int FocusedEntry { get; set; }
 
     private void Load()
     {

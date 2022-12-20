@@ -5,6 +5,7 @@ namespace DRV3_Sharp.Menus;
 
 internal sealed class SpcFileSelectionMenu : ISelectableMenu
 {
+    public string HeaderText => "You can choose from the following options:";
     private SpcData spcReference { get; }
     public int FocusedEntry { get; set; }
     public SortedSet<int> SelectedEntries { get; }

@@ -56,7 +56,7 @@ internal sealed class Program
             {
                 Console.Clear();
                 Console.WriteLine($"Current menu is {currentMenu.GetType()}, menu stack depth is {menuStack.Count}.");
-                Console.WriteLine("You can choose from the following options:");
+                Console.WriteLine(currentMenu.HeaderText);
             }
 
             // Query the menu for what entries are currently possible.

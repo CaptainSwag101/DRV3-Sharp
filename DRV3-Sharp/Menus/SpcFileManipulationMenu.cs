@@ -5,6 +5,7 @@ namespace DRV3_Sharp.Menus;
 
 internal sealed class SpcFileManipulationMenu : IMenu
 {
+    public string HeaderText => $"Currently manipulating file: {fileQueue.Peek().Name}, {fileQueue.Count - 1} remaining.";
     private SpcData spcReference { get; }
     private Queue<ArchivedFile> fileQueue { get; }
     public int FocusedEntry { get; set; }

@@ -5,6 +5,7 @@ namespace DRV3_Sharp.Menus;
 
 internal sealed class MainMenu : IMenu
 {
+    public string HeaderText => "You can choose from the following options:";
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
         new("Select Initial Context", "Select which kind of file you wish to work with.", SelectContext),

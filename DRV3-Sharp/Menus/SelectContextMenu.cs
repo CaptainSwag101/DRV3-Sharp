@@ -2,6 +2,7 @@ namespace DRV3_Sharp.Menus;
 
 internal sealed class SelectContextMenu : IMenu
 {
+    public string HeaderText => "You can choose from the following options:";
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
         new("SPC", "The primary data archive format, used to store most files in the game.", SPC),
