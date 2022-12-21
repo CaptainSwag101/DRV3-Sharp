@@ -2,7 +2,7 @@
     DRV3-Sharp, a free and open-source toolkit
     for working with files and assets from Danganronpa V3.
 
-    Copyright (C) 2020-2022  James Pelster
+    Copyright (C) 2020-2022  James Pelster "CaptainSwag101"
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
