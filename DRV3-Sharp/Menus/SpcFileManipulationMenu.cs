@@ -63,7 +63,20 @@ internal sealed class SpcFileManipulationMenu : IMenu
 
     private void ReplaceData()
     {
-        
+        var paths = Utils.ParsePathsFromConsole("Type the file you wish to use as replacement data, or drag-and-drop it onto this window: ", true, false);
+        if (paths is null || paths.Length == 0)
+        {
+            Console.WriteLine("Unable to load any data from the provided path. Please ensure the file exists.\nPress ENTER to continue...");
+            Console.ReadLine();
+            return;
+        }
+
+        // Load new data and replace the old
+        var info = paths[0];
+        byte[] newData = File.ReadAllBytes(info.FullName);
+        var file = fileQueue.Peek();
+        int index = spcReference.Files.IndexOf(file);
+        spcReference.Files[index] = file with { Data = newData, IsCompressed = false, OriginalSize = newData.Length };
     }
 
     private void Delete()

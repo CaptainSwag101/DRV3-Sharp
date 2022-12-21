@@ -8,6 +8,8 @@ namespace DRV3_Sharp.Menus;
 internal sealed class SpcRootMenu : IMenu
 {
     public string HeaderText => "You can choose from the following options:";
+    public int FocusedEntry { get; set; }
+    
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
         // Add always-available entries
@@ -16,8 +18,6 @@ internal sealed class SpcRootMenu : IMenu
         new("Help", "View descriptions of currently-available operations.", Help),
         new("Back", "Return to the previous menu.", Program.PopMenu)
     };
-    
-    public int FocusedEntry { get; set; }
 
     private async void QuickExtract()
     {
@@ -84,10 +84,10 @@ internal sealed class SpcRootMenu : IMenu
 
     private void DetailedOperations()
     {
-        var paths = Utils.ParsePathsFromConsole("Type the file/directory you wish to load, or drag-and-drop it onto this window, separated by spaces and/or quotes: ", true, true);
+        var paths = Utils.ParsePathsFromConsole("Type the file/directory you wish to load, or drag-and-drop it onto this window: ", true, true);
         if (paths is null || paths.Length == 0)
         {
-            Console.WriteLine("Unable to load any files from the provided path(s). Please ensure the files or directories exist.\nPress ENTER to continue...");
+            Console.WriteLine("Unable to load any files from the provided path. Please ensure the file or directory exists.\nPress ENTER to continue...");
             Console.ReadLine();
             return;
         }

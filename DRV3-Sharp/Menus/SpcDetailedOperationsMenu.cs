@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using DRV3_Sharp_Library.Formats.Archive.SPC;
 using Microsoft.Extensions.Primitives;
@@ -62,6 +63,13 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
 
         foreach (var file in files)
         {
+            // Verify that a file with the same name does not already exist in the archive.
+            if (loadedData.Data.Files.Any(f => f.Name == file.Name))
+            {
+                Console.WriteLine($"Skipping file {file.Name}: A file with the same name already exists. If you wish to replace its data, please manipulate the existing file.");
+                continue;
+            }
+            
             // Load the data but do not compress it, that will be done when saving to save on performance.
             var data = File.ReadAllBytes(file.FullName);
             loadedData.Data.Files.Add(new(file.Name, data, 4, false, data.Length));
