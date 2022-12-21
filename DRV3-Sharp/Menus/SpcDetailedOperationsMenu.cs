@@ -61,6 +61,7 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
             return;
         }
 
+        bool someSuccess = false;
         foreach (var file in files)
         {
             // Verify that a file with the same name does not already exist in the archive.
@@ -73,9 +74,11 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
             // Load the data but do not compress it, that will be done when saving to save on performance.
             var data = File.ReadAllBytes(file.FullName);
             loadedData.Data.Files.Add(new(file.Name, data, 4, false, data.Length));
+            someSuccess = true;
         }
         
-        Console.WriteLine($"Added the specified files to the archive, not yet saved or compressed. Press ENTER to continue...");
+        if (someSuccess) Console.Write($"Added files to the archive, not yet saved or compressed.");
+        Console.WriteLine("Press ENTER to continue...");
         Console.ReadLine();
     }
 
