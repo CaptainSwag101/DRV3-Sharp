@@ -21,6 +21,5 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD;
 
 public interface ISrdBlock
 {
-    public abstract string BlockType { get; }
-    public abstract List<string> GetBlockInfo();
+    public List<string> GetBlockInfo();
 }

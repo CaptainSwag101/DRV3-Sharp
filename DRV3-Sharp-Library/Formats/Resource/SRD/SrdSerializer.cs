@@ -36,7 +36,7 @@ public static class SrdSerializer
             blocks.Add(currentBlock);
         }
 
-        outputData = new(blocks.ToArray());
+        outputData = new(blocks);
     }
 
     public static void DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv, out ISrdBlock outputBlock)
@@ -50,6 +50,7 @@ public static class SrdSerializer
         int unknown = BinaryPrimitives.ReverseEndianness(srdReader.ReadInt32());
         Debug.Assert(unknown == 0 || unknown == 1);
 
+        // Read main data
         MemoryStream mainDataStream = new(srdReader.ReadBytes(mainDataLength));
         MemoryStream? subDataStream = null;
         if (subDataLength > 0)

@@ -22,7 +22,7 @@ namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks;
 public sealed class CfhBlock : ISrdBlock
 {
     #region Public Properties
-    public string BlockType { get { return @"$CFH"; } }
+    private static string BlockType => @"$CFH";
     #endregion
 
     #region Public Methods
@@ -31,9 +31,7 @@ public sealed class CfhBlock : ISrdBlock
 
     public List<string> GetBlockInfo()
     {
-        List<string> infoList = new();
-
-        infoList.Add($"Block Type: {BlockType}");
+        List<string> infoList = new() { $"Block Type: {BlockType}" };
 
         return infoList;
     }

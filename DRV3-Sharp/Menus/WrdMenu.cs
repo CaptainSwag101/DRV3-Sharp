@@ -35,9 +35,7 @@ internal sealed class WrdMenu : IMenu
     {
         var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window: ", true, true);
 
-        if (paths is null) return;
-
-        if (paths[0] is not FileInfo fileInfo) return;
+        if (paths?[0] is not FileInfo fileInfo) return;
         
         // TODO: Check with the user if there are existing loaded files before clearing the list
         loadedData = null;

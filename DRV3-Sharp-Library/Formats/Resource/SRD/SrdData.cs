@@ -15,6 +15,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+using System.Collections.Generic;
+
 namespace DRV3_Sharp_Library.Formats.Resource.SRD;
 
-public sealed record SrdData(ISrdBlock[] Blocks) : IDanganV3Data;
+public sealed record SrdData(List<ISrdBlock> Blocks) : IDanganV3Data;
