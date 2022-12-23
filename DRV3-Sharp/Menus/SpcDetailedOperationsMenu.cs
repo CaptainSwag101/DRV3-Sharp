@@ -11,9 +11,9 @@ namespace DRV3_Sharp.Menus;
 internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
 {
     public string HeaderText => "You can choose from the following options:";
-    private (string Path, SpcData Data) loadedData { get; }
     public int FocusedEntry { get; set; }
     public SortedSet<int> SelectedEntries { get; }
+    private (string Path, SpcData Data) loadedData { get; }
 
     public SpcDetailedOperationsMenu((string Path, SpcData Data) incomingFile)
     {
@@ -96,13 +96,11 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
             var originalFile = loadedData.Data.Files[i];
             
             // Attempt to compress the file; see if it makes the data smaller.
-            if (!originalFile.IsCompressed)
+            if (originalFile.IsCompressed) continue;
+            byte[] compressedData = SpcCompressor.Compress(originalFile.Data);
+            if (compressedData.Length < originalFile.Data.Length)
             {
-                byte[] compressedData = SpcCompressor.Compress(originalFile.Data);
-                if (compressedData.Length < originalFile.Data.Length)
-                {
-                    loadedData.Data.Files[i] = originalFile with { Data = compressedData, IsCompressed = true };
-                }
+                loadedData.Data.Files[i] = originalFile with { Data = compressedData, IsCompressed = true };
             }
         }
 

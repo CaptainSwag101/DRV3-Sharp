@@ -31,7 +31,7 @@ public static class SrdSerializer
         int mainDataLength = BinaryPrimitives.ReverseEndianness(srdReader.ReadInt32());
         int subDataLength = BinaryPrimitives.ReverseEndianness(srdReader.ReadInt32());
         int unknown = BinaryPrimitives.ReverseEndianness(srdReader.ReadInt32());
-        Debug.Assert(unknown == 0 || unknown == 1);
+        Debug.Assert(unknown is 0 or 1);
 
         // Read main data
         MemoryStream mainDataStream = new(srdReader.ReadBytes(mainDataLength));
@@ -43,25 +43,24 @@ public static class SrdSerializer
         }
         Utils.SkipToNearest(srdReader, 16);
 
-        // Deserialize data based on block type
-        if (blockType == @"$CFH")
+        switch (blockType)
         {
-            outputBlock = new CfhBlock();   // We don't even need to bother serializing it
-        }
-        else if (blockType == @"$RSF")
-        {
-            RsfBlock.Deserialize(mainDataStream, out RsfBlock rsf);
-            outputBlock = rsf;
-        }
-        else if (blockType == @"$RSI")
-        {
-            RsiBlock.Deserialize(mainDataStream, inputSrdi, inputSrdv, out RsiBlock rsi);
-            outputBlock = rsi;
-        }
-        else
-        {
-            UnknownBlock.Deserialize(blockType, mainDataStream, subDataStream, inputSrdi, inputSrdv, out UnknownBlock unk);
-            outputBlock = unk;
+            // Deserialize data based on block type
+            case @"$CFH":
+                outputBlock = new CfhBlock();   // We don't even need to bother serializing it
+                break;
+            case @"$RSF":
+                RsfBlock.Deserialize(mainDataStream, out RsfBlock rsf);
+                outputBlock = rsf;
+                break;
+            case @"$RSI":
+                RsiBlock.Deserialize(mainDataStream, inputSrdi, inputSrdv, out RsiBlock rsi);
+                outputBlock = rsi;
+                break;
+            default:
+                UnknownBlock.Deserialize(blockType, mainDataStream, subDataStream, inputSrdi, inputSrdv, out UnknownBlock unk);
+                outputBlock = unk;
+                break;
         }
         subDataStream?.Dispose();
         mainDataStream.Dispose();
