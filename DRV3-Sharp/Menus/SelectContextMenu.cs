@@ -6,7 +6,8 @@ internal sealed class SelectContextMenu : IMenu
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
         new("SPC", "The primary data archive format, used to store most files in the game.", SPC),
-        //new("WRD", "The primary script format, used to control game behavior, map transitions, text displays, and more.", WRD),
+        new("STX", "The primary text format, used to store dialogue.", STX),
+        new("WRD", "The primary script format, used to control game behavior, map transitions, text displays, and more.", WRD),
         new("Help", "View descriptions of currently-available operations.", Help),
         new("Back", "Return to the previous menu.", Program.PopMenu)
     };
@@ -16,6 +17,11 @@ internal sealed class SelectContextMenu : IMenu
     private void SPC()
     {
         Program.PushMenu(new SpcRootMenu());
+    }
+
+    private void STX()
+    {
+        Program.PushMenu(new StxMenu());
     }
 
     private void WRD()

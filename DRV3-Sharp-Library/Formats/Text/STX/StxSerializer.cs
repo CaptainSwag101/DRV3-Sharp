@@ -62,7 +62,7 @@ public static class StxSerializer
                 strings[s] = new SegmentedString(rawString.Split('\n'));
 
                 // Check if the string ID does not line up with the position it was given in the list, just in case.
-                if (stringId != (strings.Length - 1)) throw new InvalidDataException($"String #{s} has a reported ID of {stringId}, this list is not sorted correctly!");
+                //if (stringId != (strings.Length - 1)) throw new InvalidDataException($"String #{s} has a reported ID of {stringId}, this list is not sorted correctly!");
 
                 reader.BaseStream.Seek(returnPos, SeekOrigin.Begin);
             }
