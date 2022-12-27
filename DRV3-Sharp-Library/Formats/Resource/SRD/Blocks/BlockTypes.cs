@@ -15,7 +15,7 @@ public sealed record RsfBlock(
 public sealed record RsiBlock(
     byte Unknown00, byte Unknown01, sbyte Unknown02, short Unknown06,
     List<(string Name, byte[] Data, int UnknownValue)> LocalResourceData,
-    List<(ResourceDataLocation Location, byte[] Data, int UnknownValue1, int UnknownValue2)> ExternalResourceData,
+    List<(int Location, byte[] Data, int UnknownValue1, int UnknownValue2)> ExternalResourceData,
     List<int> UnknownIntList,
     List<string> ResourceStrings,
     List<ISrdBlock> SubBlocks)

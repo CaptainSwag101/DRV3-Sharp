@@ -7,14 +7,9 @@ namespace DRV3_Sharp.Menus;
 
 internal sealed class WrdMenu : IMenu
 {
+    private (string Path, WrdData Data)? loadedData = null;
     public string HeaderText => "You can choose from the following options:";
     public int FocusedEntry { get; set; }
-    private WrdData? loadedData { get; set; }
-
-    public WrdMenu()
-    {
-        loadedData = null;
-    }
     
     public MenuEntry[] AvailableEntries
     {
@@ -33,7 +28,7 @@ internal sealed class WrdMenu : IMenu
 
     private void Load()
     {
-        var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window: ", true, true);
+        var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window: ", true, false);
 
         if (paths?[0] is not FileInfo fileInfo) return;
         
@@ -42,10 +37,10 @@ internal sealed class WrdMenu : IMenu
         
         using FileStream fs = new(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
         WrdSerializer.Deserialize(fs, out WrdData data);
-        loadedData = data;
+        loadedData = (fileInfo.FullName, data);
             
         Console.WriteLine($"Loaded the WRD file successfully.");
-        foreach (var command in loadedData.Commands)
+        foreach (var command in data.Commands)
         {
             Console.WriteLine(command);
         }

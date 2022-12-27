@@ -22,7 +22,7 @@ public static class SrdSerializer
         outputData = new(blocks);
     }
 
-    public static void DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv, out ISrdBlock outputBlock)
+    private static void DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv, out ISrdBlock outputBlock)
     {
         using BinaryReader srdReader = new(inputSrd, Encoding.ASCII, true);
 
@@ -50,6 +50,7 @@ public static class SrdSerializer
         {
             "$CFH" => new CfhBlock(new()),
             "$RSF" => BlockSerializer.DeserializeRsfBlock(mainDataStream),
+            "$RSI" => BlockSerializer.DeserializeRsiBlock(mainDataStream, inputSrdi, inputSrdv),
             _ => BlockSerializer.DeserializeUnknownBlock(blockType, mainDataStream),
         };
         
@@ -75,7 +76,7 @@ public static class SrdSerializer
         }
     }
 
-    public static void SerializeBlock(ISrdBlock block, Stream outputSrd, Stream outputSrdi, Stream outputSrdv)
+    private static void SerializeBlock(ISrdBlock block, Stream outputSrd, Stream outputSrdi, Stream outputSrdv)
     {
         // Setup memory stream for serialized main data
         MemoryStream mainDataStream = new();
@@ -96,6 +97,13 @@ public static class SrdSerializer
             case RsfBlock rsf:
                 typeString = "$RSF";
                 mainDataStream.Write(BlockSerializer.SerializeRsfBlock(rsf));
+                break;
+            case RsiBlock rsi:
+                typeString = "$RSI";
+                var results = BlockSerializer.SerializeRsiBlock(rsi);
+                mainDataStream.Write(results.main);
+                outputSrdi.Write(results.srdi);
+                outputSrdv.Write(results.srdv);
                 break;
         }
         

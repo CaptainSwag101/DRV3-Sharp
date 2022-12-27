@@ -12,7 +12,6 @@ internal sealed class SpcRootMenu : IMenu
     
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
-        // Add always-available entries
         new("Quick Extract", "Load and extract the contents of one or more SPC archives.", QuickExtract),
         new("Detailed Operations", "Load a single SPC file to operate on more precisely.", DetailedOperations),
         new("Help", "View descriptions of currently-available operations.", Help),
