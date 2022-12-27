@@ -15,9 +15,8 @@ public enum ResourceDataLocation
 public sealed record ExternalResourceInfo(int Address, int Length, int Unknown1, int Unknown2);
 public sealed record LocalResourceInfo(int Address1, int Address2, int Length, int Unknown);
 
-public sealed class RsiBlock : ISrdBlock
+public sealed class OldRsiBlock
 {
-    #region Public Properties
     public string BlockType { get { return @"$RSI"; } }
     public byte Unknown00 { get; private set; }
     public byte Unknown01 { get; private set; }
@@ -27,10 +26,8 @@ public sealed class RsiBlock : ISrdBlock
     public List<(ResourceDataLocation Location, byte[] Data, int UnknownValue1, int UnknownValue2)> ExternalResourceData { get; }
     public List<int> UnknownIntList { get; }
     public List<string> ResourceStrings { get; }
-    #endregion
 
-    #region Public Methods
-    public RsiBlock()
+    public OldRsiBlock()
     {
         LocalResourceData = new();
         ExternalResourceData = new();
@@ -38,7 +35,7 @@ public sealed class RsiBlock : ISrdBlock
         ResourceStrings = new();
     }
 
-    public List<string> GetBlockInfo()
+    public IEnumerable<string> GetBlockInfo()
     {
         List<string> infoList = new();
 
@@ -80,10 +77,8 @@ public sealed class RsiBlock : ISrdBlock
 
         return infoList;
     }
-    #endregion
 
-    #region Public Static Methods
-    public static void Deserialize(MemoryStream inputMainData, Stream? inputSrdi, Stream? inputSrdv, out RsiBlock outputBlock)
+    public static void Deserialize(MemoryStream inputMainData, Stream? inputSrdi, Stream? inputSrdv, out OldRsiBlock outputBlock)
     {
         outputBlock = new();
 
@@ -181,7 +176,7 @@ public sealed class RsiBlock : ISrdBlock
         }
     }
 
-    public static void Serialize(RsiBlock inputBlock, Stream outputMainData, Stream outputSrdi, Stream outputSrdv)
+    public static void Serialize(OldRsiBlock inputBlock, Stream outputMainData, Stream outputSrdi, Stream outputSrdv)
     {
         using BinaryWriter mainDataWriter = new(outputMainData, Encoding.ASCII, true);
 
@@ -244,5 +239,4 @@ public sealed class RsiBlock : ISrdBlock
 
         throw new NotImplementedException();
     }
-    #endregion
 }
