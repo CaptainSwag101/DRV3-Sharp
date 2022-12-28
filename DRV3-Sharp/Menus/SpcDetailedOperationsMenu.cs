@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using DRV3_Sharp_Library.Formats.Archive.SPC;
-using Microsoft.Extensions.Primitives;
 
 namespace DRV3_Sharp.Menus;
 

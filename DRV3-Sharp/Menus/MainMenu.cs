@@ -31,7 +31,7 @@ internal sealed class MainMenu : IMenu
         Console.WriteLine("DRV3-Sharp, by CaptainSwag101");
         try
         {
-            var versionInfo = File.ReadAllLines("VERSION_INFO_FOR_DEBUGGING.txt");
+            var versionInfo = File.ReadAllLines("VERSION_INFO.txt");
             foreach (string s in versionInfo)
             {
                 Console.WriteLine(s);
