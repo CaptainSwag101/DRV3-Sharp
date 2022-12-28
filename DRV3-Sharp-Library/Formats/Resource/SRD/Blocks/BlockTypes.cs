@@ -12,10 +12,17 @@ public sealed record RsfBlock(
     List<ISrdBlock> SubBlocks)
     : ISrdBlock;
 
+public enum ResourceDataLocation
+{
+    Srdi = 0x20000000,
+    Srdv = 0x40000000
+}
+public sealed record LocalResource(string Name, byte[] Data, int UnknownValue);
+public sealed record ExternalResource(ResourceDataLocation Location, byte[] Data, int UnknownValue1, int UnknownValue2);
 public sealed record RsiBlock(
     byte Unknown00, byte Unknown01, sbyte Unknown02, short Unknown06,
-    List<(string Name, byte[] Data, int UnknownValue)> LocalResourceData,
-    List<(int Location, byte[] Data, int UnknownValue1, int UnknownValue2)> ExternalResourceData,
+    List<LocalResource> LocalResources,
+    List<ExternalResource> ExternalResources,
     List<int> UnknownIntList,
     List<string> ResourceStrings,
     List<ISrdBlock> SubBlocks)

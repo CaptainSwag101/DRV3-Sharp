@@ -43,11 +43,6 @@ internal static class BlockSerializer
         return mem.ToArray();
     }
     
-    private enum ResourceDataLocation
-    {
-        Srdi = 0x20000000,
-        Srdv = 0x40000000
-    }
     private sealed record ExternalResourceInfo(int Address, int Length, int Unknown1, int Unknown2);
     private sealed record LocalResourceInfo(int Address1, int Address2, int Length, int Unknown);
     public static RsiBlock DeserializeRsiBlock(MemoryStream mainStream, Stream? srdi, Stream? srdv)
@@ -80,7 +75,7 @@ internal static class BlockSerializer
         }
 
         // Read external resource data
-        List<(int Location, byte[] data, int unknown1, int unknown2)> externalResources = new();
+        List<ExternalResource> externalResources = new();
         foreach (var info in externalResourceInfo)
         {
             // Determine resource data location
@@ -97,7 +92,7 @@ internal static class BlockSerializer
 
                     using BinaryReader srdiReader = new(srdi, Encoding.ASCII, true);
                     byte[] data = srdiReader.ReadBytes(info.Length);
-                    externalResources.Add(((int)location, data, info.Unknown1, info.Unknown2));
+                    externalResources.Add(new(location, data, info.Unknown1, info.Unknown2));
                     break;
                 }
                 case ResourceDataLocation.Srdv when srdv == null:
@@ -108,7 +103,7 @@ internal static class BlockSerializer
 
                     using BinaryReader srdvReader = new(srdv, Encoding.ASCII, true);
                     byte[] data = srdvReader.ReadBytes(info.Length);
-                    externalResources.Add(((int)location, data, info.Unknown1, info.Unknown2));
+                    externalResources.Add(new(location, data, info.Unknown1, info.Unknown2));
                     break;
                 }
                 default:
@@ -126,14 +121,14 @@ internal static class BlockSerializer
         }
 
         // Read local resource data
-        List<(string name, byte[] data, int unknown)> localResources = new();
+        List<LocalResource> localResources = new();
         foreach (LocalResourceInfo info in localResourceInfo)
         {
             reader.BaseStream.Seek(info.Address1, SeekOrigin.Begin);
             string name = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
             reader.BaseStream.Seek(info.Address2, SeekOrigin.Begin);
             byte[] data = reader.ReadBytes(info.Length);
-            localResources.Add((name, data, info.Unknown));
+            localResources.Add(new(name, data, info.Unknown));
         }
 
         // Read unknown int list
@@ -167,18 +162,18 @@ internal static class BlockSerializer
 
         // Write external resource data and info
         List<ExternalResourceInfo> extResourceInfo = new();
-        foreach (var externalResource in rsi.ExternalResourceData)
+        foreach (var externalResource in rsi.ExternalResources)
         {
             int address;
             var locationEnum = (ResourceDataLocation)externalResource.Location;
             if (locationEnum == ResourceDataLocation.Srdi)
             {
-                address = (int)srdiMem.Position | externalResource.Location;
+                address = (int)srdiMem.Position | (int)externalResource.Location;
                 srdiMem.Write(externalResource.Data);
             }
             else if (locationEnum == ResourceDataLocation.Srdv)
             {
-                address = (int)srdvMem.Position | externalResource.Location;
+                address = (int)srdvMem.Position | (int)externalResource.Location;
                 srdvMem.Write(externalResource.Data);
             }
             else
@@ -190,7 +185,7 @@ internal static class BlockSerializer
         // Write local resource data and info (using placeholder addresses)
         List<LocalResourceInfo> locResourceInfo = new();
         using BinaryWriter localResourceDataWriter = new(new MemoryStream());
-        foreach (var localResource in rsi.LocalResourceData)
+        foreach (var localResource in rsi.LocalResources)
         {
             // TODO: Do stuff here
             throw new NotImplementedException();
@@ -217,8 +212,8 @@ internal static class BlockSerializer
         }
         mainWriter.Write(rsi.Unknown01);
         mainWriter.Write(rsi.Unknown02);
-        mainWriter.Write((byte)rsi.ExternalResourceData.Count);
-        mainWriter.Write((short)rsi.LocalResourceData.Count);
+        mainWriter.Write((byte)rsi.ExternalResources.Count);
+        mainWriter.Write((short)rsi.LocalResources.Count);
         mainWriter.Write(rsi.Unknown06);
 
         // Write ExternalResourceInfo
