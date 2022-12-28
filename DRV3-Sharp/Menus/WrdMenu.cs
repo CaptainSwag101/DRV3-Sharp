@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using DRV3_Sharp_Library.Formats.Script.WRD;
 
 namespace DRV3_Sharp.Menus;
@@ -42,7 +43,9 @@ internal sealed class WrdMenu : IMenu
         Console.WriteLine($"Loaded the WRD file successfully.");
         foreach (var command in data.Commands)
         {
-            Console.WriteLine(command);
+            StringBuilder argText = new();
+            argText.AppendJoin(' ', command.Arguments);
+            Console.WriteLine($"{command.Opcode}:\t{argText}");
         }
         Console.WriteLine("Press ENTER to continue...");
         Console.ReadLine();

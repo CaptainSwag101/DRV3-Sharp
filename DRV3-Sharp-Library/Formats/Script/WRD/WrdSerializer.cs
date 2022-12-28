@@ -1,5 +1,8 @@
+using System;
+using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace DRV3_Sharp_Library.Formats.Script.WRD;
@@ -71,15 +74,17 @@ public static class WrdSerializer
             if (b != 0x70) throw new InvalidDataException("The provided WRD command data did not start with hex 0x70.");
 
             byte op = reader.ReadByte();
-            string opName = op.ToString();  // TODO: Convert opcode name to string properly using internal names
+            var info = WrdCommandConstants.CommandInfo[op];
+            string opName = info.Name;  // Convert opcode name to string properly using internal names
             
             // Read arguments, two bytes at a time.
             List<string> args = new();
+            var argNum = 0;
             while ((reader.BaseStream.Position + 1) < localBranchDataPtr)
             {
-                ushort data = reader.ReadUInt16();
-                // If the data contains hex 0x70 in the first byte, it is the next opcode.
-                if ((data & 0x00FF) == 0x0070)
+                ushort data = BinaryPrimitives.ReverseEndianness(reader.ReadUInt16());
+                // If the data contains hex 0x70 in the most significant byte (big-endian), it is the next opcode.
+                if ((data & 0xFF00) == 0x7000)
                 {
                     // Backtrack two bytes and then break out so those bytes can
                     // be interpreted as an opcode.
@@ -87,8 +92,47 @@ public static class WrdSerializer
                     break;
                 }
                 
-                // TODO: Parse the argument type based on the current opcode.
-                args.Add(data.ToString());
+                // Parse the argument type based on the current opcode.
+                if (info.ArgTypes is null)
+                {
+                    // Forcibly interpret the argument as a plaintext parameter, to help determine its purpose/validity.
+                    args.Add(parameters[data]);
+                    continue;
+                }
+                
+                string parsedArg = info.ArgTypes[argNum % info.ArgTypes.Length] switch
+                {
+                    0 => parameters[data],  // Plaintext parameter
+                    1 => data.ToString(),   // Raw number
+                    2 => data.ToString(),   // Dialogue string
+                    3 => labelNames[data],  // Label name
+                    _ => parameters[data]
+                };
+                args.Add(parsedArg);
+
+                ++argNum;
+            }
+
+            // If we're trying to parse args for an opcode that shouldn't have any, alert the user.
+            if (info.ArgTypes is null)
+            {
+                if (args.Count > 0)
+                {
+                    Console.WriteLine($"Found arguments for opcode {opName} which should not have any.\nThis may indicate a bug in the software, or in the script file.");
+                    Console.WriteLine("Press ENTER to continue...");
+                    Console.ReadLine();
+                }
+            }
+            // If we parsed more args than expected, and the opcode doesn't support
+            // variable argument counts, alert the user.
+            // Also alert in the event that we read fewer than the minimum expected arg count,
+            // regardless of whether the opcode supports variable arg counts.
+            else if ((args.Count > info.ArgTypes.Length && !info.VariableArgCount)
+                || args.Count < info.ArgTypes.Length)
+            {
+                Console.WriteLine($"Parsed {args.Count} for opcode {opName} but expected {info.ArgTypes.Length}.");
+                Console.WriteLine("Press ENTER to continue...");
+                Console.ReadLine();
             }
             
             commands.Add(new(opName, args));
