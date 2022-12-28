@@ -45,8 +45,8 @@ internal sealed class SrdMenu : IMenu
         // Determine the expected paths of the accompanying SRDI and SRDV files.
         int lengthNoExtension = (fileInfo.FullName.Length - fileInfo.Extension.Length);
         string noExtension = fileInfo.FullName[..lengthNoExtension];
-        FileInfo srdiInfo = new(noExtension + "srdi");
-        FileInfo srdvInfo = new(noExtension + "srdv");
+        FileInfo srdiInfo = new(noExtension + ".srdi");
+        FileInfo srdvInfo = new(noExtension + ".srdv");
         
         // Initialize appropriate FileStreams based on which files exist.
         FileStream fs = new(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
