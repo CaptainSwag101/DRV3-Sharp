@@ -13,13 +13,7 @@ internal static class Utils
             Console.WriteLine(promptMessage);
 
         string? input = Console.ReadLine();
-        if (string.IsNullOrWhiteSpace(input))
-        {
-            Console.WriteLine("The specified path is null.");
-            Console.WriteLine("Press any key to continue...");
-            _ = Console.ReadKey(true);
-            return null;
-        }
+        if (string.IsNullOrWhiteSpace(input)) return null;
         
         // Use regex to match quoted paths and then split any unquoted paths by space.
         // For a breakdown of this regex: https://regex101.com/r/tqKFpz/2
@@ -70,10 +64,11 @@ internal static class Utils
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred while trying to parse one of the path(s) provided: {ex}");
+                Console.ReadLine();
             }
         }
 
-        return results.ToArray();
+        return results.Count == 0 ? null : results.ToArray();
     }
 
     [Obsolete]

@@ -102,7 +102,12 @@ internal sealed class StxMenu : IMenu
     private void ToStx()
     {
         var paths = Utils.ParsePathsFromConsole("Type the files/directories of JSON files you want to convert, or drag-and-drop them onto this window, separated by spaces and/or quotes: ", true, true);
-        if (paths is null) return;
+        if (paths is null)
+        {
+            Console.WriteLine("Unable to find the path(s) specified. Press ENTER to continue...");
+            Console.ReadLine();
+            return;
+        }
 
         // Load data
         List<(string name, StxData data)> loadedData = new();

@@ -21,7 +21,12 @@ internal sealed class SpcRootMenu : IMenu
     private async void QuickExtract()
     {
         var paths = Utils.ParsePathsFromConsole("Type the files/directories of SPC archives you want to extract, or drag-and-drop them onto this window, separated by spaces and/or quotes: ", true, true);
-        if (paths is null) return;
+        if (paths is null)
+        {
+            Console.WriteLine("Unable to find the path(s) specified. Press ENTER to continue...");
+            Console.ReadLine();
+            return;
+        }
 
         // Load data
         List<(string name, SpcData data)> loadedData = new();
@@ -84,15 +89,15 @@ internal sealed class SpcRootMenu : IMenu
     private void DetailedOperations()
     {
         var paths = Utils.ParsePathsFromConsole("Type the file/directory you wish to load, or drag-and-drop it onto this window: ", true, true);
-        if (paths is null || paths.Length == 0)
+        if (paths?.Length == 0)
         {
-            Console.WriteLine("Unable to load any files from the provided path. Please ensure the file or directory exists.\nPress ENTER to continue...");
+            Console.WriteLine("Unable to find the path specified. Press ENTER to continue...");
             Console.ReadLine();
             return;
         }
 
         // Load first path, then stop and load the detailed menu.
-        var info = paths[0];
+        var info = paths?[0];
         if (info is FileInfo)
         {
             // If we're loading a file, open its SPC data.
