@@ -57,7 +57,7 @@ public static class SrdSerializer
         // If there is any sub-block data, parse it too.
         while (subDataStream is not null && subDataStream.Position < subDataLength)
         {
-            DeserializeBlock(inputSrd, inputSrdi, inputSrdv, out var subBlock);
+            DeserializeBlock(subDataStream, inputSrdi, inputSrdv, out var subBlock);
             outputBlock.SubBlocks.Add(subBlock);
         }
         
