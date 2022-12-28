@@ -221,4 +221,38 @@ internal static class BlockSerializer
 
         throw new NotImplementedException();
     }
+
+    public static TxrBlock DeserializeTxrBlock(MemoryStream mainStream)
+    {
+        using BinaryReader reader = new(mainStream);
+        
+        int unknown00 = reader.ReadInt32();
+        ushort swizzle = reader.ReadUInt16();
+        ushort width = reader.ReadUInt16();
+        ushort height = reader.ReadUInt16();
+        ushort scanline = reader.ReadUInt16();
+        TextureFormat format = (TextureFormat)reader.ReadByte();
+        byte unknown0D = reader.ReadByte();
+        byte palette = reader.ReadByte();
+        byte paletteId = reader.ReadByte();
+
+        return new TxrBlock(unknown00, swizzle, width, height, scanline, format, unknown0D, palette, paletteId, new());
+    }
+    public static byte[] SerializeTxrBlock(TxrBlock txr)
+    {
+        using MemoryStream mem = new();
+        using BinaryWriter writer = new(mem);
+
+        writer.Write(txr.Unknown00);
+        writer.Write(txr.Swizzle);
+        writer.Write(txr.Width);
+        writer.Write(txr.Height);
+        writer.Write(txr.Scanline);
+        writer.Write((byte)txr.Format);
+        writer.Write(txr.Unknown0D);
+        writer.Write(txr.Palette);
+        writer.Write(txr.PaletteID);
+        
+        return mem.ToArray();
+    }
 }

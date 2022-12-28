@@ -51,6 +51,7 @@ public static class SrdSerializer
             "$CFH" => new CfhBlock(new()),
             "$RSF" => BlockSerializer.DeserializeRsfBlock(mainDataStream),
             "$RSI" => BlockSerializer.DeserializeRsiBlock(mainDataStream, inputSrdi, inputSrdv),
+            "$TXR" => BlockSerializer.DeserializeTxrBlock(mainDataStream),
             _ => BlockSerializer.DeserializeUnknownBlock(blockType, mainDataStream),
         };
         
@@ -104,6 +105,10 @@ public static class SrdSerializer
                 mainDataStream.Write(results.main);
                 outputSrdi.Write(results.srdi);
                 outputSrdv.Write(results.srdv);
+                break;
+            case TxrBlock txr:
+                typeString = "$TXR";
+                mainDataStream.Write(BlockSerializer.SerializeTxrBlock(txr));
                 break;
         }
         
