@@ -95,7 +95,7 @@ public static class WrdCommandConstants
         new("MAP", new[] { 0, 0, 0 }, false),
         // Load Object
         new("OBJ", new[] { 0, 0, 0 }, false),
-        // Truth Bullet parameters?
+        // Seems to be related to some kind of screen effect?
         new("BUL", new[] { 0, 0, 0, 0, 0, 0, 0, 0 }, false),
         // Cross Fade
         new("CRF", new[] { 0, 0, 0, 0, 0, 0, 0 }, false),
