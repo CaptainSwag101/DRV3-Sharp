@@ -20,7 +20,7 @@ public static class WrdCommandConstants
         // Work ("waaku") (Seems to be used to configure game engine parameters)
         new("WAK", new[] { 0, 0, 0 }, false),
         // If WAK
-        new("IFW", new[] { 0, 0, 0 }, true),
+        new("IFW", new[] { 0, 0, 1 }, true),
         // Begin switch statement
         new("SWI", new[] { 0 }, false),
         // Switch Case
@@ -33,7 +33,7 @@ public static class WrdCommandConstants
         new("MOD", new[] { 0, 0, 0, 0 }, false),
         // Human? Seems to be used to initialize "interactable" objects in a map?
         new("HUM", new[] { 0 }, false),
-        // Check?
+        // Adds a Truth Bullet to the list of usable evidence during a non-stop debate.
         new("CHK", new[] { 0 }, false),
         // Kotodama?
         new("KTD", new[] { 0, 0 }, false),
