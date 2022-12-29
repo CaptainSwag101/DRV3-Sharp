@@ -21,12 +21,14 @@
     <OutputPath>..\_Build\Debug</OutputPath>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <OutputPath>..\_Build\Release</OutputPath>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

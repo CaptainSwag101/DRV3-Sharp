@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>DRV3_Sharp_Library</RootNamespace>
     <Nullable>enable</Nullable>
-    <Version>$(VersionPrefix)3.0.0-alpha1</Version>
+    <Version>$(VersionPrefix)3.0.0-alpha2</Version>
     <PackageLicenseFile>D:\jpmac\Documents\GitHub\DRV3-Sharp\LICENSE.txt</PackageLicenseFile>
   </PropertyGroup>
 
