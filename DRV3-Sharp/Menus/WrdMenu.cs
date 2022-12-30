@@ -156,8 +156,6 @@ internal sealed class WrdMenu : IMenu
                 outputWriter.WriteLine(commandBuilder.ToString());
             }
         }
-        
-        return;
     }
 
     private FileInfo GenerateTextSpcFileInfo(FileInfo wrdSpcFileInfo)
