@@ -74,6 +74,8 @@ internal sealed class WrdMenu : IMenu
         }
 
         FileInfo textSpcFileInfo = GenerateTextSpcFileInfo(fileInfo);
+        string outputFolderName = fileInfo.FullName.Replace(fileInfo.Extension, "");
+        Directory.CreateDirectory(outputFolderName);
         if (!textSpcFileInfo.Exists)
         {
             Console.WriteLine("A matching text SPC archive was not found, aborting. Press ENTER to continue...");
@@ -116,7 +118,7 @@ internal sealed class WrdMenu : IMenu
             WrdData wrd = pair.Value;
             StxData? stx = loadedStxs.ContainsKey(name) ? loadedStxs[name] : null;
 
-            string outputPath = fileInfo.DirectoryName! + Path.DirectorySeparatorChar + name + "_wrdExport.txt";
+            string outputPath = outputFolderName + Path.DirectorySeparatorChar + name + "_wrdExport.txt";
             using StreamWriter outputWriter = new(new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.Read));
             
             foreach (var command in wrd.Commands)
@@ -150,7 +152,7 @@ internal sealed class WrdMenu : IMenu
                 }
                 
                 commandBuilder.AppendJoin(' ', commandSegments);
-                commandBuilder.Append(">");
+                commandBuilder.Append('>');
                 
                 // Write the built command text to the output file.
                 outputWriter.WriteLine(commandBuilder.ToString());
