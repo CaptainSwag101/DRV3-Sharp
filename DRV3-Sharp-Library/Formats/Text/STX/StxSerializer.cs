@@ -45,7 +45,7 @@ public static class StxSerializer
         for (int t = 0; t < tableCount; ++t)
         {
             var (unknown, stringCount) = tableInfo[t];
-            var strings = new SegmentedString[stringCount];
+            var strings = new string[stringCount];
 
             for (int s = 0; s < stringCount; ++s)
             {
@@ -59,7 +59,7 @@ public static class StxSerializer
                 // C# does not include a way to read null-terminated strings, so we'll have to do it manually.
                 // Also, some languages for this game use carriage returns, others don't. Screw consistency, am I right?
                 string rawString = Utils.ReadNullTerminatedString(reader, Encoding.Unicode).Replace("\r","");
-                strings[s] = new SegmentedString(rawString.Split('\n'));
+                strings[s] = rawString;
 
                 // Check if the string ID does not line up with the position it was given in the list, just in case.
                 //if (stringId != (strings.Length - 1)) throw new InvalidDataException($"String #{s} has a reported ID of {stringId}, this list is not sorted correctly!");
@@ -113,18 +113,13 @@ public static class StxSerializer
         {
             uint strId = 0;
             List<(int, string)> writtenStrings = new();
-            foreach (SegmentedString str in table.Strings)
+            foreach (string str in table.Strings)
             {
-                // Convert segmented string to a full string
-                StringBuilder sb = new();
-                sb.AppendJoin('\n', str.Segments);
-                string wholeString = sb.ToString();
-
                 // De-duplicate strings by re-using offsets
                 int? foundOffset = null;
                 foreach (var (offset, text) in writtenStrings)
                 {
-                    if (text == wholeString)
+                    if (text == str)
                     {
                         foundOffset = offset;
                         break;
@@ -141,7 +136,7 @@ public static class StxSerializer
                 else
                 {
                     strPos = latestPos;
-                    writtenStrings.Add((strPos, wholeString));  // If the string is not already present, add it to the de-duplication list
+                    writtenStrings.Add((strPos, str));  // If the string is not already present, add it to the de-duplication list
                 }
 
                 // Write ID/offset pair
@@ -156,7 +151,7 @@ public static class StxSerializer
                 // Write string data if there are no existing duplicates
                 if (foundOffset is null)
                 {
-                    byte[] strData = Encoding.Unicode.GetBytes(wholeString);
+                    byte[] strData = Encoding.Unicode.GetBytes(str);
                     writer.Write(strData);
                     writer.Write((ushort)0);
                 }

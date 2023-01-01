@@ -2,6 +2,4 @@
 
 public sealed record StxData(StringTable[] Tables) : IDanganV3Data;
 
-public sealed record StringTable(int UnknownData, SegmentedString[] Strings);
-    
-public sealed record SegmentedString(string[] Segments);
+public sealed record StringTable(int UnknownData, string[] Strings);

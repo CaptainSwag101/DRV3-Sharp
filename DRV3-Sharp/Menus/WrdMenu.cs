@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using DRV3_Sharp_Library.Formats.Archive.SPC;
 using DRV3_Sharp_Library.Formats.Script.WRD;
@@ -23,6 +24,7 @@ internal sealed class WrdMenu : IMenu
                 // Add always-available entries
                 new("Peek", "Peek at the command contents of a WRD script.", Load),
                 new("Export", "Batch export an SPC archive of WRD scripts, alongside accompanying text data.", Export),
+                new("Import", "Batch import a folder of exported scripts and generate archives for WRD scripts and STX text.", Import),
                 new("Help", "View descriptions of currently-available operations.", Help),
                 new("Back", "Return to the previous menu.", Program.PopMenu)
             };
@@ -133,9 +135,7 @@ internal sealed class WrdMenu : IMenu
                     var stringNum = Convert.ToInt16(command.Arguments[0]);
                     if (stx is not null)
                     {
-                        StringBuilder segmentJoiner = new();
-                        segmentJoiner.AppendJoin("\\n", stx.Tables[0].Strings[stringNum].Segments);
-                        commandSegments.Add(segmentJoiner.ToString());
+                        commandSegments.Add(stx.Tables[0].Strings[stringNum]);
                     }
                     else if (wrd.InternalStrings is not null)
                     {
@@ -158,8 +158,92 @@ internal sealed class WrdMenu : IMenu
                 outputWriter.WriteLine(commandBuilder.ToString());
             }
         }
+    }
+
+    private void Import()
+    {
+        // Get the directory of exported WRDs from the user.
+        var paths = Utils.ParsePathsFromConsole("Type the SPC archive containing WRD scripts you wish to load, or drag-and-drop it onto this window: ", true, true);
+        if (paths?[0] is not DirectoryInfo directoryInfo)
+        {
+            Console.WriteLine("Unable to find the path specified. Please ensure you provided a valid folder to import. Press ENTER to continue...");
+            Console.ReadLine();
+            return;
+        }
+
+        // Determine if/which files are actually exported WRDs.
+        FileInfo[] contents = directoryInfo.GetFiles();
+        List<FileInfo> txtFiles = (from file in contents where file.Extension == ".txt" select file).ToList();
+        if (txtFiles.Count == 0)
+        {
+            Console.WriteLine("The specified folder does not contain any exported WRD TXT files. It must be a directory containing exported WRD scripts in TXT form.");
+            Console.WriteLine("Press ENTER to continue...");
+            Console.ReadLine();
+            return;
+        }
+
+        // Prompt the user whether they want to use internal strings or not.
+        bool useInternalStrings = false;
+        Console.Write("Would you like to put dialogue strings directly inside the WRD file? Choose 'N' unless you are sure (y/N): ");
+        var response = Console.ReadLine()?.ToLowerInvariant();
+        if (response is not null && response == "y") useInternalStrings = true;
         
-        return;
+        // Load and parse the files we determined in the last step.
+        List<(string Name, WrdData Wrd, StxData? Stx)> parsedData = new();
+        foreach (var txt in txtFiles)
+        {
+            string[] lines = File.ReadAllLines(txt.FullName);
+
+            List<WrdCommand> commands = new();
+            List<string> dialogue = new();
+
+            // Strip leading and trailing arrow brackets.
+            for (var lineNum = 0; lineNum < lines.Length; ++lineNum)
+            {
+                lines[lineNum] = lines[lineNum].Trim('<').Trim('>');
+
+                string[] splitLine = lines[lineNum].Split();
+
+                if (splitLine.Length == 0) continue;
+
+                string opName = splitLine[0];
+                
+                // Determine the parameter count and type based on the opcode.
+                WrdCommand command;
+                if (opName == "LOC")
+                {
+                    // Parse text lines specially.
+                    StringBuilder sb = new();
+                    sb.AppendJoin(' ', splitLine[1..splitLine.Length]);
+                    command = new(opName, new(){ dialogue.Count.ToString() });
+                    dialogue.Add(sb.ToString());
+                }
+                else
+                {
+                    command = new(opName, splitLine[1..splitLine.Length].ToList());
+                }
+                commands.Add(command);
+            }
+
+            string genericName = txt.Name.Replace("_wrdExport.txt", "");
+            if (useInternalStrings)
+            {
+                WrdData wrd = new(commands, dialogue);
+                parsedData.Add((genericName, wrd, null));
+            }
+            else
+            {
+                WrdData wrd = new(commands, null);
+                StxData stx = new(new StringTable[] { new(0, dialogue.ToArray()) });
+                parsedData.Add((genericName, wrd, stx));
+            }
+        }
+
+        // Generate the SPC file(s).
+        FileInfo wrdSpcFileInfo = new(directoryInfo.FullName + ".SPC");
+        FileInfo? textSpcFileInfo = useInternalStrings ? GenerateTextSpcFileInfo(wrdSpcFileInfo) : null;
+        
+        // TODO
     }
 
     private FileInfo GenerateTextSpcFileInfo(FileInfo wrdSpcFileInfo)
