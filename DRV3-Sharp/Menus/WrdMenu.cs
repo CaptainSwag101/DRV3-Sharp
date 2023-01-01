@@ -234,7 +234,8 @@ internal sealed class WrdMenu : IMenu
             else
             {
                 WrdData wrd = new(commands, null);
-                StxData stx = new(new StringTable[] { new(0, dialogue.ToArray()) });
+                StxData? stx = null;
+                if (dialogue.Count > 0) stx = new(new StringTable[] { new(0, dialogue.ToArray()) });
                 parsedData.Add((genericName, wrd, stx));
             }
         }
