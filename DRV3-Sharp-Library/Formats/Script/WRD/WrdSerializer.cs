@@ -22,39 +22,47 @@ public static class WrdSerializer
         ushort localBranchCount = reader.ReadUInt16();
         
         // Unknown what this is.
-        uint unknown1 = reader.ReadUInt32();
+        uint unknown = reader.ReadUInt32();
         
         // Read pointers
-        uint localBranchDataPtr = reader.ReadUInt32();
+        uint localBranchOffsetsPtr = reader.ReadUInt32();
         uint labelOffsetsPtr = reader.ReadUInt32();
         uint labelNamesPtr = reader.ReadUInt32();
         uint parametersPtr = reader.ReadUInt32();
         uint stringsPtr = reader.ReadUInt32();
         
         // Read label names.
-        reader.BaseStream.Seek(labelNamesPtr, SeekOrigin.Begin);
+        inputStream.Seek(labelNamesPtr, SeekOrigin.Begin);
         List<string> labelNames = new();
-        for (int i = 0; i < labelCount; ++i)
+        for (var i = 0; i < labelCount; ++i)
         {
             labelNames.Add(reader.ReadString());
             _ = reader.ReadByte();  // Skip the null terminator
         }
         
         // Read plaintext parameters.
-        reader.BaseStream.Seek(parametersPtr, SeekOrigin.Begin);
+        inputStream.Seek(parametersPtr, SeekOrigin.Begin);
         List<string> parameters = new();
-        for (int i = 0; i < parameterCount; ++i)
+        for (var i = 0; i < parameterCount; ++i)
         {
             parameters.Add(reader.ReadString());
             _ = reader.ReadByte();  // Skip null terminator
+        }
+        
+        // Read local branch data
+        inputStream.Seek(localBranchOffsetsPtr, SeekOrigin.Begin);
+        List<(ushort Index, ushort Offset)> localBranchData = new();
+        for (var i = 0; i < localBranchCount; ++i)
+        {
+            localBranchData.Add((reader.ReadUInt16(), reader.ReadUInt16()));
         }
         
         // Read internal dialogue strings, if any.
         List<string>? internalStrings = null;
         if (stringsPtr != 0)
         {
-            reader.BaseStream.Seek(stringsPtr, SeekOrigin.Begin);
-            using BinaryReader stringReader = new(reader.BaseStream, Encoding.Unicode, true);
+            inputStream.Seek(stringsPtr, SeekOrigin.Begin);
+            using BinaryReader stringReader = new(inputStream, Encoding.Unicode, true);
             internalStrings = new();
             for (int i = 0; i < stringCount; ++i)
             {
@@ -65,9 +73,9 @@ public static class WrdSerializer
         
         // Now that we've loaded all the plaintext, convert the opcodes
         // and arguments into their proper string representations.
-        reader.BaseStream.Seek(WRD_COMMAND_PTR, SeekOrigin.Begin);
+        inputStream.Seek(WRD_COMMAND_PTR, SeekOrigin.Begin);
         List<WrdCommand> commands = new();
-        while ((reader.BaseStream.Position + 1) < localBranchDataPtr)
+        while ((inputStream.Position + 1) < localBranchOffsetsPtr)
         {
             // Each opcode starts with 0x70, skip over it or throw if we don't see it when we should.
             byte b = reader.ReadByte();
@@ -78,9 +86,8 @@ public static class WrdSerializer
             string opName = info.Name;  // Convert opcode name to string properly using internal names
             
             // Read arguments, two bytes at a time.
-            List<string> args = new();
-            var argNum = 0;
-            while ((reader.BaseStream.Position + 1) < localBranchDataPtr)
+            List<ushort> args = new();
+            while ((inputStream.Position + 1) < localBranchOffsetsPtr)
             {
                 ushort data = BinaryPrimitives.ReverseEndianness(reader.ReadUInt16());
                 // If the data contains hex 0x70 in the most significant byte (big-endian), it is the next opcode.
@@ -88,29 +95,11 @@ public static class WrdSerializer
                 {
                     // Backtrack two bytes and then break out so those bytes can
                     // be interpreted as an opcode.
-                    reader.BaseStream.Seek(-2, SeekOrigin.Current);
+                    inputStream.Seek(-2, SeekOrigin.Current);
                     break;
                 }
                 
-                // Parse the argument type based on the current opcode.
-                if (info.ArgTypes is null)
-                {
-                    // Forcibly interpret the argument as a plaintext parameter, to help determine its purpose/validity.
-                    args.Add(parameters[data]);
-                    continue;
-                }
-                
-                string parsedArg = info.ArgTypes[argNum % info.ArgTypes.Length] switch
-                {
-                    0 => parameters[data],  // Plaintext parameter
-                    1 => data.ToString(),   // Raw number
-                    2 => data.ToString(),   // Dialogue string
-                    3 => labelNames[data],  // Label name
-                    _ => parameters[data]
-                };
-                args.Add(parsedArg);
-
-                ++argNum;
+                args.Add(data);
             }
 
             // If we're trying to parse args for an opcode that shouldn't have any, alert the user.
@@ -139,6 +128,47 @@ public static class WrdSerializer
         }
         
         // Finally, construct the output data.
-        outputData = new(commands, internalStrings);
+        outputData = new(commands, unknown, labelNames, parameters, internalStrings);
+    }
+
+    public static void Serialize(WrdData inputData, ushort stringCount, MemoryStream outputStream)
+    {
+        using BinaryWriter writer = new(outputStream, Encoding.ASCII, true);
+        
+        // Compute necessary counts, etc.
+        ushort localBranchCount = 0;
+        foreach (var command in inputData.Commands)
+        {
+            var info = WrdCommandConstants.CommandInfo.First(c => c.Name == command.Name);
+            if (info is null) throw new InvalidDataException($"The opcode {command.Name} is invalid.");
+
+            if (command.Name == "LBN") ++localBranchCount;
+        }
+        
+        // Write header
+        writer.Write(stringCount);
+        writer.Write((ushort)inputData.Labels.Count);
+        writer.Write((ushort)inputData.Parameters.Count);
+        writer.Write(localBranchCount);
+        writer.Write(inputData.Unknown);
+        
+        // Remember current position so we can return and write the pointers later.
+        var pointersWriteLocation = outputStream.Position;
+        
+        // Write placeholder null pointers.
+        writer.Write((int)0);
+        writer.Write((int)0);
+        writer.Write((int)0);
+        writer.Write((int)0);
+        writer.Write((int)0);
+        
+        // Write label names
+        var labelNamePtr = outputStream.Position;
+        foreach (string lblName in inputData.Labels)
+        {
+            writer.Write(lblName);
+            writer.Write((byte)0);  // Null terminator
+        }
+        
     }
 }

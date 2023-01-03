@@ -2,9 +2,9 @@ using System.Collections.Generic;
 
 namespace DRV3_Sharp_Library.Formats.Script.WRD;
 
-public sealed record WrdData(List<WrdCommand> Commands, List<string>? InternalStrings) : IDanganV3Data;
+public sealed record WrdData(List<WrdCommand> Commands, uint Unknown, List<string> Parameters, List<string> Labels, List<string>? InternalStrings) : IDanganV3Data;
 
-public sealed record WrdCommand(string Opcode, List<string> Arguments);
+public sealed record WrdCommand(string Name, List<ushort> Arguments);
 
 public static class WrdCommandConstants
 {

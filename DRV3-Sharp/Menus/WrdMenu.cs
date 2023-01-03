@@ -22,7 +22,7 @@ internal sealed class WrdMenu : IMenu
             List<MenuEntry> entries = new()
             {
                 // Add always-available entries
-                new("Peek", "Peek at the command contents of a WRD script.", Load),
+                new("Peek", "Peek at the command contents of a WRD script.", Peek),
                 new("Export", "Batch export an SPC archive of WRD scripts, alongside accompanying text data.", Export),
                 new("Import", "Batch import a folder of exported scripts and generate archives for WRD scripts and STX text.", Import),
                 new("Help", "View descriptions of currently-available operations.", Help),
@@ -33,7 +33,7 @@ internal sealed class WrdMenu : IMenu
         }
     }
 
-    private void Load()
+    private void Peek()
     {
         var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window: ", true, false);
         if (paths?[0] is not FileInfo fileInfo)
@@ -51,7 +51,7 @@ internal sealed class WrdMenu : IMenu
         {
             StringBuilder argText = new();
             argText.AppendJoin(' ', command.Arguments);
-            Console.WriteLine($"{command.Opcode}:\t{argText}");
+            Console.WriteLine($"{command.Name}:\t{argText}");
         }
         Console.WriteLine("Press ENTER to continue...");
         Console.ReadLine();
@@ -127,12 +127,12 @@ internal sealed class WrdMenu : IMenu
             {
                 StringBuilder commandBuilder = new("<");
                 List<string> commandSegments = new(command.Arguments.Count + 1);
-                commandSegments.Add(command.Opcode);
+                commandSegments.Add(command.Name);
                 
                 // If the opcode is for text, insert the true text from external or internal strings.
-                if (command.Opcode == "LOC")
+                if (command.Name == "LOC")
                 {
-                    var stringNum = Convert.ToInt16(command.Arguments[0]);
+                    var stringNum = command.Arguments[0];
                     if (stx is not null)
                     {
                         commandSegments.Add(stx.Tables[0].Strings[stringNum]);
@@ -143,12 +143,12 @@ internal sealed class WrdMenu : IMenu
                     }
                     else
                     {
-                        commandSegments.Add(command.Arguments[0]);
+                        commandSegments.Add(command.Arguments[0].ToString());
                     }
                 }
                 else
                 {
-                    commandSegments.AddRange(command.Arguments);
+                    commandSegments.AddRange(command.Arguments.Select(arg => arg.ToString()));
                 }
                 
                 commandBuilder.AppendJoin(' ', commandSegments);
@@ -228,7 +228,7 @@ internal sealed class WrdMenu : IMenu
             string genericName = txt.Name.Replace("_wrdExport.txt", "");
             if (useInternalStrings)
             {
-                WrdData wrd = new(commands, dialogue);
+                WrdData wrd = new(commands, dialogue.Count > 0 ? dialogue : null);
                 parsedData.Add((genericName, wrd, null));
             }
             else
@@ -240,11 +240,20 @@ internal sealed class WrdMenu : IMenu
             }
         }
 
-        // Generate the SPC file(s).
+        // Generate the SPC file path(s).
         FileInfo wrdSpcFileInfo = new(directoryInfo.FullName + ".SPC");
-        FileInfo? textSpcFileInfo = useInternalStrings ? GenerateTextSpcFileInfo(wrdSpcFileInfo) : null;
+        FileInfo textSpcFileInfo = GenerateTextSpcFileInfo(wrdSpcFileInfo);
         
-        // TODO
+        // Generate the SPC data.
+        List<ArchivedFile> wrdSpcContents = new();
+        List<ArchivedFile> stxSpcContents = new();
+        foreach (var tuple in parsedData)
+        {
+            using MemoryStream wrdDataStream = new();
+            var stringCount = useInternalStrings ? tuple.Wrd.InternalStrings?.Count : tuple.Stx?.Tables[0].Strings.Length;
+            stringCount ??= 0;
+            WrdSerializer.Serialize(tuple.Wrd, (ushort)stringCount, wrdDataStream);
+        }
     }
 
     private FileInfo GenerateTextSpcFileInfo(FileInfo wrdSpcFileInfo)
