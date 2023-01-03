@@ -38,8 +38,7 @@ public static class StxSerializer
         }
 
             
-        // For each table, read its data and split strings by newline
-        // so we can export them in a more readable fashion.
+        // For each table, read its data.
         reader.BaseStream.Seek(tableOffset, SeekOrigin.Begin);
         var tables = new StringTable[tableCount];
         for (int t = 0; t < tableCount; ++t)
@@ -96,65 +95,71 @@ public static class StxSerializer
         }
 
         // Write tableOffset
-        long lastPos = writer.BaseStream.Position;
+        var lastPos = writer.BaseStream.Position;
         writer.BaseStream.Seek(0x0C, SeekOrigin.Begin);
         writer.Write((int)lastPos);
         writer.BaseStream.Seek(lastPos, SeekOrigin.Begin);
 
-        // Write temporary padding for string IDs/offset
+        // Write temporary padding for string IDs + offsets
         foreach (var table in inputData.Tables)
         {
             writer.Write(new byte[(8 * table.Strings.Length)]); // (4 * 2) bytes per string entry
         }
 
         // Write string data & corresponding ID/offset pair
-        long infoPairPos = lastPos;
+        var infoPairPos = lastPos;
         foreach (var table in inputData.Tables)
         {
-            uint strId = 0;
+            uint stringIndex = 0;
             List<(int, string)> writtenStrings = new();
-            foreach (string str in table.Strings)
+            foreach (string currentString in table.Strings)
             {
-                // De-duplicate strings by re-using offsets
-                int? foundOffset = null;
-                foreach (var (offset, text) in writtenStrings)
+                // De-duplicate strings by re-using offsets.
+                int? existingOffset = null;
+                // Search the strings we've already written to see if one matches our current string exactly.
+                foreach (var (previousOffset, previousString) in writtenStrings)
                 {
-                    if (text == str)
+                    if (previousString == currentString)
                     {
-                        foundOffset = offset;
+                        existingOffset = previousOffset;
                         break;
                     }
                 }
 
-                int latestPos = (int)writer.BaseStream.Position;
+                // Keep track of
+                var newestOffset = writer.BaseStream.Position;
 
-                int strPos;
-                if (foundOffset is not null)
+                int stringOffset;
+                if (existingOffset is not null)
                 {
-                    strPos = (int)foundOffset;
+                    // If another copy of the string has already been written to the data,
+                    // re-use its offset rather than saving a duplicate.
+                    stringOffset = (int)existingOffset;
                 }
                 else
                 {
-                    strPos = latestPos;
-                    writtenStrings.Add((strPos, str));  // If the string is not already present, add it to the de-duplication list
+                    // If the string is not already present, add it to the de-duplication list,
+                    // pending to be written at the end of this loop.
+                    stringOffset = (int)newestOffset;
+                    writtenStrings.Add((stringOffset, currentString));
                 }
 
-                // Write ID/offset pair
+                // Write index/offset pair.
                 writer.BaseStream.Seek(infoPairPos, SeekOrigin.Begin);
-                writer.Write(strId++);
-                writer.Write(strPos);
-                writer.BaseStream.Seek(latestPos, SeekOrigin.Begin);
+                writer.Write(stringIndex++);
+                writer.Write(stringOffset);
 
-                // Increment infoPairPos 8 bytes to next entry position
+                // Increment infoPairPos 8 bytes to next entry position.
                 infoPairPos += 8;
+                
+                // Return to the tail of the file.
+                writer.BaseStream.Seek(newestOffset, SeekOrigin.Begin);
 
-                // Write string data if there are no existing duplicates
-                if (foundOffset is null)
-                {
-                    byte[] strData = Encoding.Unicode.GetBytes(str);
-                    writer.Write(strData);
-                    writer.Write((ushort)0);
-                }
+                // Write string data if there are no existing instances of the data already written to the file.
+                if (existingOffset is not null) continue;
+                byte[] strData = Encoding.Unicode.GetBytes(currentString);
+                writer.Write(strData);
+                writer.Write((ushort)0);    // Null terminator
             }
         }
     }
