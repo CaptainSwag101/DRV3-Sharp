@@ -15,23 +15,15 @@ internal sealed class WrdMenu : IMenu
     public string HeaderText => "You can choose from the following options:";
     public int FocusedEntry { get; set; }
     
-    public MenuEntry[] AvailableEntries
+    public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
-        get
-        {
-            List<MenuEntry> entries = new()
-            {
-                // Add always-available entries
-                new("Peek", "Peek at the command contents of a WRD script.", Peek),
-                new("Export", "Batch export an SPC archive of WRD scripts, alongside accompanying text data.", Export),
-                new("Import", "Batch import a folder of exported scripts and generate archives for WRD scripts and STX text.", Import),
-                new("Help", "View descriptions of currently-available operations.", Help),
-                new("Back", "Return to the previous menu.", Program.PopMenu)
-            };
-
-            return entries.ToArray();
-        }
-    }
+        // Add always-available entries
+        new("Peek", "Peek at the command contents of a WRD script.", Peek),
+        new("Export", "Batch export an SPC archive of WRD scripts, alongside accompanying text data.", Export),
+        new("Import", "Batch import a folder of exported scripts and generate archives for WRD scripts and STX text.", Import),
+        new("Help", "View descriptions of currently-available operations.", Help),
+        new("Back", "Return to the previous menu.", Program.PopMenu)
+    };
 
     private void Peek()
     {
