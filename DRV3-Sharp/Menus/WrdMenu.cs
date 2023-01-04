@@ -72,16 +72,16 @@ internal sealed class WrdMenu : IMenu
         Directory.CreateDirectory(outputFolderName);
         if (!textSpcFileInfo.Exists)
         {
-            Console.WriteLine("A matching text SPC archive was not found, aborting. Press ENTER to continue...");
+            Console.WriteLine("A matching text SPC archive was not found, aborting. Press ENTER to attempt reading anyway...");
             Console.ReadLine();
-            return;
         }
         
         // Load the WRD archive and the STX archive.
         using FileStream wrdSpcStream = new(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using FileStream stxSpcStream = new(textSpcFileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using FileStream? stxSpcStream = textSpcFileInfo.Exists ? new(textSpcFileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read) : null;
         SpcSerializer.Deserialize(wrdSpcStream, out SpcData wrdSpc);
-        SpcSerializer.Deserialize(stxSpcStream, out SpcData stxSpc);
+        SpcData? stxSpc = null;
+        if (stxSpcStream is not null) SpcSerializer.Deserialize(stxSpcStream, out stxSpc);
         
         // Serialize all WRD and STX files from the two files
         Dictionary<string, WrdData> loadedWrds = new();
@@ -95,14 +95,17 @@ internal sealed class WrdMenu : IMenu
             WrdSerializer.Deserialize(ms, out WrdData wrd);
             loadedWrds.Add(file.Name.Replace(".wrd", ""), wrd);
         }
-        foreach (var file in stxSpc.Files)
+        if (stxSpc is not null)
         {
-            if (!file.Name.EndsWith(".stx")) continue;
+            foreach (var file in stxSpc.Files)
+            {
+                if (!file.Name.EndsWith(".stx")) continue;
             
-            byte[] data = file.IsCompressed ? SpcCompressor.Decompress(file.Data) : file.Data;
-            using MemoryStream ms = new(data);
-            StxSerializer.Deserialize(ms, out StxData stx);
-            loadedStxs.Add(file.Name.Replace(".stx", ""), stx);
+                byte[] data = file.IsCompressed ? SpcCompressor.Decompress(file.Data) : file.Data;
+                using MemoryStream ms = new(data);
+                StxSerializer.Deserialize(ms, out StxData stx);
+                loadedStxs.Add(file.Name.Replace(".stx", ""), stx);
+            }
         }
         
         // For each WRD file, generate a text output combining the opcodes in-line with the text, if applicable.
@@ -145,7 +148,7 @@ internal sealed class WrdMenu : IMenu
                             }
                             else
                             {
-                                throw new InvalidDataException( "Attempted to find a string value that does not exist. Something has gone horribly wrong here!");
+                                parsedArg = argValue.ToString();
                             }
                             // Escape newline characters and remove carriage returns.
                             parsedArg = parsedArg.Replace("\r", "").Replace("\n", "\\n");
