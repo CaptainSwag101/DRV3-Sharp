@@ -64,7 +64,7 @@ public static class WrdSerializer
             inputStream.Seek(stringsPtr, SeekOrigin.Begin);
             using BinaryReader stringReader = new(inputStream, Encoding.Unicode, true);
             internalStrings = new();
-            for (int i = 0; i < stringCount; ++i)
+            for (var i = 0; i < stringCount; ++i)
             {
                 internalStrings.Add(stringReader.ReadString());
                 _ = stringReader.ReadChar();    // Skip null terminator (Unicode)

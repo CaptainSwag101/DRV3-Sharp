@@ -155,6 +155,8 @@ internal sealed class WrdMenu : IMenu
                             {
                                 throw new InvalidDataException( "Attempted to find a string value that does not exist. Something has gone horribly wrong here!");
                             }
+                            // Escape newline characters and remove carriage returns.
+                            parsedArg = parsedArg.Replace("\r", "").Replace("\n", "\\n");
                             break;
                         case 3:
                             parsedArg = wrd.Labels[argValue];
