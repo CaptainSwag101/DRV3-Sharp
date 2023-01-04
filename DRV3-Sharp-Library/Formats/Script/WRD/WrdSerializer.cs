@@ -3,6 +3,7 @@ using System.Buffers.Binary;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace DRV3_Sharp_Library.Formats.Script.WRD;
@@ -49,12 +50,20 @@ public static class WrdSerializer
             _ = reader.ReadByte();  // Skip null terminator
         }
         
-        // Read local branch data
+        // Read local branch offsets
         inputStream.Seek(localBranchOffsetsPtr, SeekOrigin.Begin);
-        List<(ushort Index, ushort Offset)> localBranchData = new();
+        List<(ushort Index, ushort Offset)> localBranchOffsets = new();
         for (var i = 0; i < localBranchCount; ++i)
         {
-            localBranchData.Add((reader.ReadUInt16(), reader.ReadUInt16()));
+            localBranchOffsets.Add((reader.ReadUInt16(), reader.ReadUInt16()));
+        }
+        
+        // Read label offsets
+        inputStream.Seek(labelOffsetsPtr, SeekOrigin.Begin);
+        List<ushort> labelOffsets = new();
+        for (var i = 0; i < labelCount; ++i)
+        {
+            labelOffsets.Add(reader.ReadUInt16());
         }
         
         // Read internal dialogue strings, if any.
@@ -162,13 +171,84 @@ public static class WrdSerializer
         writer.Write((int)0);
         writer.Write((int)0);
         
+        // Write command data, keeping track of label offsets and local branch offsets.
+        var opcodeNames = WrdCommandConstants.CommandInfo.Keys.ToList();
+        List<(ushort Index, ushort Offset)> localBranchOffsets = new();
+        List<ushort> labelOffsets = new();
+        foreach (var command in inputData.Commands)
+        {
+            // Track position-related data for labels and local branches.
+            if (command.Name == "LBN")
+            {
+                // Offsets are relative to the start of command data.
+                localBranchOffsets.Add((command.Arguments[0], (ushort)(outputStream.Position - WRD_COMMAND_PTR)));
+            }
+            else if (command.Name == "LAB")
+            {
+                // Offsets are relative to the start of command data.
+                labelOffsets.Add((ushort)(outputStream.Position - WRD_COMMAND_PTR));
+            }
+            
+            // Write opcode data
+            writer.Write((byte)0x70);
+            writer.Write((byte)opcodeNames.IndexOf(command.Name));
+            
+            // Writer arguments data
+            foreach (ushort arg in command.Arguments)
+            {
+                writer.Write(BinaryPrimitives.ReverseEndianness(arg));
+            }
+        }
+        
+        // Write local branch indices + offsets
+        var localBranchOffsetsPtr = outputStream.Position;
+        foreach ((ushort index, ushort offset) in localBranchOffsets)
+        {
+            writer.Write(index);
+            writer.Write(offset);
+        }
+        
+        // Write label offsets
+        var labelOffsetsPtr = outputStream.Position;
+        foreach (ushort offset in labelOffsets)
+        {
+            writer.Write(offset);
+        }
+        
         // Write label names
-        var labelNamePtr = outputStream.Position;
+        var labelNamesPtr = outputStream.Position;
         foreach (string lblName in inputData.Labels)
         {
             writer.Write(lblName);
             writer.Write((byte)0);  // Null terminator
         }
         
+        // Write plaintext parameters
+        var parametersPtr = outputStream.Position;
+        foreach (string param in inputData.Parameters)
+        {
+            writer.Write(param);
+            writer.Write((byte)0);  // Null terminator
+        }
+
+        long stringsPtr = 0;
+        if (inputData.InternalStrings is not null)
+        {
+            stringsPtr = outputStream.Position;
+
+            foreach (string str in inputData.InternalStrings)
+            {
+                writer.Write(Encoding.Unicode.GetBytes(str));
+                writer.Write((ushort)0);    // Null terminator
+            }
+        }
+        
+        // Return to the header and write our now-computed pointers
+        outputStream.Seek(pointersWriteLocation, SeekOrigin.Begin);
+        writer.Write((uint)localBranchOffsetsPtr);
+        writer.Write((uint)labelOffsetsPtr);
+        writer.Write((uint)labelNamesPtr);
+        writer.Write((uint)parametersPtr);
+        writer.Write((uint)stringsPtr);
     }
 }
