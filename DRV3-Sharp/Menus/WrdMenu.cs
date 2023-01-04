@@ -213,44 +213,72 @@ internal sealed class WrdMenu : IMenu
 
             List<WrdCommand> commands = new();
             List<string> dialogue = new();
+            List<string> parameters = new();
+            List<string> labelNames = new();
 
-            // Strip leading and trailing arrow brackets.
-            for (var lineNum = 0; lineNum < lines.Length; ++lineNum)
+            // Iterate through each line in the file and parse a single WRD command from it.
+            foreach (var l in lines)
             {
-                lines[lineNum] = lines[lineNum].Trim('<').Trim('>');
+                // Skip empty lines.
+                if (string.IsNullOrWhiteSpace(l)) continue;
 
-                string[] splitLine = lines[lineNum].Split();
+                // Strip leading and trailing arrow brackets.
+                string line = l;
+                if (line.StartsWith('<')) line = line[1..];
+                if (line.EndsWith('>')) line = line[..^1];
 
-                if (splitLine.Length == 0) continue;
-
+                string[] splitLine = line.Split();
                 string opName = splitLine[0];
                 
                 // Determine the parameter count and type based on the opcode.
-                WrdCommand command;
-                if (opName == "LOC")
+                var info = WrdCommandConstants.CommandInfo[opName];
+
+                if (info is null) throw new InvalidDataException( $"There is no valid WRD command associated with the opcode {opName}.");
+
+                List<ushort> argIndices = new();
+                for (var argNum = 1; argNum < splitLine.Length; ++argNum)
                 {
-                    // Parse text lines specially.
-                    StringBuilder sb = new();
-                    sb.AppendJoin(' ', splitLine[1..splitLine.Length]);
-                    command = new(opName, new(){ dialogue.Count.ToString() });
-                    dialogue.Add(sb.ToString());
+                    // Append to the argIndices list first so that we don't need to subtract 1 from the respective counts each time.
+                    switch (info.ArgTypes?[argNum % info.ArgTypes.Length])
+                    {
+                        case 0:
+                            argIndices.Add((ushort)parameters.Count);
+                            parameters.Add(splitLine[argNum]);
+                            break;
+                        case 1:
+                            argIndices.Add(Convert.ToUInt16(splitLine[argNum]));
+                            break;
+                        case 2:
+                            argIndices.Add((ushort)dialogue.Count);
+                            // Parse text lines as a whole.
+                            StringBuilder sb = new();
+                            sb.AppendJoin(' ', splitLine[1..]);
+                            dialogue.Add(sb.ToString());
+                            // Forcibly set our iterator to the end to prevent adding a dialogue string for each space in the line.
+                            argNum = splitLine.Length;
+                            break;
+                        case 3:
+                            argIndices.Add((ushort)labelNames.Count);
+                            labelNames.Add(splitLine[argNum]);
+                            break;
+                        default:
+                            argIndices.Add((ushort)parameters.Count);
+                            parameters.Add(splitLine[argNum]);
+                            break;
+                    }
                 }
-                else
-                {
-                    command = new(opName, splitLine[1..splitLine.Length].ToList());
-                }
-                commands.Add(command);
+                commands.Add(new WrdCommand(opName, argIndices));
             }
 
             string genericName = txt.Name.Replace("_wrdExport.txt", "");
             if (useInternalStrings)
             {
-                WrdData wrd = new(commands, dialogue.Count > 0 ? dialogue : null);
+                WrdData wrd = new WrdData(commands, 0, parameters, labelNames, dialogue.Count > 0 ? dialogue : null);
                 parsedData.Add((genericName, wrd, null));
             }
             else
             {
-                WrdData wrd = new(commands, null);
+                WrdData wrd = new(commands, 0, parameters, labelNames, null);
                 StxData? stx = null;
                 if (dialogue.Count > 0) stx = new(new StringTable[] { new(0, dialogue.ToArray()) });
                 parsedData.Add((genericName, wrd, stx));
