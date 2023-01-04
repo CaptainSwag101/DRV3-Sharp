@@ -277,7 +277,7 @@ internal sealed class WrdMenu : IMenu
             {
                 WrdData wrd = new(commands, 0, parameters, labelNames, null);
                 StxData? stx = null;
-                if (dialogue.Count > 0) stx = new(new StringTable[] { new(0, dialogue.ToArray()) });
+                if (dialogue.Count > 0) stx = new(new StringTable[] { new(8, dialogue.ToArray()) });
                 parsedData.Add((genericName, wrd, stx));
             }
         }
