@@ -238,8 +238,9 @@ public static class WrdSerializer
 
             foreach (string str in inputData.InternalStrings)
             {
-                writer.Write(Encoding.Unicode.GetBytes(str));
-                writer.Write((ushort)0);    // Null terminator
+                using BinaryWriter stringWriter = new(outputStream, Encoding.Unicode, true);
+                stringWriter.Write(str);
+                stringWriter.Write((ushort)0);  // Null terminator
             }
         }
         
