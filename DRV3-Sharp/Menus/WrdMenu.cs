@@ -305,9 +305,15 @@ internal sealed class WrdMenu : IMenu
             WrdSerializer.Serialize(wrd, (ushort)stringCount, wrdDataStream);
             // Compress the data while storing the original size.
             byte[] wrdBytes = wrdDataStream.ToArray();
-            var wrdBytesLength = wrdBytes.Length;
-            wrdBytes = SpcCompressor.Compress(wrdBytes);
-            wrdSpcContents.Add(new(name + ".wrd", wrdBytes, 4, true, wrdBytesLength));
+            byte[] wrdBytesCompressed = SpcCompressor.Compress(wrdBytes);
+            if (wrdBytesCompressed.Length < wrdBytes.Length)
+            {
+                wrdSpcContents.Add(new(name + ".wrd", wrdBytesCompressed, 4, true, wrdBytes.Length));
+            }
+            else
+            {
+                wrdSpcContents.Add(new(name + ".wrd", wrdBytes, 4, false, wrdBytes.Length));
+            }
 
             if (stx is null || stringCount == 0) continue;
 
@@ -315,9 +321,15 @@ internal sealed class WrdMenu : IMenu
             StxSerializer.Serialize(stx, stxDataStream);
             // Compress the data while storing the original size.
             byte[] stxBytes = stxDataStream.ToArray();
-            var stxBytesLength = stxBytes.Length;
-            stxBytes = SpcCompressor.Compress(stxBytes);
-            stxSpcContents.Add(new(name + ".stx", stxBytes, 4, true, stxBytesLength));
+            byte[] stxBytesCompressed = SpcCompressor.Compress(stxBytes);
+            if (stxBytesCompressed.Length < stxBytes.Length)
+            {
+                stxSpcContents.Add(new(name + ".stx", stxBytesCompressed, 4, true, stxBytes.Length));
+            }
+            else
+            {
+                stxSpcContents.Add(new(name + ".stx", stxBytes, 4, false, stxBytes.Length));
+            }
         }
 
         // TODO: Write the output SPCs.
