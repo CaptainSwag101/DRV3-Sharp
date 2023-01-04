@@ -273,7 +273,7 @@ internal sealed class WrdMenu : IMenu
             string genericName = txt.Name.Replace("_wrdExport.txt", "");
             if (useInternalStrings)
             {
-                WrdData wrd = new WrdData(commands, 0, parameters, labelNames, dialogue.Count > 0 ? dialogue : null);
+                WrdData wrd = new(commands, 0, parameters, labelNames, dialogue.Count > 0 ? dialogue : null);
                 parsedData.Add((genericName, wrd, null));
             }
             else
