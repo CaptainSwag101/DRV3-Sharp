@@ -131,28 +131,41 @@ internal sealed class WrdMenu : IMenu
 
                 for (var i = 0; i < command.Arguments.Count; ++i)
                 {
-                    string parsedArg = WrdCommandConstants.CommandInfo
-                    // If the opcode is for text, insert the true text from external or internal strings.
-                    if (command.Name == "LOC")
+                    ushort argValue = command.Arguments[i];
+                    var commandInfo = WrdCommandConstants.CommandInfo[command.Name];
+                    string parsedArg;
+                    switch (commandInfo.ArgTypes?[i % commandInfo.ArgTypes.Length])
                     {
-                        var arg = command.Arguments[0];
-                        if (stx is not null)
-                        {
-                            commandSegments.Add(stx.Tables[0].Strings[arg]);
-                        }
-                        else if (wrd.InternalStrings is not null)
-                        {
-                            commandSegments.Add(wrd.InternalStrings[arg]);
-                        }
-                        else
-                        {
-                            commandSegments.Add(command.Arguments[0].ToString());
-                        }
+                        case 0:
+                            parsedArg = wrd.Parameters[argValue];
+                            break;
+                        case 1:
+                            parsedArg = argValue.ToString();
+                            break;
+                        case 2:
+                            if (stx is not null)
+                            {
+                                parsedArg = stx.Tables[0].Strings[argValue];
+                            }
+                            else if (wrd.InternalStrings is not null)
+                            {
+                                parsedArg = wrd.InternalStrings[argValue];
+                            }
+                            else
+                            {
+                                throw new InvalidDataException( "Attempted to find a string value that does not exist. Something has gone horribly wrong here!");
+                            }
+                            break;
+                        case 3:
+                            parsedArg = wrd.Labels[argValue];
+                            break;
+                        default:
+                            parsedArg = wrd.Parameters[argValue];
+                            break;
                     }
-                    else
-                    {
-                        commandSegments.AddRange(command.Arguments.Select(arg => arg.ToString()));
-                    }
+                    
+                    // Now add whatever the parsed data is to the command segments
+                    commandSegments.Add(parsedArg);
                 }
                 
                 commandBuilder.AppendJoin(' ', commandSegments);
