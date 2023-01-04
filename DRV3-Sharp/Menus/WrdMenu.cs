@@ -72,7 +72,8 @@ internal sealed class WrdMenu : IMenu
         Directory.CreateDirectory(outputFolderName);
         if (!textSpcFileInfo.Exists)
         {
-            Console.WriteLine("A matching text SPC archive was not found, aborting. Press ENTER to attempt reading anyway...");
+            Console.WriteLine("A matching text SPC archive was not found, unless you are working with the original PS4/Vita Japanese scripts,\n" +
+                              "this may be indicate a problem. Press ENTER to attempt reading anyway...");
             Console.ReadLine();
         }
         
