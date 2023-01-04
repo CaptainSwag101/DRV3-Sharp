@@ -75,6 +75,14 @@ public static class SrdSerializer
     {
         List<ISrdResource> outputResources = new();
 
+        foreach (var block in inputBlocks)
+        {
+            if (block is TxrBlock txr)
+            {
+                outputResources.Add(ResourceSerializer.DeserializeTexture(txr));
+            }
+        }
+
         return outputResources;
     }
 
