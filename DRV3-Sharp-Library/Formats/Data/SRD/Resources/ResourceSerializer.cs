@@ -17,6 +17,9 @@ internal static class ResourceSerializer
         // The RSI sub-block is critical because it contains the raw image data.
         if (txr.SubBlocks[0] is not RsiBlock rsi)
             throw new InvalidDataException("A TXR block within the SRD file did not have its expected RSI sub-block.");
+        
+        string outputName = rsi.ResourceStrings[0];
+        Console.WriteLine($"Processing texture {outputName}");
 
         // We plan to save all images as BMP for the time being. This may change, to match the original file format.
         Configuration config = new(new BmpConfigurationModule());
@@ -72,7 +75,7 @@ internal static class ResourceSerializer
                 case 0:
                 case 2:
                 case 6:
-                    Console.WriteLine("WARNING: This texture is swizzled, meaning it likely came from a console version of the game. These are not supported.");
+                    //Console.WriteLine("WARNING: This texture is swizzled, meaning it likely came from a console version of the game. These are not supported.");
 
                     /*
                     if (txr.Swizzle == 0 || txr.Swizzle == 6)   // PS4
@@ -90,7 +93,7 @@ internal static class ResourceSerializer
                         // TODO: blockSize is a placeholder and does not work with all images.
                         imageRawData = ResourceUtils.PS4UnSwizzle(imageRawData, mipWidth, mipHeight, 8);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         Console.WriteLine("Error de-swizzling texture, block size is probably wrong!");
                     }
@@ -163,7 +166,6 @@ internal static class ResourceSerializer
             outputImages.Add(currentMipmap);
         }
         
-        string outputName = rsi.ResourceStrings[0];
         return new TextureResource(outputName, outputImages);
     }
 }

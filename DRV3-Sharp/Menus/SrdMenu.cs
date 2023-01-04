@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 using DRV3_Sharp_Library.Formats.Data.SRD;
+using DRV3_Sharp_Library.Formats.Data.SRD.Resources;
+using SixLabors.ImageSharp.Formats.Bmp;
 
 namespace DRV3_Sharp.Menus;
 
 internal sealed class SrdMenu : IMenu
 {
-    private (string srdPath, SrdData data)? loadedData = null;
+    private SrdData? loadedData = null;
+    private FileInfo? loadedDataInfo = null;
     public string HeaderText => "You can choose from the following options:";
     public int FocusedEntry { get; set; }
 
@@ -26,7 +29,7 @@ internal sealed class SrdMenu : IMenu
             if (loadedData is not null)
             {
                 // Add loaded-data specific entries
-                
+                entries.Insert(1, new("Export Textures", "Export all texture resources within the resource data.", ExtractTextures));
             }
 
             return entries.ToArray();
@@ -45,6 +48,7 @@ internal sealed class SrdMenu : IMenu
         
         // TODO: Check with the user if there are existing loaded files before clearing the list
         loadedData = null;
+        loadedDataInfo = null;
         
         // Determine the expected paths of the accompanying SRDI and SRDV files.
         int lengthNoExtension = (fileInfo.FullName.Length - fileInfo.Extension.Length);
@@ -61,9 +65,29 @@ internal sealed class SrdMenu : IMenu
         
         // Deserialize the SRD data with available resource streams
         SrdSerializer.Deserialize(fs, srdi, srdv, out SrdData data);
-        loadedData = (fileInfo.FullName, data);
+        loadedData = data;
+        loadedDataInfo = fileInfo;
             
         Console.WriteLine($"Loaded the SRD file successfully. Press ENTER to continue...");
+        Console.ReadLine();
+    }
+
+    private void ExtractTextures()
+    {
+        if (loadedData is null || loadedDataInfo is null) return;
+
+        var successfulExports = 0;
+        foreach (var resource in loadedData!.Resources)
+        {
+            if (resource is not TextureResource texture) continue;
+            
+            string outputPath = Path.Combine(loadedDataInfo.DirectoryName!, texture.Name.Replace(".tga", ".bmp"));
+            using FileStream fs = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+            texture.ImageMipmaps[0].Save(fs, new BmpEncoder());
+            ++successfulExports;
+        }
+        
+        Console.WriteLine($"Exported {successfulExports} textures successfully. Press ENTER to continue...");
         Console.ReadLine();
     }
 
