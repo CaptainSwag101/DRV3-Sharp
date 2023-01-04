@@ -297,13 +297,31 @@ internal sealed class WrdMenu : IMenu
         // Generate the SPC data.
         List<ArchivedFile> wrdSpcContents = new();
         List<ArchivedFile> stxSpcContents = new();
-        foreach (var tuple in parsedData)
+        foreach ((string name, WrdData wrd, StxData? stx) in parsedData)
         {
             using MemoryStream wrdDataStream = new();
-            var stringCount = useInternalStrings ? tuple.Wrd.InternalStrings?.Count : tuple.Stx?.Tables[0].Strings.Length;
+            var stringCount = useInternalStrings ? wrd.InternalStrings?.Count : stx?.Tables[0].Strings.Length;
             stringCount ??= 0;
-            WrdSerializer.Serialize(tuple.Wrd, (ushort)stringCount, wrdDataStream);
+            WrdSerializer.Serialize(wrd, (ushort)stringCount, wrdDataStream);
+            // Compress the data while storing the original size.
+            byte[] wrdBytes = wrdDataStream.ToArray();
+            var wrdBytesLength = wrdBytes.Length;
+            wrdBytes = SpcCompressor.Compress(wrdBytes);
+            wrdSpcContents.Add(new(name + ".wrd", wrdBytes, 4, true, wrdBytesLength));
+
+            if (stx is null || stringCount == 0) continue;
+
+            using MemoryStream stxDataStream = new();
+            StxSerializer.Serialize(stx, stxDataStream);
+            // Compress the data while storing the original size.
+            byte[] stxBytes = stxDataStream.ToArray();
+            var stxBytesLength = stxBytes.Length;
+            stxBytes = SpcCompressor.Compress(stxBytes);
+            stxSpcContents.Add(new(name + ".stx", stxBytes, 4, true, stxBytesLength));
         }
+
+        // TODO: Write the output SPCs.
+        return;
     }
 
     private FileInfo GenerateTextSpcFileInfo(FileInfo wrdSpcFileInfo)
