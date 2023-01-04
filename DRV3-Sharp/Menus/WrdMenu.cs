@@ -238,17 +238,20 @@ internal sealed class WrdMenu : IMenu
                 if (info is null) throw new InvalidDataException( $"There is no valid WRD command associated with the opcode {opName}.");
 
                 List<ushort> argIndices = new();
-                for (var argNum = 1; argNum < splitLine.Length; ++argNum)
+                for (var argNum = 0; argNum < (splitLine.Length - 1); ++argNum)
                 {
+                    // The first index of splitLine is the opcode name, so we skip over that.
+                    string argString = splitLine[argNum + 1];
+                    
                     // Append to the argIndices list first so that we don't need to subtract 1 from the respective counts each time.
                     switch (info.ArgTypes?[argNum % info.ArgTypes.Length])
                     {
                         case 0:
                             argIndices.Add((ushort)parameters.Count);
-                            parameters.Add(splitLine[argNum]);
+                            parameters.Add(argString);
                             break;
                         case 1:
-                            argIndices.Add(Convert.ToUInt16(splitLine[argNum]));
+                            argIndices.Add(Convert.ToUInt16(argString));
                             break;
                         case 2:
                             argIndices.Add((ushort)dialogue.Count);
@@ -261,11 +264,11 @@ internal sealed class WrdMenu : IMenu
                             break;
                         case 3:
                             argIndices.Add((ushort)labelNames.Count);
-                            labelNames.Add(splitLine[argNum]);
+                            labelNames.Add(argString);
                             break;
                         default:
                             argIndices.Add((ushort)parameters.Count);
-                            parameters.Add(splitLine[argNum]);
+                            parameters.Add(argString);
                             break;
                     }
                 }
