@@ -242,28 +242,25 @@ internal sealed class WrdMenu : IMenu
                     switch (info.ArgTypes?[argNum % info.ArgTypes.Length])
                     {
                         case 0:
-                            argIndices.Add((ushort)parameters.Count);
-                            parameters.Add(argString);
+                            argIndices.Add((ushort)DeduplicateAndAddToList(ref parameters, argString));
                             break;
                         case 1:
                             argIndices.Add(Convert.ToUInt16(argString));
                             break;
                         case 2:
-                            argIndices.Add((ushort)dialogue.Count);
                             // Parse text lines as a whole.
                             StringBuilder sb = new();
                             sb.AppendJoin(' ', splitLine[1..]);
-                            dialogue.Add(sb.ToString());
+                            string dialogueString = sb.ToString().Replace("\\n", "\n");
+                            argIndices.Add((ushort)DeduplicateAndAddToList(ref dialogue, dialogueString));
                             // Forcibly set our iterator to the end to prevent adding a dialogue string for each space in the line.
                             argNum = splitLine.Length;
                             break;
                         case 3:
-                            argIndices.Add((ushort)labelNames.Count);
-                            labelNames.Add(argString);
+                            argIndices.Add((ushort)DeduplicateAndAddToList(ref labelNames, argString));
                             break;
                         default:
-                            argIndices.Add((ushort)parameters.Count);
-                            parameters.Add(argString);
+                            argIndices.Add((ushort)DeduplicateAndAddToList(ref parameters, argString));
                             break;
                     }
                 }
@@ -366,6 +363,19 @@ internal sealed class WrdMenu : IMenu
         textSpcBuilder.Append(wrdSpcFileInfo.Extension);
         // Finally build the output FileInfo based on the resultant string
         return new FileInfo(textSpcBuilder.ToString());
+    }
+
+    private int DeduplicateAndAddToList(ref List<string> list, string strToAdd)
+    {
+        // De-duplicate the list when possible
+        if (list.Contains(strToAdd))
+        {
+            return list.IndexOf(strToAdd);
+        }
+
+        int index = list.Count;
+        list.Add(strToAdd);
+        return index;
     }
 
     private void Help()
