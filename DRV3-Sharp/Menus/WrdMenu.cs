@@ -284,7 +284,7 @@ internal sealed class WrdMenu : IMenu
 
         // Generate the SPC file path(s).
         FileInfo wrdSpcFileInfo = new(directoryInfo.FullName + ".SPC");
-        FileInfo textSpcFileInfo = GenerateTextSpcFileInfo(wrdSpcFileInfo);
+        FileInfo stxSpcFileInfo = GenerateTextSpcFileInfo(wrdSpcFileInfo);
         
         // Generate the SPC data.
         List<ArchivedFile> wrdSpcContents = new();
@@ -323,9 +323,28 @@ internal sealed class WrdMenu : IMenu
                 stxSpcContents.Add(new(name + ".stx", stxBytes, 4, false, stxBytes.Length));
             }
         }
+        
+        // Generate the output SPCs.
+        SpcData wrdSpc = new(0, wrdSpcContents);
+        SpcData? stxSpc = null;
+        if (stxSpcContents.Count > 0)
+        {
+            stxSpc = new(0, stxSpcContents);
+        }
 
-        // TODO: Write the output SPCs.
-        return;
+        // Write the output SPCs.
+        using MemoryStream wrdSpcStream = new();
+        SpcSerializer.Serialize(wrdSpc, wrdSpcStream);
+        byte[] wrdSpcBytes = wrdSpcStream.ToArray();
+        File.WriteAllBytes(wrdSpcFileInfo.FullName, wrdSpcBytes);
+
+        if (stxSpc is not null)
+        {
+            using MemoryStream stxSpcStream = new();
+            SpcSerializer.Serialize(stxSpc, stxSpcStream);
+            byte[] stxSpcBytes = stxSpcStream.ToArray();
+            File.WriteAllBytes(stxSpcFileInfo.FullName, stxSpcBytes);
+        }
     }
 
     private FileInfo GenerateTextSpcFileInfo(FileInfo wrdSpcFileInfo)
