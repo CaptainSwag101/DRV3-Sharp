@@ -236,9 +236,9 @@ public static class WrdSerializer
         {
             stringsPtr = outputStream.Position;
 
+            using BinaryWriter stringWriter = new(outputStream, Encoding.Unicode, true);
             foreach (string str in inputData.InternalStrings)
             {
-                using BinaryWriter stringWriter = new(outputStream, Encoding.Unicode, true);
                 stringWriter.Write(str);
                 stringWriter.Write((ushort)0);  // Null terminator
             }
