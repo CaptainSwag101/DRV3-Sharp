@@ -1,8 +1,8 @@
 using System;
 using System.Buffers.Binary;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
-using System.Linq;
 using System.Text;
 
 namespace DRV3_Sharp_Library.Formats.Script.WRD;
@@ -82,8 +82,8 @@ public static class WrdSerializer
             if (b != 0x70) throw new InvalidDataException("The provided WRD command data did not start with hex 0x70.");
 
             byte op = reader.ReadByte();
-            var info = WrdCommandConstants.CommandInfo[op];
-            string opName = info.Name;  // Convert opcode name to string properly using internal names
+            var info = WrdCommandConstants.CommandInfo.Values.ToImmutableArray()[op];
+            string opName = WrdCommandConstants.CommandInfo.Keys.ToImmutableArray()[op];
             
             // Read arguments, two bytes at a time.
             List<ushort> args = new();
@@ -128,7 +128,7 @@ public static class WrdSerializer
         }
         
         // Finally, construct the output data.
-        outputData = new(commands, unknown, labelNames, parameters, internalStrings);
+        outputData = new WrdData(commands, unknown, parameters, labelNames, internalStrings);
     }
 
     public static void Serialize(WrdData inputData, ushort stringCount, MemoryStream outputStream)
@@ -139,7 +139,7 @@ public static class WrdSerializer
         ushort localBranchCount = 0;
         foreach (var command in inputData.Commands)
         {
-            var info = WrdCommandConstants.CommandInfo.First(c => c.Name == command.Name);
+            var info = WrdCommandConstants.CommandInfo[command.Name];
             if (info is null) throw new InvalidDataException($"The opcode {command.Name} is invalid.");
 
             if (command.Name == "LBN") ++localBranchCount;

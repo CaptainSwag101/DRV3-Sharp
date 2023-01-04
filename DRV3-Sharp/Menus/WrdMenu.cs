@@ -128,27 +128,31 @@ internal sealed class WrdMenu : IMenu
                 StringBuilder commandBuilder = new("<");
                 List<string> commandSegments = new(command.Arguments.Count + 1);
                 commandSegments.Add(command.Name);
-                
-                // If the opcode is for text, insert the true text from external or internal strings.
-                if (command.Name == "LOC")
+
+                for (var i = 0; i < command.Arguments.Count; ++i)
                 {
-                    var stringNum = command.Arguments[0];
-                    if (stx is not null)
+                    string parsedArg = WrdCommandConstants.CommandInfo
+                    // If the opcode is for text, insert the true text from external or internal strings.
+                    if (command.Name == "LOC")
                     {
-                        commandSegments.Add(stx.Tables[0].Strings[stringNum]);
-                    }
-                    else if (wrd.InternalStrings is not null)
-                    {
-                        commandSegments.Add(wrd.InternalStrings[stringNum]);
+                        var arg = command.Arguments[0];
+                        if (stx is not null)
+                        {
+                            commandSegments.Add(stx.Tables[0].Strings[arg]);
+                        }
+                        else if (wrd.InternalStrings is not null)
+                        {
+                            commandSegments.Add(wrd.InternalStrings[arg]);
+                        }
+                        else
+                        {
+                            commandSegments.Add(command.Arguments[0].ToString());
+                        }
                     }
                     else
                     {
-                        commandSegments.Add(command.Arguments[0].ToString());
+                        commandSegments.AddRange(command.Arguments.Select(arg => arg.ToString()));
                     }
-                }
-                else
-                {
-                    commandSegments.AddRange(command.Arguments.Select(arg => arg.ToString()));
                 }
                 
                 commandBuilder.AppendJoin(' ', commandSegments);
