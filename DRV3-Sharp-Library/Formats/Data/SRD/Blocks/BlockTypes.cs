@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks;
+namespace DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
 
 public sealed record CfhBlock(
         List<ISrdBlock> SubBlocks)

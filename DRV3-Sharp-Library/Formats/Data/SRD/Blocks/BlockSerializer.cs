@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace DRV3_Sharp_Library.Formats.Resource.SRD.Blocks;
+namespace DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
 
 internal static class BlockSerializer
 {

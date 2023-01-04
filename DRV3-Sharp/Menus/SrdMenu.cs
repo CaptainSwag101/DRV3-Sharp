@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using DRV3_Sharp_Library.Formats.Resource.SRD;
+using DRV3_Sharp_Library.Formats.Data.SRD;
 
 namespace DRV3_Sharp.Menus;
 

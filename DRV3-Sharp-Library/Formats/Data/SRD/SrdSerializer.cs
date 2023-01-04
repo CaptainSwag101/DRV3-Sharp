@@ -3,26 +3,29 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using DRV3_Sharp_Library.Formats.Resource.SRD.Blocks;
+using DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
+using DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 
-namespace DRV3_Sharp_Library.Formats.Resource.SRD;
+namespace DRV3_Sharp_Library.Formats.Data.SRD;
 
 public static class SrdSerializer
 {
     public static void Deserialize(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv, out SrdData outputData)
     {
-        // Read through the SRD stream and deserialize all blocks
+        // Pass 1: Read through the SRD stream and deserialize all blocks.
         List<ISrdBlock> blocks = new();
         while (inputSrd.Position < inputSrd.Length)
         {
-            DeserializeBlock(inputSrd, inputSrdi, inputSrdv, out var currentBlock);
-            blocks.Add(currentBlock);
+            blocks.Add(DeserializeBlock(inputSrd, inputSrdi, inputSrdv));
         }
+        
+        // Pass 2: Read through the block list and deserialize resources from their contents.
+        var resources = DeserializeResources(blocks);
 
-        outputData = new(blocks);
+        outputData = new(resources);
     }
 
-    private static void DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv, out ISrdBlock outputBlock)
+    private static ISrdBlock DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv)
     {
         using BinaryReader srdReader = new(inputSrd, Encoding.ASCII, true);
 
@@ -46,7 +49,7 @@ public static class SrdSerializer
         }
 
         // Read and parse main block data
-        outputBlock = blockType switch
+        ISrdBlock outputBlock = blockType switch
         {
             "$CFH" => new CfhBlock(new()),
             "$RSF" => BlockSerializer.DeserializeRsfBlock(mainDataStream),
@@ -58,20 +61,32 @@ public static class SrdSerializer
         // If there is any sub-block data, parse it too.
         while (subDataStream is not null && subDataStream.Position < subDataLength)
         {
-            DeserializeBlock(subDataStream, inputSrdi, inputSrdv, out var subBlock);
-            outputBlock.SubBlocks.Add(subBlock);
+            outputBlock.SubBlocks.Add(DeserializeBlock(subDataStream, inputSrdi, inputSrdv));
         }
         
         // Clean up
         subDataStream?.Dispose();
         mainDataStream.Dispose();
+
+        return outputBlock;
+    }
+
+    private static List<ISrdResource> DeserializeResources(List<ISrdBlock> inputBlocks)
+    {
+        List<ISrdResource> outputResources = new();
+
+        return outputResources;
     }
 
     public static void Serialize(SrdData inputData, Stream outputSrd, Stream outputSrdi, Stream outputSrdv)
     {
+        // Pass 1: Serialize resources into blocks
+        List<ISrdBlock> blocks = SerializeResources(inputData);
+        
+        // Pass 2: Serialize blocks into data and raw binary chunks.
         // Remember to check if outputSrdi and outputSrdv exist for each block,
         // and create it if it is needed and doesn't already exist.
-        foreach (var block in inputData.Blocks)
+        foreach (var block in blocks)
         {
             SerializeBlock(block, outputSrd, outputSrdi, outputSrdv);
         }
@@ -146,5 +161,12 @@ public static class SrdSerializer
         // Dispose of our memory streams
         subDataStream.Dispose();
         mainDataStream.Dispose();
+    }
+
+    private static List<ISrdBlock> SerializeResources(SrdData inputData)
+    {
+        List<ISrdBlock> outputBlocks = new();
+
+        return outputBlocks;
     }
 }
