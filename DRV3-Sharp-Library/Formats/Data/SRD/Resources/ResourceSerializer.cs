@@ -114,7 +114,7 @@ internal static class ResourceSerializer
             
             // Use Scarlet to convert the raw pixel data into something we can actually use.
             ScarletImage scarletImageBinary = new(mipWidth, mipHeight, pixelFormat, imageRawData.ToArray());
-            byte[] convertedPixelData = scarletImageBinary.GetOutputPixelData(0);
+            var convertedPixelData = new ReadOnlySpan<byte>(scarletImageBinary.GetOutputPixelData(0));
             Image<Rgba32> currentMipmap = new(config, mipWidth, mipHeight);
             for (var y = 0; y < mipHeight; ++y)
             {
@@ -137,12 +137,11 @@ internal static class ResourceSerializer
                     {
                         int pixelDataOffset = ((y * mipWidth) + x) * 4;
 
-                        byte[] pixelData = new byte[4];
-                        Array.Copy(convertedPixelData, pixelDataOffset, pixelData, 0, 4);
-                        pixelColor.B = pixelData[0];
-                        pixelColor.G = pixelData[1];
-                        pixelColor.R = pixelData[2];
-                        pixelColor.A = pixelData[3];
+                        var pixelBytes = convertedPixelData[pixelDataOffset..(pixelDataOffset + 4)];
+                        pixelColor.B = pixelBytes[0];
+                        pixelColor.G = pixelBytes[1];
+                        pixelColor.R = pixelBytes[2];
+                        pixelColor.A = pixelBytes[3];
 
                         // Perform fixups depending on the output data format
                         if (pixelFormat == PixelDataFormat.FormatRGTC2)
