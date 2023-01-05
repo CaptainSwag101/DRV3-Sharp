@@ -91,8 +91,7 @@ internal static class BlockSerializer
                     srdi.Seek(address, SeekOrigin.Begin);
 
                     using BinaryReader srdiReader = new(srdi, Encoding.ASCII, true);
-                    byte[] data = srdiReader.ReadBytes(info.Length);
-                    externalResources.Add(new(location, data, info.Unknown1, info.Unknown2));
+                    externalResources.Add(new(location, srdiReader.ReadBytes(info.Length), info.Unknown1, info.Unknown2));
                     break;
                 }
                 case ResourceDataLocation.Srdv when srdv == null:
@@ -102,8 +101,7 @@ internal static class BlockSerializer
                     srdv.Seek(address, SeekOrigin.Begin);
 
                     using BinaryReader srdvReader = new(srdv, Encoding.ASCII, true);
-                    byte[] data = srdvReader.ReadBytes(info.Length);
-                    externalResources.Add(new(location, data, info.Unknown1, info.Unknown2));
+                    externalResources.Add(new(location, srdvReader.ReadBytes(info.Length), info.Unknown1, info.Unknown2));
                     break;
                 }
                 default:
@@ -127,8 +125,7 @@ internal static class BlockSerializer
             reader.BaseStream.Seek(info.Address1, SeekOrigin.Begin);
             string name = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
             reader.BaseStream.Seek(info.Address2, SeekOrigin.Begin);
-            byte[] data = reader.ReadBytes(info.Length);
-            localResources.Add(new(name, data, info.Unknown));
+            localResources.Add(new(name, reader.ReadBytes(info.Length), info.Unknown));
         }
 
         // Read unknown int list
