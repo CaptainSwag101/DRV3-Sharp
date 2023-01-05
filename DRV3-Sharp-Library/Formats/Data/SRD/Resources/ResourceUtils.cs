@@ -36,24 +36,24 @@ internal static class ResourceUtils
         return num7 * sx + num6;
     }
 
-    public static byte[] PS4Swizzle(byte[] data, int width, int height, int blockSize)
+    public static Span<byte> PS4Swizzle(ReadOnlySpan<byte> data, int width, int height, int blockSize)
     {
         return DoSwizzle(data, width, height, blockSize, false);
     }
 
-    public static byte[] PS4UnSwizzle(byte[] data, int width, int height, int blockSize)
+    public static Span<byte> PS4UnSwizzle(ReadOnlySpan<byte> data, int width, int height, int blockSize)
     {
         return DoSwizzle(data, width, height, blockSize, true);
     }
 
-    private static byte[] DoSwizzle(byte[] data, int width, int height, int blockSize, bool unswizzle)
+    private static Span<byte> DoSwizzle(ReadOnlySpan<byte> data, int width, int height, int blockSize, bool unswizzle)
     {
         // This corrects the dimensions in the case of textures whose size isn't a power of two
         // (or more precisely, an even multiple of 4).
         width = Utils.NearestMultipleOf(width, 4);
         height = Utils.NearestMultipleOf(height, 4);
 
-        var processed = new byte[data.Length];
+        var processed = new Span<byte>(new byte[data.Length]);
         var heightTexels = height / 4;
         var heightTexelsAligned = (heightTexels + 7) / 8;
         int widthTexels = width / 4;
@@ -77,10 +77,8 @@ internal static class ResourceUtils
                         var destPixelIndex = yOffset * widthTexels + xOffset;
                         int destIndex = blockSize * destPixelIndex;
 
-                        if (unswizzle)
-                            Array.Copy(data, dataIndex, processed, destIndex, blockSize);
-                        else
-                            Array.Copy(data, destIndex, processed, dataIndex, blockSize);
+                        ReadOnlySpan<byte> chunk = data[dataIndex..(dataIndex+blockSize)];
+                        chunk.CopyTo(processed[destIndex..(destIndex+blockSize)]);
                     }
 
                     dataIndex += blockSize;

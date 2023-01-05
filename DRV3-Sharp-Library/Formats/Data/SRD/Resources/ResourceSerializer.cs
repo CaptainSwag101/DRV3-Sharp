@@ -38,7 +38,7 @@ internal static class ResourceSerializer
         for (var m = 0; m < (false ? rsi.ExternalResources.Count : 1); ++m)
         {
             var imageResourceInfo = rsi.ExternalResources[m];
-            byte[] imageRawData = imageResourceInfo.Data;
+            Span<byte> imageRawData = imageResourceInfo.Data;
 
             int sourceWidth = txr.Width;
             int sourceHeight = txr.Height;
@@ -113,7 +113,7 @@ internal static class ResourceSerializer
             }
             
             // Use Scarlet to convert the raw pixel data into something we can actually use.
-            ScarletImage scarletImageBinary = new(mipWidth, mipHeight, pixelFormat, imageRawData);
+            ScarletImage scarletImageBinary = new(mipWidth, mipHeight, pixelFormat, imageRawData.ToArray());
             byte[] convertedPixelData = scarletImageBinary.GetOutputPixelData(0);
             Image<Rgba32> currentMipmap = new(config, mipWidth, mipHeight);
             for (var y = 0; y < mipHeight; ++y)
