@@ -43,8 +43,8 @@ internal static class BlockSerializer
         return mem.ToArray();
     }
     
-    private sealed record ExternalResourceInfo(int Address, int Length, int Unknown1, int Unknown2);
-    private sealed record LocalResourceInfo(int Address1, int Address2, int Length, int Unknown);
+    private sealed record ExternalResourceInfo(int Pointer, int Length, int Unknown1, int Unknown2);
+    private sealed record LocalResourceInfo(int NamePointer, int DataPointer, int Length, int Unknown);
     public static RsiBlock DeserializeRsiBlock(MemoryStream mainStream, Stream? srdi, Stream? srdv)
     {
         using BinaryReader reader = new(mainStream);
@@ -79,8 +79,8 @@ internal static class BlockSerializer
         foreach (var info in externalResourceInfo)
         {
             // Determine resource data location
-            var location = (ResourceDataLocation)(info.Address & 0xF0000000);
-            int address = info.Address & 0x0FFFFFFF;
+            var location = (ResourceDataLocation)(info.Pointer & 0xF0000000);
+            int address = info.Pointer & 0x0FFFFFFF;
 
             switch (location)
             {
@@ -105,7 +105,7 @@ internal static class BlockSerializer
                     break;
                 }
                 default:
-                    throw new NotImplementedException($"There is no corresponding location for an address of {info.Address:X8}");
+                    throw new InvalidDataException($"There is no corresponding location for an address of {info.Pointer:X8}");
             }
         }
 
@@ -122,9 +122,9 @@ internal static class BlockSerializer
         List<LocalResource> localResources = new();
         foreach (LocalResourceInfo info in localResourceInfo)
         {
-            reader.BaseStream.Seek(info.Address1, SeekOrigin.Begin);
+            reader.BaseStream.Seek(info.NamePointer, SeekOrigin.Begin);
             string name = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
-            reader.BaseStream.Seek(info.Address2, SeekOrigin.Begin);
+            reader.BaseStream.Seek(info.DataPointer, SeekOrigin.Begin);
             localResources.Add(new(name, reader.ReadBytes(info.Length), info.Unknown));
         }
 
@@ -158,17 +158,16 @@ internal static class BlockSerializer
         using BinaryWriter mainWriter = new(mainMem, Encoding.ASCII);
 
         // Write external resource data and info
-        List<ExternalResourceInfo> extResourceInfo = new();
+        List<ExternalResourceInfo> externalResourceInfo = new();
         foreach (var externalResource in rsi.ExternalResources)
         {
             int address;
-            var locationEnum = (ResourceDataLocation)externalResource.Location;
-            if (locationEnum == ResourceDataLocation.Srdi)
+            if (externalResource.Location == ResourceDataLocation.Srdi)
             {
                 address = (int)srdiMem.Position | (int)externalResource.Location;
                 srdiMem.Write(externalResource.Data);
             }
-            else if (locationEnum == ResourceDataLocation.Srdv)
+            else if (externalResource.Location == ResourceDataLocation.Srdv)
             {
                 address = (int)srdvMem.Position | (int)externalResource.Location;
                 srdvMem.Write(externalResource.Data);
@@ -176,16 +175,29 @@ internal static class BlockSerializer
             else
                 throw new InvalidDataException($"No defined ExternalResourceLocation for value {externalResource.Location:X8}");
 
-            extResourceInfo.Add(new(address, externalResource.Data.Length, externalResource.UnknownValue1, externalResource.UnknownValue2));
+            externalResourceInfo.Add(new(address, externalResource.Data.Length, externalResource.UnknownValue1, externalResource.UnknownValue2));
         }
 
-        // Write local resource data and info (using placeholder addresses)
-        List<LocalResourceInfo> locResourceInfo = new();
-        using BinaryWriter localResourceDataWriter = new(new MemoryStream());
+        // Write local resource data and info.
+        // We use placeholder addresses to be offset by our localResourceData's final position within the block data.
+        List<LocalResourceInfo> localResourceInfo = new();
+        using MemoryStream localResourceDataStream = new();
+        using MemoryStream localResourceNameStream = new();
+        using BinaryWriter localResourceDataWriter = new(localResourceDataStream);
+        using BinaryWriter localResourceNameWriter = new(localResourceNameStream);
+        int localResourceDataSize = 0;
         foreach (var localResource in rsi.LocalResources)
         {
-            // TODO: Do stuff here
-            throw new NotImplementedException();
+            int nameAddressToBeOffset = (int)localResourceNameWriter.BaseStream.Position;
+            int dataAddressToBeOffset = (int)localResourceDataWriter.BaseStream.Position;
+            localResourceInfo.Add(new(nameAddressToBeOffset, dataAddressToBeOffset, localResource.Data.Length, -1));
+            
+            localResourceNameWriter.Write(Encoding.ASCII.GetBytes(localResource.Name));
+            localResourceNameWriter.Write((byte)0); // Null terminator
+            
+            localResourceDataWriter.Write(localResource.Data);
+
+            localResourceDataSize += localResource.Data.Length;
         }
 
         // Write unknown int list
@@ -198,7 +210,7 @@ internal static class BlockSerializer
             }
         }
 
-        // Finally, write everything in its final order
+        // Finally, start writing the output, beginning with the header.
         if (unknownIntWriter.BaseStream.Length > 0)
         {
             mainWriter.Write((byte)4);
@@ -214,9 +226,47 @@ internal static class BlockSerializer
         mainWriter.Write(rsi.Unknown06);
 
         // Write ExternalResourceInfo
-        using BinaryWriter externalResourceInfoWriter = new(new MemoryStream());
+        foreach (var externResource in externalResourceInfo)
+        {
+            mainWriter.Write(externResource.Pointer);
+            mainWriter.Write(externResource.Length);
+            mainWriter.Write(externResource.Unknown1);
+            mainWriter.Write(externResource.Unknown2);
+        }
+        
+        // Write LocalResourceInfo
+        var localResourceInfoSize = localResourceInfo.Count * 4 * sizeof(int);
+        int localResourceDataOffset = (int)mainWriter.BaseStream.Position + localResourceInfoSize + (rsi.UnknownIntList.Count * sizeof(int));
+        int localResourceNameOffset = localResourceDataOffset + localResourceDataSize;
+        foreach (var localResource in localResourceInfo)
+        {
+            mainWriter.Write(localResource.NamePointer + localResourceNameOffset);
+            mainWriter.Write(localResource.DataPointer + localResourceDataOffset);
+            mainWriter.Write(localResource.Length);
+            mainWriter.Write(localResource.Unknown);
+        }
+        
+        // Write unknown int list
+        foreach (int i in rsi.UnknownIntList)
+        {
+            mainWriter.Write(i);
+        }
+        
+        // Write local resource data
+        mainWriter.Write(localResourceDataStream.ToArray());
+        
+        // Write local resource names
+        mainWriter.Write(localResourceNameStream.ToArray());
+        
+        // Write resource strings
+        foreach (string str in rsi.ResourceStrings)
+        {
+            mainWriter.Write(Encoding.ASCII.GetBytes(str));
+            mainWriter.Write((byte)0);  // Null terminator
+        }
 
-        throw new NotImplementedException();
+        // Return only the memory streams that were populated with actual data.
+        return (mainMem.ToArray(), srdiMem.Length == 0 ? srdiMem.ToArray() : null, srdvMem.Length == 0 ? srdvMem.ToArray() : null);
     }
 
     public static TxrBlock DeserializeTxrBlock(MemoryStream mainStream)
