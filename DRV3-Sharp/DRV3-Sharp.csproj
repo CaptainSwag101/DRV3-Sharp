@@ -1,0 +1,66 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>DRV3_Sharp</RootNamespace>
+    <Nullable>enable</Nullable>
+    <StartupObject>DRV3_Sharp.Program</StartupObject>
+    <ProduceReferenceAssembly>False</ProduceReferenceAssembly>
+    <Version>3.0.0-alpha2</Version>
+    <AssemblyVersion>3.0.0.0</AssemblyVersion>
+    <FileVersion>3.0.0.0</FileVersion>
+    <PackageLicenseFile>D:\jpmac\Documents\GitHub\DRV3-Sharp\LICENSE.txt</PackageLicenseFile>
+    <RunPostBuildEvent>Always</RunPostBuildEvent>
+    <LangVersion>default</LangVersion>
+    <Authors>CaptainSwag101</Authors>
+    <Company>CaptainSwag101</Company>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\_Build\Debug</OutputPath>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\_Build\Release</OutputPath>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CheckForOverflowUnderflow>True</CheckForOverflowUnderflow>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DRV3-Sharp-Library\DRV3-Sharp-Library.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Scarlet">
+      <HintPath>..\dependencies\Scarlet.dll</HintPath>
+    </Reference>
+    <Reference Include="Scarlet.IO.CompressionFormats">
+      <HintPath>..\dependencies\Scarlet.IO.CompressionFormats.dll</HintPath>
+    </Reference>
+    <Reference Include="Scarlet.IO.ContainerFormats">
+      <HintPath>..\dependencies\Scarlet.IO.ContainerFormats.dll</HintPath>
+    </Reference>
+    <Reference Include="Scarlet.IO.ImageFormats">
+      <HintPath>..\dependencies\Scarlet.IO.ImageFormats.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="CreateVersionInfoFile" AfterTargets="PostBuildEvent">
+    <Exec Command="git rev-parse HEAD &gt; $(OutDir)/VERSION_INFO.txt&#xD;&#xA;echo v$(Version) Configuration: $(Configuration), $(Platform) &gt;&gt; $(OutDir)/VERSION_INFO.txt" />
+  </Target>
+</Project>

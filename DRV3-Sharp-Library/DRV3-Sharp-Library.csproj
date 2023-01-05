@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>DRV3_Sharp_Library</RootNamespace>
+    <Nullable>enable</Nullable>
+    <Version>$(VersionPrefix)3.0.0-alpha2</Version>
+    <PackageLicenseFile>D:\jpmac\Documents\GitHub\DRV3-Sharp\LICENSE.txt</PackageLicenseFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SixLabors.ImageSharp" Version="2.1.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Scarlet">
+      <HintPath>..\dependencies\Scarlet.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+</Project>
