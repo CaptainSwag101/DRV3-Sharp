@@ -308,6 +308,9 @@ internal static class BlockSerializer
     {
         using BinaryReader reader = new(mainStream);
 
+        // NOTE: Quite a few of the data elements in this block are as-yet unknown and existing
+        // elements may have been interpreted incorrectly or configured based on mistaken
+        // assumptions. The contents and structure of this block is subject to change.
         int vectorCount = reader.ReadInt32();
         short unknown04 = reader.ReadInt16();
         short meshType = reader.ReadInt16();
