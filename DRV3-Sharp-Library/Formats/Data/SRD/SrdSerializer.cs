@@ -22,12 +22,12 @@ public static class SrdSerializer
         }
         
         // Pass 2: Read through the block list and deserialize resources from their contents.
-        var resources = DeserializeResources(blocks);
+        var resources = DeserializeResources(blocks).Result;
         
         // (To be added later) Pass 3: Build higher-level data structures from resources,
         // such as 3D models, etc.
 
-        outputData = new(resources.Result);
+        outputData = new(resources);
     }
 
     private static ISrdBlock DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv)
