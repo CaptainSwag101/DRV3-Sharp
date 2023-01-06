@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
 using DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 
@@ -25,7 +27,7 @@ public static class SrdSerializer
         // (To be added later) Pass 3: Build higher-level data structures from resources,
         // such as 3D models, etc.
 
-        outputData = new(resources);
+        outputData = new(resources.Result);
     }
 
     private static ISrdBlock DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv)
@@ -74,19 +76,19 @@ public static class SrdSerializer
         return outputBlock;
     }
 
-    private static List<ISrdResource> DeserializeResources(List<ISrdBlock> inputBlocks)
+    private static async Task<List<ISrdResource>> DeserializeResources(List<ISrdBlock> inputBlocks)
     {
-        List<ISrdResource> outputResources = new();
-
+        List<Task<ISrdResource>> resourceTasks = new();
         foreach (var block in inputBlocks)
         {
             if (block is TxrBlock txr)
             {
-                outputResources.Add(ResourceSerializer.DeserializeTexture(txr));
+                resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeTexture(txr)));
             }
         }
+        var outputResources = await Task.WhenAll(resourceTasks);
 
-        return outputResources;
+        return outputResources.ToList();
     }
 
     public static void Serialize(SrdData inputData, Stream outputSrd, Stream outputSrdi, Stream outputSrdv)

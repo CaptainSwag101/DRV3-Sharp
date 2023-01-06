@@ -12,7 +12,7 @@ namespace DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 
 internal static class ResourceSerializer
 {
-    public static TextureResource DeserializeTexture(TxrBlock txr)
+    public static ISrdResource DeserializeTexture(TxrBlock txr)
     {
         // The RSI sub-block is critical because it contains the raw image data.
         if (txr.SubBlocks[0] is not RsiBlock rsi)

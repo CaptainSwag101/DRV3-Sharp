@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using DRV3_Sharp_Library.Formats.Data.SRD;
 using DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 using SixLabors.ImageSharp.Formats.Bmp;
@@ -72,7 +73,7 @@ internal sealed class SrdMenu : IMenu
         Console.ReadLine();
     }
 
-    private void ExtractTextures()
+    private async void ExtractTextures()
     {
         if (loadedData is null || loadedDataInfo is null) return;
 
@@ -82,8 +83,8 @@ internal sealed class SrdMenu : IMenu
             if (resource is not TextureResource texture) continue;
             
             string outputPath = Path.Combine(loadedDataInfo.DirectoryName!, texture.Name.Replace(".tga", ".bmp"));
-            using FileStream fs = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            texture.ImageMipmaps[0].Save(fs, new BmpEncoder());
+            await using FileStream fs = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+            await texture.ImageMipmaps[0].SaveAsync(fs, new BmpEncoder());
             ++successfulExports;
         }
         
