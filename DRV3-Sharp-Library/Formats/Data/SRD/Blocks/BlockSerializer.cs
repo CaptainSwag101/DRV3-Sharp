@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Numerics;
 using System.Text;
 
 namespace DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
@@ -147,8 +148,8 @@ internal static class BlockSerializer
             resourceStrings.Add(Utils.ReadNullTerminatedString(reader, Encoding.GetEncoding("shift-jis")));
         }
 
-        return new RsiBlock(unknown00, unknown01, unknown02, unknown06, localResources, externalResources, unknownInts,
-            resourceStrings, new());
+        return new RsiBlock(unknown00, unknown01, unknown02, unknown06, localResources, externalResources,
+            resourceStrings, unknownInts, new());
     }
     public static (byte[] main, byte[]? srdi, byte[]? srdv) SerializeRsiBlock(RsiBlock rsi)
     {
@@ -283,7 +284,7 @@ internal static class BlockSerializer
         byte palette = reader.ReadByte();
         byte paletteId = reader.ReadByte();
 
-        return new TxrBlock(unknown00, swizzle, width, height, scanline, format, unknown0D, palette, paletteId, new());
+        return new TxrBlock(unknown00, unknown0D, swizzle, width, height, scanline, format, palette, paletteId, new());
     }
     public static byte[] SerializeTxrBlock(TxrBlock txr)
     {
@@ -301,5 +302,76 @@ internal static class BlockSerializer
         writer.Write(txr.PaletteID);
         
         return mem.ToArray();
+    }
+
+    public static VtxBlock DeserializeVtxBlock(MemoryStream mainStream)
+    {
+        using BinaryReader reader = new(mainStream);
+
+        int vectorCount = reader.ReadInt32();
+        short unknown04 = reader.ReadInt16();
+        short meshType = reader.ReadInt16();
+        int vertexCount = reader.ReadInt32();
+        short unknown0C = reader.ReadInt16();
+        byte unknown0E = reader.ReadByte();
+        byte vertexSubBlockCount = reader.ReadByte();
+        ushort boneRootPtr = reader.ReadUInt16();
+        ushort vertexSectionInfoPtr = reader.ReadUInt16();
+        ushort unknownVectorListPtr = reader.ReadUInt16();
+        ushort boneListPtr = reader.ReadUInt16();
+        uint unknown18 = reader.ReadUInt32();
+        Utils.SkipToNearest(reader, 16);
+        
+        // Read unknown short list
+        List<short> unknownShorts = new();
+        while ((mainStream.Position + 1) < vertexSectionInfoPtr)
+        {
+            unknownShorts.Add(reader.ReadInt16());
+        }
+        
+        // Read vertex section info
+        mainStream.Seek(vertexSectionInfoPtr, SeekOrigin.Begin);
+        List<(uint Start, uint Size)> vertexSectionInfo = new();
+        for (var s = 0; s < vertexSubBlockCount; ++s)
+        {
+            vertexSectionInfo.Add((reader.ReadUInt32(), reader.ReadUInt32()));
+        }
+        
+        // Read bone root and list
+        mainStream.Seek(boneRootPtr, SeekOrigin.Begin);
+        short boneRoot = reader.ReadInt16();
+
+        if (boneListPtr != 0) mainStream.Seek(boneListPtr, SeekOrigin.Begin);
+
+        List<string> boneList = new();
+        while (mainStream.Position < unknownVectorListPtr)
+        {
+            // This data structure is a list of 16-bit name offsets, followed by a list of strings.
+            ushort boneNameOffset = reader.ReadUInt16();
+            if (boneNameOffset == 0) break; // A zero offset indicates the end of the list.
+
+            // Seek to and read the bone name, then return to the offset list.
+            var returnPos = mainStream.Position;
+            mainStream.Seek(boneNameOffset, SeekOrigin.Begin);
+            boneList.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
+            mainStream.Seek(returnPos, SeekOrigin.Begin);
+        }
+        
+        // Read the unknown list of floats (vector3's???)
+        mainStream.Seek(unknownVectorListPtr, SeekOrigin.Begin);
+        List<Vector3> unknownVectors = new();
+        for (var h = 0; h < (vectorCount / 2); ++h)
+        {
+            Vector3 vector = new()
+            {
+                X = reader.ReadSingle(),
+                Y = reader.ReadSingle(),
+                Z = reader.ReadSingle()
+            };
+            unknownVectors.Add(vector);
+        }
+
+        return new VtxBlock(unknown04, unknown0C, unknown0E, unknown18, meshType, vertexCount, vertexSectionInfo, boneRoot, boneList,
+            unknownShorts, unknownVectors, new());
     }
 }

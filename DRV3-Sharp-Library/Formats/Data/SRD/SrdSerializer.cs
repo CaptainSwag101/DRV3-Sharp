@@ -60,6 +60,7 @@ public static class SrdSerializer
             "$RSF" => BlockSerializer.DeserializeRsfBlock(mainDataStream),
             "$RSI" => BlockSerializer.DeserializeRsiBlock(mainDataStream, inputSrdi, inputSrdv),
             "$TXR" => BlockSerializer.DeserializeTxrBlock(mainDataStream),
+            "$VTX" => BlockSerializer.DeserializeVtxBlock(mainDataStream),
             _ => BlockSerializer.DeserializeUnknownBlock(blockType, mainDataStream),
         };
         

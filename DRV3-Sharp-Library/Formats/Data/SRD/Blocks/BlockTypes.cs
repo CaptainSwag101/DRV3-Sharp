@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Numerics;
 
 namespace DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
 
@@ -23,8 +24,8 @@ public sealed record RsiBlock(
         byte Unknown00, byte Unknown01, sbyte Unknown02, short Unknown06,
         List<LocalResource> LocalResources,
         List<ExternalResource> ExternalResources,
-        List<int> UnknownIntList,
         List<string> ResourceStrings,
+        List<int> UnknownIntList,
         List<ISrdBlock> SubBlocks)
     : ISrdBlock;
 
@@ -42,12 +43,23 @@ public enum TextureFormat
     BPTC        = 0x1C
 }
 public sealed record TxrBlock(
-        int Unknown00,
+        int Unknown00, byte Unknown0D,
         ushort Swizzle, ushort Width, ushort Height, ushort Scanline,
         TextureFormat Format,
-        byte Unknown0D,
         byte Palette, byte PaletteID,
         List<ISrdBlock> SubBlocks)
+    : ISrdBlock;
+
+public sealed record VtxBlock(
+        short Unknown04, short Unknown0C, byte Unknown0E, uint Unknown18,
+        short MeshType,
+        int VertexCount,
+        List<(uint Start, uint Size)> VertexSectionInfo,
+        short RootBoneID,
+        List<string> BoneList,
+        List<short> UnknownShorts,
+        List<Vector3> UnknownVectors,
+        List<ISrdBlock> SubBlocks) 
     : ISrdBlock;
 
 public sealed record UnknownBlock(
