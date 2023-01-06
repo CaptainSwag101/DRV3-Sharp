@@ -21,6 +21,9 @@ public static class SrdSerializer
         
         // Pass 2: Read through the block list and deserialize resources from their contents.
         var resources = DeserializeResources(blocks);
+        
+        // (To be added later) Pass 3: Build higher-level data structures from resources,
+        // such as 3D models, etc.
 
         outputData = new(resources);
     }
