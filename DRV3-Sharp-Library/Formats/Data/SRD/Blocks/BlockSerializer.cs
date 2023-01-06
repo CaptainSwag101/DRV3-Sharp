@@ -314,13 +314,13 @@ internal static class BlockSerializer
         int vertexCount = reader.ReadInt32();
         short unknown0C = reader.ReadInt16();
         byte unknown0E = reader.ReadByte();
-        byte vertexSubBlockCount = reader.ReadByte();
+        byte vertexSectionInfoCount = reader.ReadByte();
         ushort boneRootPtr = reader.ReadUInt16();
         ushort vertexSectionInfoPtr = reader.ReadUInt16();
         ushort unknownVectorListPtr = reader.ReadUInt16();
         ushort boneListPtr = reader.ReadUInt16();
         uint unknown18 = reader.ReadUInt32();
-        Utils.SkipToNearest(reader, 16);
+        uint unknown1C = reader.ReadUInt32();
         
         // Read unknown short list
         List<short> unknownShorts = new();
@@ -332,14 +332,14 @@ internal static class BlockSerializer
         // Read vertex section info
         mainStream.Seek(vertexSectionInfoPtr, SeekOrigin.Begin);
         List<(uint Start, uint Size)> vertexSectionInfo = new();
-        for (var s = 0; s < vertexSubBlockCount; ++s)
+        for (var s = 0; s < vertexSectionInfoCount; ++s)
         {
             vertexSectionInfo.Add((reader.ReadUInt32(), reader.ReadUInt32()));
         }
         
         // Read bone root and list
         mainStream.Seek(boneRootPtr, SeekOrigin.Begin);
-        short boneRoot = reader.ReadInt16();
+        short rootBoneID = reader.ReadInt16();
 
         if (boneListPtr != 0) mainStream.Seek(boneListPtr, SeekOrigin.Begin);
 
@@ -370,8 +370,15 @@ internal static class BlockSerializer
             };
             unknownVectors.Add(vector);
         }
+        
+        // Read the list of mapping strings?
+        List<string> mappingStrings = new();
+        while (mainStream.Position < mainStream.Length)
+        {
+            mappingStrings.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
+        }
 
-        return new VtxBlock(unknown04, unknown0C, unknown0E, unknown18, meshType, vertexCount, vertexSectionInfo, boneRoot, boneList,
-            unknownShorts, unknownVectors, new());
+        return new VtxBlock(unknown04, unknown0C, unknown0E, unknown18, unknown1C, meshType, vertexCount, vertexSectionInfo,
+            rootBoneID, boneList, unknownShorts, unknownVectors, mappingStrings, new());
     }
 }

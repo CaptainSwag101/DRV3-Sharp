@@ -51,7 +51,7 @@ public sealed record TxrBlock(
     : ISrdBlock;
 
 public sealed record VtxBlock(
-        short Unknown04, short Unknown0C, byte Unknown0E, uint Unknown18,
+        short Unknown04, short Unknown0C, byte Unknown0E, uint Unknown18, uint Unknown1C,
         short MeshType,
         int VertexCount,
         List<(uint Start, uint Size)> VertexSectionInfo,
@@ -59,6 +59,7 @@ public sealed record VtxBlock(
         List<string> BoneList,
         List<short> UnknownShorts,
         List<Vector3> UnknownVectors,
+        List<string> MappingStrings,
         List<ISrdBlock> SubBlocks) 
     : ISrdBlock;
 
