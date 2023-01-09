@@ -14,17 +14,17 @@ public static class SrdSerializer
 {
     public static void Deserialize(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv, out SrdData outputData)
     {
-        // Pass 1: Read through the SRD stream and deserialize all blocks.
+        // Stage 1: Read through the SRD stream and deserialize all blocks.
         List<ISrdBlock> blocks = new();
         while (inputSrd.Position < inputSrd.Length)
         {
             blocks.Add(DeserializeBlock(inputSrd, inputSrdi, inputSrdv));
         }
         
-        // Pass 2: Read through the block list and deserialize resources from their contents.
+        // Stage 2: Read through the block list and deserialize resources from their contents.
         var resources = DeserializeResources(blocks).Result;
         
-        // (To be added later) Pass 3: Build higher-level data structures from resources,
+        // (To be added later) Stage 3: Build higher-level data structures from resources,
         // such as 3D models, etc.
 
         outputData = new(resources);
@@ -60,7 +60,7 @@ public static class SrdSerializer
             "$RSF" => BlockSerializer.DeserializeRsfBlock(mainDataStream),
             "$RSI" => BlockSerializer.DeserializeRsiBlock(mainDataStream, inputSrdi, inputSrdv),
             "$TXR" => BlockSerializer.DeserializeTxrBlock(mainDataStream),
-            "$VTX" => BlockSerializer.DeserializeVtxBlock(mainDataStream),
+            //"$VTX" => BlockSerializer.DeserializeVtxBlock(mainDataStream),
             _ => BlockSerializer.DeserializeUnknownBlock(blockType, mainDataStream),
         };
         
@@ -180,6 +180,16 @@ public static class SrdSerializer
     private static List<ISrdBlock> SerializeResources(SrdData inputData)
     {
         List<ISrdBlock> outputBlocks = new();
+
+        foreach (var resource in inputData.Resources)
+        {
+            switch (resource)
+            {
+                case TextureResource texture:
+                    outputBlocks.Add(ResourceSerializer.SerializeTexture(texture));
+                    break;
+            }
+        }
 
         return outputBlocks;
     }

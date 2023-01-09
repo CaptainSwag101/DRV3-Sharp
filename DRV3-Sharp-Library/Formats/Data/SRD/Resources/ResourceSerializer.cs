@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
 using Scarlet.Drawing;
+using Scarlet.IO;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Bmp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -35,10 +37,11 @@ internal static class ResourceSerializer
         
         // Read image data/mipmaps
         List<Image<Rgba32>> outputImages = new();
-        for (var m = 0; m < (false ? rsi.ExternalResources.Count : 1); ++m)
+        bool processSmallerMipmaps = false;
+        for (var m = 0; m < (processSmallerMipmaps ? rsi.ExternalResources.Count : 1); ++m) // Ignore mipmaps for now
         {
             var imageResourceInfo = rsi.ExternalResources[m];
-            Span<byte> imageRawData = imageResourceInfo.Data;
+            var imageRawData = imageResourceInfo.Data;
 
             int sourceWidth = txr.Width;
             int sourceHeight = txr.Height;
@@ -68,7 +71,8 @@ internal static class ResourceSerializer
                 _ => PixelDataFormat.Undefined
             };
             
-            // Handle console-specific image data swizzling... hopefully.
+            // Handle console-specific image data swizzling... later, when we understand it better.
+            /*
             switch (txr.Swizzle)
             {
                 // Swizzling?
@@ -76,28 +80,15 @@ internal static class ResourceSerializer
                 case 2:
                 case 6:
                     //Console.WriteLine("WARNING: This texture is swizzled, meaning it likely came from a console version of the game. These are not supported.");
-
-                    /*
-                    if (txr.Swizzle == 0 || txr.Swizzle == 6)   // PS4
-                    {
-                        
-                    }
-                    else
-                    {
-                        pixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
-                    }
-                    */
-
                     try
                     {
                         // TODO: blockSize is a placeholder and does not work with all images.
-                        imageRawData = ResourceUtils.PS4UnSwizzle(imageRawData, mipWidth, mipHeight, 8);
+                        imageRawData = ResourceUtils.PS4UnSwizzle(imageRawData, mipWidth, mipHeight, 8).ToArray();
                     }
                     catch (Exception)
                     {
                         Console.WriteLine("Error de-swizzling texture, block size is probably wrong!");
                     }
-                    //pixelFormat |= PixelDataFormat.PixelOrderingSwizzledVita;
 
                     break;
                 
@@ -111,9 +102,10 @@ internal static class ResourceSerializer
                     Console.ReadLine();
                     break;
             }
+            */
             
             // Use Scarlet to convert the raw pixel data into something we can actually use.
-            ScarletImage scarletImageBinary = new(mipWidth, mipHeight, pixelFormat, imageRawData.ToArray());
+            ScarletImage scarletImageBinary = new(mipWidth, mipHeight, pixelFormat, imageRawData);
             var convertedPixelData = new ReadOnlySpan<byte>(scarletImageBinary.GetOutputPixelData(0));
             Image<Rgba32> currentMipmap = new(config, mipWidth, mipHeight);
             for (var y = 0; y < mipHeight; ++y)
@@ -143,14 +135,19 @@ internal static class ResourceSerializer
                         pixelColor.R = pixelBytes[2];
                         pixelColor.A = pixelBytes[3];
 
-                        // Perform fixups depending on the output data format
-                        if (pixelFormat == PixelDataFormat.FormatRGTC2)
+                        // Perform fixups depending on the output data format.
+                        // BC5 and BC4 are two-channel and one-channel formats respectively,
+                        // so we need to imply the remaining color and alpha channels' data.
+                        if (pixelFormat == PixelDataFormat.FormatRGTC2)         // BC5
                         {
+                            // Set missing channels to maximum value since this
+                            // format is only used for normal map textures.
                             pixelColor.B = 255;
                             pixelColor.A = 255;
                         }
-                        else if (pixelFormat == PixelDataFormat.FormatRGTC1)
+                        else if (pixelFormat == PixelDataFormat.FormatRGTC1)    // BC4
                         {
+                            // Export as grayscale instead of just R, G, or B.
                             pixelColor.G = pixelColor.R;
                             pixelColor.B = pixelColor.R;
                             //pixelColor.A = pixelColor.R;
@@ -166,5 +163,48 @@ internal static class ResourceSerializer
         }
         
         return new TextureResource(outputName, outputImages);
+    }
+
+    public static TxrBlock SerializeTexture(TextureResource texture)
+    {
+        // First, convert the texture(s) from ImageSharp format to Scarlet
+        // so we can compress it to a Direct3D compatible byte format.
+        List<byte[]> convertedPixelBytes = new();
+        foreach (var mipmap in texture.ImageMipmaps)
+        {
+            // ImageSharp pixel data is stored as ARGB little-endian (alpha being MSB, blue being LSB).
+            var numBytes = 4 * mipmap.Height * mipmap.Width;
+            var pixelData = new byte[numBytes];
+
+            for (var y = 0; y < mipmap.Height; ++y)
+            {
+                for (var x = 0; x < mipmap.Width; ++x)
+                {
+                    int byteOffset = 4 * ((y * mipmap.Width) + x);
+
+                    pixelData[byteOffset + 0] = mipmap.Frames[0][x, y].B;
+                    pixelData[byteOffset + 1] = mipmap.Frames[0][x, y].G;
+                    pixelData[byteOffset + 2] = mipmap.Frames[0][x, y].R;
+                    pixelData[byteOffset + 3] = mipmap.Frames[0][x, y].A;
+                }
+            }
+            
+            // Now, convert the pixel data to a ScarletImage and get the output bytes.
+            ScarletImage scarletImageBinary = new(mipmap.Width, mipmap.Height, PixelDataFormat.FormatArgb8888,
+                Endian.LittleEndian, PixelDataFormat.FormatBPTC, Endian.LittleEndian, pixelData);
+
+            var convertedData = scarletImageBinary.GetOutputPixelData(0);
+            convertedPixelBytes.Add(convertedData);
+        }
+        
+        // Now, generate the TXR and RSI block data based on this info.
+        var mipmapResources = convertedPixelBytes.Select(mipmapData => new ExternalResource(ResourceDataLocation.Srdv, mipmapData, 0, -1)).ToList();
+
+        RsiBlock rsi = new(6, 5, 4, -1, new(), mipmapResources,
+            new() { texture.Name },new(), new());
+        TxrBlock txr = new(8, 28, 1, (ushort)texture.ImageMipmaps[0].Width, (ushort)texture.ImageMipmaps[0].Height,
+            1024, TextureFormat.BPTC, 0, 0, new() { rsi });
+
+        return txr;
     }
 }
