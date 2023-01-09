@@ -9,6 +9,11 @@ namespace DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
 
 internal static class BlockSerializer
 {
+    public static byte[] GetTerminatorBlockBytes()
+    {
+        UnknownBlock ct0 = new("$CT0", Array.Empty<byte>(), new());
+        return SerializeUnknownBlock(ct0);
+    }
     public static UnknownBlock DeserializeUnknownBlock(string blockType, MemoryStream mainStream)
     {
         return new UnknownBlock(blockType, mainStream.ToArray(), new());

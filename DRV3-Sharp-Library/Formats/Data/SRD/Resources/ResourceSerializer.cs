@@ -14,6 +14,15 @@ namespace DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 
 internal static class ResourceSerializer
 {
+    public static ISrdResource DeserializeUnknown(ISrdBlock block)
+    {
+        return new UnknownResource(block);
+    }
+    public static ISrdBlock SerializeUnknown(UnknownResource unknown)
+    {
+        return unknown.UnderlyingBlock;
+    }
+    
     public static ISrdResource DeserializeTexture(TxrBlock txr)
     {
         // The RSI sub-block is critical because it contains the raw image data.
@@ -164,7 +173,6 @@ internal static class ResourceSerializer
         
         return new TextureResource(outputName, outputImages);
     }
-
     public static TxrBlock SerializeTexture(TextureResource texture)
     {
         // First, convert the texture(s) from ImageSharp format to Scarlet

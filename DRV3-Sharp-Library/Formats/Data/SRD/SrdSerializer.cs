@@ -18,7 +18,8 @@ public static class SrdSerializer
         List<ISrdBlock> blocks = new();
         while (inputSrd.Position < inputSrd.Length)
         {
-            blocks.Add(DeserializeBlock(inputSrd, inputSrdi, inputSrdv));
+            var block = DeserializeBlock(inputSrd, inputSrdi, inputSrdv);
+            if (block is not null) blocks.Add(block);
         }
         
         // Stage 2: Read through the block list and deserialize resources from their contents.
@@ -30,7 +31,7 @@ public static class SrdSerializer
         outputData = new(resources);
     }
 
-    private static ISrdBlock DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv)
+    private static ISrdBlock? DeserializeBlock(Stream inputSrd, Stream? inputSrdi, Stream? inputSrdv)
     {
         using BinaryReader srdReader = new(inputSrd, Encoding.ASCII, true);
 
@@ -54,20 +55,22 @@ public static class SrdSerializer
         }
 
         // Read and parse main block data
-        ISrdBlock outputBlock = blockType switch
+        ISrdBlock? outputBlock = blockType switch
         {
             "$CFH" => new CfhBlock(new()),
             "$RSF" => BlockSerializer.DeserializeRsfBlock(mainDataStream),
             "$RSI" => BlockSerializer.DeserializeRsiBlock(mainDataStream, inputSrdi, inputSrdv),
             "$TXR" => BlockSerializer.DeserializeTxrBlock(mainDataStream),
             //"$VTX" => BlockSerializer.DeserializeVtxBlock(mainDataStream),
+            "$CT0" => null,
             _ => BlockSerializer.DeserializeUnknownBlock(blockType, mainDataStream),
         };
         
         // If there is any sub-block data, parse it too.
         while (subDataStream is not null && subDataStream.Position < subDataLength)
         {
-            outputBlock.SubBlocks.Add(DeserializeBlock(subDataStream, inputSrdi, inputSrdv));
+            var subBlock = DeserializeBlock(subDataStream, inputSrdi, inputSrdv);
+            if (subBlock is not null) outputBlock?.SubBlocks.Add(subBlock);
         }
         
         // Clean up
@@ -86,6 +89,10 @@ public static class SrdSerializer
             {
                 resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeTexture(txr)));
             }
+            else
+            {
+                resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeUnknown(block)));
+            }
         }
         var outputResources = await Task.WhenAll(resourceTasks);
 
@@ -95,7 +102,7 @@ public static class SrdSerializer
     public static void Serialize(SrdData inputData, Stream outputSrd, Stream outputSrdi, Stream outputSrdv)
     {
         // Pass 1: Serialize resources into blocks
-        List<ISrdBlock> blocks = SerializeResources(inputData);
+        var blocks = SerializeResources(inputData);
         
         // Pass 2: Serialize blocks into data and raw binary chunks.
         // Remember to check if outputSrdi and outputSrdv exist for each block,
@@ -104,6 +111,9 @@ public static class SrdSerializer
         {
             SerializeBlock(block, outputSrd, outputSrdi, outputSrdv);
         }
+        // Finally add one last terminator block
+        outputSrd.Write(BlockSerializer.GetTerminatorBlockBytes());
+        Utils.PadToNearest(new(outputSrd, Encoding.ASCII, true), 16);
     }
 
     private static void SerializeBlock(ISrdBlock block, Stream outputSrd, Stream outputSrdi, Stream outputSrdv)
@@ -148,6 +158,8 @@ public static class SrdSerializer
         {
             SerializeBlock(subBlock, subDataStream, outputSrdi, outputSrdv);
         }
+        // Append data for CT0 terminator block if there were any sub-blocks
+        if (block.SubBlocks.Count > 0) subDataStream.Write(BlockSerializer.GetTerminatorBlockBytes());
         
 
         // Sanity checks
@@ -185,6 +197,9 @@ public static class SrdSerializer
         {
             switch (resource)
             {
+                case UnknownResource unknown:
+                    outputBlocks.Add(ResourceSerializer.SerializeUnknown(unknown));
+                    break;
                 case TextureResource texture:
                     outputBlocks.Add(ResourceSerializer.SerializeTexture(texture));
                     break;
