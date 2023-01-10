@@ -43,8 +43,10 @@ internal sealed class CpkMenu : IMenu
                 
                 // Write out the file data to the appropriate path.
                 var data = cpkReader.ExtractFile(file);
-                using FileStream outStream = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+                FileStream outStream = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.Read);
                 outStream.Write(data.Span);
+                outStream.Flush();
+                outStream.Close();
             }
         }
     }
