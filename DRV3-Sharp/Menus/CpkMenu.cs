@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using CriFsV2Lib;
 
 namespace DRV3_Sharp.Menus;
@@ -19,6 +20,8 @@ internal sealed class CpkMenu : IMenu
     {
         var cpkPaths = Utils.ParsePathsFromConsole("Type the paths of the CPK files you want to extract, or drag-and-drop them onto this window, separated by spaces and/or quotes: ", true, false);
         if (cpkPaths is null) return;
+        
+        Console.WriteLine("Please be patient, depending on your device's storage speed, this may take a long time...");
 
         // For each CPK provided, extract its entire contents.
         foreach (var path in cpkPaths)
