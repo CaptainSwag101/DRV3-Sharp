@@ -7,6 +7,7 @@ internal sealed class SelectContextMenu : IMenu
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
         new("SPC", "The primary data archive format, used to store most files in the game.", SPC),
+        new("CPK", "The outer layer archive format, which stores all the game data.", CPK),
         new("SRD", "The primary resource container format, used to store images, 3D models, fonts, and more.", SRD),
         new("STX", "The primary text format, used to store dialogue.", STX),
         new("WRD", "The primary script format, used to control game behavior, map transitions, text displays, and more.", WRD),
@@ -17,6 +18,11 @@ internal sealed class SelectContextMenu : IMenu
     private void SPC()
     {
         Program.PushMenu(new SpcRootMenu());
+    }
+
+    private void CPK()
+    {
+        Program.PushMenu(new CpkMenu());
     }
 
     private void SRD()

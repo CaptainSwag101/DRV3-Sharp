@@ -92,6 +92,8 @@ internal static class ResourceSerializer
                     try
                     {
                         // TODO: blockSize is a placeholder and does not work with all images.
+                        // It seems to be based on the input texture type:
+                        // https://gbatemp.net/threads/is-there-any-tool-to-unswizzle-textures-from-switch-games.609228/post-9774349
                         imageRawData = ResourceUtils.PS4UnSwizzle(imageRawData, mipWidth, mipHeight, 8).ToArray();
                     }
                     catch (Exception)
