@@ -69,8 +69,8 @@ internal sealed class SrdMenu : IMenu
         loadedData = data;
         loadedDataInfo = fileInfo;
             
-        Console.WriteLine($"Loaded the SRD file successfully. Press ENTER to continue...");
-        Console.ReadLine();
+        Console.WriteLine($"Loaded the SRD file successfully.");
+        Utils.PromptForEnterKey(false);
     }
 
     private async void ExtractTextures()
@@ -88,8 +88,8 @@ internal sealed class SrdMenu : IMenu
             ++successfulExports;
         }
         
-        Console.WriteLine($"Exported {successfulExports} textures successfully. Press ENTER to continue...");
-        Console.ReadLine();
+        Console.WriteLine($"Exported {successfulExports} textures successfully.");
+        Utils.PromptForEnterKey(false);
     }
 
     private void Help()

@@ -16,7 +16,7 @@ internal sealed class MainMenu : IMenu
     
     public int FocusedEntry { get; set; }
 
-    private void SelectContext()
+    private static void SelectContext()
     {
         Program.PushMenu(new SelectContextMenu());
     }
@@ -26,7 +26,7 @@ internal sealed class MainMenu : IMenu
         Utils.PrintMenuDescriptions(AvailableEntries);
     }
 
-    private void About()
+    private static void About()
     {
         Console.WriteLine("DRV3-Sharp, by CaptainSwag101");
         try
@@ -42,7 +42,6 @@ internal sealed class MainMenu : IMenu
             Console.WriteLine("The version/build info file that should be included with this software was missing. Consider re-downloading the software or re-building it from source.");
         }
         
-        Console.WriteLine("Press ENTER to continue...");
-        Console.ReadLine();
+        Utils.PromptForEnterKey();
     }
 }

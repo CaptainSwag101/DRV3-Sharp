@@ -15,27 +15,27 @@ internal sealed class SelectContextMenu : IMenu
         new("Back", "Return to the previous menu.", Program.PopMenu)
     };
 
-    private void SPC()
+    private static void SPC()
     {
         Program.PushMenu(new SpcRootMenu());
     }
 
-    private void CPK()
+    private static void CPK()
     {
         Program.PushMenu(new CpkMenu());
     }
 
-    private void SRD()
+    private static void SRD()
     {
         Program.PushMenu(new SrdMenu());
     }
 
-    private void STX()
+    private static void STX()
     {
         Program.PushMenu(new StxMenu());
     }
 
-    private void WRD()
+    private static void WRD()
     {
         Program.PushMenu(new WrdMenu());
     }

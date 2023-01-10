@@ -46,8 +46,7 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
             Console.WriteLine(truncatedFileInfo);
         }
         
-        Console.WriteLine("Press ENTER to continue...");
-        Console.ReadLine();
+        Utils.PromptForEnterKey();
     }
 
     private void AddFiles()
@@ -55,8 +54,8 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
         var files = Utils.ParsePathsFromConsole("Type the files you wish to load, or drag-and-drop them onto this window, separated by spaces and/or quotes: ", true, false);
         if (files is null || files.Length == 0)
         {
-            Console.WriteLine("Unable to load any files from the provided path(s). Please ensure the files exist.\nPress ENTER to continue...");
-            Console.ReadLine();
+            Console.Write("Unable to load any files from the provided path(s). Please ensure the files exist.");
+            Utils.PromptForEnterKey(false);
             return;
         }
 
@@ -77,8 +76,7 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
         }
         
         if (someSuccess) Console.Write($"Added files to the archive, not yet saved or compressed.");
-        Console.WriteLine("Press ENTER to continue...");
-        Console.ReadLine();
+        Utils.PromptForEnterKey(false);
     }
 
     private void ManipulateFiles()
@@ -90,7 +88,7 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
     {
         Console.WriteLine("Compressing data and saving, please wait...");
 
-        for (int i = 0; i < loadedData.Data.Files.Count; ++i)
+        for (var i = 0; i < loadedData.Data.Files.Count; ++i)
         {
             var originalFile = loadedData.Data.Files[i];
             
@@ -108,8 +106,8 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
         outStream.Flush();
         outStream.Dispose();
         
-        Console.WriteLine("Done! Press ENTER to continue...");
-        Console.ReadLine();
+        Console.Write("Done!");
+        Utils.PromptForEnterKey(false);
     }
 
     private void Help()

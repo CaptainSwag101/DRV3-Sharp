@@ -25,13 +25,13 @@ internal sealed class WrdMenu : IMenu
         new("Back", "Return to the previous menu.", Program.PopMenu)
     };
 
-    private void Peek()
+    private static void Peek()
     {
         var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window: ", true, false);
         if (paths?[0] is not FileInfo fileInfo)
         {
-            Console.WriteLine("Unable to find the path specified. Press ENTER to continue...");
-            Console.ReadLine();
+            Console.WriteLine("Unable to find the path specified.");
+            Utils.PromptForEnterKey(false);
             return;
         }
         
@@ -45,25 +45,23 @@ internal sealed class WrdMenu : IMenu
             argText.AppendJoin(' ', command.Arguments);
             Console.WriteLine($"{command.Name}:\t{argText}");
         }
-        Console.WriteLine("Press ENTER to continue...");
-        Console.ReadLine();
+        Utils.PromptForEnterKey();
     }
 
-    private void Export()
+    private static void Export()
     {
         var paths = Utils.ParsePathsFromConsole("Type the SPC archive containing WRD scripts you wish to load, or drag-and-drop it onto this window: ", true, false);
         if (paths?[0] is not FileInfo fileInfo)
         {
-            Console.WriteLine("Unable to find the path specified. Press ENTER to continue...");
-            Console.ReadLine();
+            Console.WriteLine("Unable to find the path specified.");
+            Utils.PromptForEnterKey(false);
             return;
         }
 
         if (fileInfo.Extension.ToLowerInvariant() != ".spc")
         {
             Console.WriteLine("The specified file was not an SPC archive. It must be an SPC archive containing WRD scripts.");
-            Console.WriteLine("Press ENTER to continue...");
-            Console.ReadLine();
+            Utils.PromptForEnterKey();
             return;
         }
 
@@ -175,14 +173,14 @@ internal sealed class WrdMenu : IMenu
         }
     }
 
-    private void Import()
+    private static void Import()
     {
         // Get the directory of exported WRDs from the user.
         var paths = Utils.ParsePathsFromConsole("Type the SPC archive containing WRD scripts you wish to load, or drag-and-drop it onto this window: ", true, true);
         if (paths?[0] is not DirectoryInfo directoryInfo)
         {
-            Console.WriteLine("Unable to find the path specified. Please ensure you provided a valid folder to import. Press ENTER to continue...");
-            Console.ReadLine();
+            Console.WriteLine("Unable to find the path specified. Please ensure you provided a valid folder to import.");
+            Utils.PromptForEnterKey();
             return;
         }
 
@@ -192,8 +190,7 @@ internal sealed class WrdMenu : IMenu
         if (txtFiles.Count == 0)
         {
             Console.WriteLine("The specified folder does not contain any exported WRD TXT files. It must be a directory containing exported WRD scripts in TXT form.");
-            Console.WriteLine("Press ENTER to continue...");
-            Console.ReadLine();
+            Utils.PromptForEnterKey();
             return;
         }
 
@@ -348,7 +345,7 @@ internal sealed class WrdMenu : IMenu
         }
     }
 
-    private FileInfo GenerateTextSpcFileInfo(FileInfo wrdSpcFileInfo)
+    private static FileInfo GenerateTextSpcFileInfo(FileInfo wrdSpcFileInfo)
     {
         // Start with the parent directory
         StringBuilder textSpcBuilder = new(wrdSpcFileInfo.DirectoryName!);
@@ -366,7 +363,7 @@ internal sealed class WrdMenu : IMenu
         return new FileInfo(textSpcBuilder.ToString());
     }
 
-    private int DeduplicateAndAddToList(ref List<string> list, string strToAdd)
+    private static int DeduplicateAndAddToList(ref List<string> list, string strToAdd)
     {
         // De-duplicate the list when possible
         if (list.Contains(strToAdd))

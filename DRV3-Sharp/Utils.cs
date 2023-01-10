@@ -35,7 +35,7 @@ internal static class Utils
         }
         
         // Trim any leading or trailing whitespace, then add all remaining string segments, split by spaces.
-        input.Trim(' ');
+        input = input.Trim(' ');
         foundPaths.AddRange(input.Split());
         
         // Iterate through all matches
@@ -64,25 +64,20 @@ internal static class Utils
             catch (Exception ex)
             {
                 Console.WriteLine($"An error occurred while trying to parse one of the path(s) provided: {ex}");
-                Console.ReadLine();
+                PromptForEnterKey();
             }
         }
 
         return results.Count == 0 ? null : results.ToArray();
     }
 
-    [Obsolete]
-    public static DirectoryInfo? GetEnclosingDirectory(string filePath, bool mustExist = true)
+    public static void PromptForEnterKey(bool startOnNewLine = true)
     {
-        FileInfo fi = new(filePath);
-
-        if (!fi.Exists && mustExist)
-        {
-            Console.WriteLine("The specified file does not exist; unable to get enclosing directory path.");
-            return null;
-        }
-
-        return fi.Directory;
+        if (startOnNewLine) Console.WriteLine();
+        else Console.Write(' ');
+        
+        Console.WriteLine("Press ENTER to continue...");
+        Console.ReadLine();
     }
 
     public static void PrintMenuDescriptions(IEnumerable<MenuEntry> entries)
@@ -97,7 +92,7 @@ internal static class Utils
             Console.ForegroundColor = origForeground;
             Console.WriteLine($"\t{entry.Description}");
         }
-        Console.WriteLine("Press ENTER to return to the menu...");
-        Console.ReadLine();
+        
+        PromptForEnterKey();
     }
 }

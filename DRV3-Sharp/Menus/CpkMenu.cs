@@ -16,7 +16,7 @@ internal sealed class CpkMenu : IMenu
         new("Back", "Return to the previous menu.", Program.PopMenu)
     };
 
-    private void Extract()
+    private static void Extract()
     {
         var cpkPaths = Utils.ParsePathsFromConsole("Type the paths of the CPK files you want to extract, or drag-and-drop them onto this window, separated by spaces and/or quotes: ", true, false);
         if (cpkPaths is null) return;
