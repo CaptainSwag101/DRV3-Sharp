@@ -37,6 +37,7 @@ internal sealed class CpkMenu : IMenu
                 if (file.Directory is not null)
                 {
                     outputPath = Path.Combine(outputPath, file.Directory);
+                    Directory.CreateDirectory(outputPath);
                 }
                 outputPath = Path.Combine(outputPath, file.FileName);
                 
