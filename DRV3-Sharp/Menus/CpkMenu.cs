@@ -29,7 +29,7 @@ internal sealed class CpkMenu : IMenu
             if (path is not FileInfo cpkInfo || cpkInfo.Extension.ToLowerInvariant() != ".cpk") continue;
 
             using FileStream cpkStream = new(cpkInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var cpkReader = CriFsLib.Instance.CreateCpkReader(cpkStream, false);
+            using var cpkReader = CriFsLib.Instance.CreateCpkReader(cpkStream, false);
             
             // Get the contents of the CPK and extract them.
             var innerFiles = cpkReader.GetFiles();
