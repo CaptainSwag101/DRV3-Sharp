@@ -16,35 +16,11 @@ internal sealed class WrdMenu : IMenu
     
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
-        new("Peek", "Peek at the command contents of a WRD script.", Peek),
         new("Export", "Batch export an SPC archive of WRD scripts, alongside accompanying text data.", Export),
         new("Import", "Batch import a folder of exported scripts and generate archives for WRD scripts and STX text.", Import),
         new("Help", "View descriptions of currently-available operations.", Help),
         new("Back", "Return to the previous menu.", Program.PopMenu)
     };
-
-    private static void Peek()
-    {
-        var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window: ", true, false);
-        if (paths?[0] is not FileInfo fileInfo)
-        {
-            Console.Write("Unable to find the path specified.");
-            Utils.PromptForEnterKey(false);
-            return;
-        }
-        
-        using FileStream fs = new(fileInfo.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
-        WrdSerializer.Deserialize(fs, out WrdData data);
-            
-        Console.WriteLine($"Loaded the WRD file successfully.");
-        foreach (var command in data.Commands)
-        {
-            StringBuilder argText = new();
-            argText.AppendJoin(' ', command.Arguments);
-            Console.WriteLine($"{command.Name}:\t{argText}");
-        }
-        Utils.PromptForEnterKey();
-    }
 
     private static void Export()
     {
