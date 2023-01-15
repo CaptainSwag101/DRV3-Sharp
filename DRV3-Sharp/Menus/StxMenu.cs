@@ -73,7 +73,7 @@ internal sealed class StxMenu : IMenu
         // Print an error if we didn't actually find any valid STX data from the provided paths.
         if (loadedData.Count == 0)
         {
-            Console.WriteLine("Unable to load any valid STX data from the paths provided. Please ensure the files/directories exist.");
+            Console.Write("Unable to load any valid STX data from the paths provided. Please ensure the files/directories exist.");
             Utils.PromptForEnterKey();
             return;
         }
@@ -95,7 +95,7 @@ internal sealed class StxMenu : IMenu
             writer.Dispose();
         }
         
-        Console.WriteLine($"Converted {loadedData.Count} STX file(s) to JSON.");
+        Console.Write($"Converted {loadedData.Count} STX file(s) to JSON.");
         Utils.PromptForEnterKey(false);
     }
     
@@ -104,7 +104,7 @@ internal sealed class StxMenu : IMenu
         var paths = Utils.ParsePathsFromConsole("Type the files/directories of JSON files you want to convert, or drag-and-drop them onto this window, separated by spaces and/or quotes: ", true, true);
         if (paths is null)
         {
-            Console.WriteLine("Unable to find the path(s) specified.");
+            Console.Write("Unable to find the path(s) specified.");
             Utils.PromptForEnterKey(false);
             return;
         }
@@ -142,7 +142,7 @@ internal sealed class StxMenu : IMenu
         // Print an error if we didn't actually find any valid JSON data from the provided paths.
         if (loadedData.Count == 0)
         {
-            Console.WriteLine("Unable to load any valid JSON data from the paths provided. Please ensure the files/directories exist.");
+            Console.Write("Unable to load any valid JSON data from the paths provided. Please ensure the files/directories exist.");
             Utils.PromptForEnterKey();
             return;
         }
@@ -156,7 +156,7 @@ internal sealed class StxMenu : IMenu
             fs.Flush();
         }
         
-        Console.WriteLine($"Converted {loadedData.Count} JSON file(s) to STX.");
+        Console.Write($"Converted {loadedData.Count} JSON file(s) to STX.");
         Utils.PromptForEnterKey(false);
     }
 

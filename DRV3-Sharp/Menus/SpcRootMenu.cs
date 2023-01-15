@@ -82,7 +82,7 @@ internal sealed class SpcRootMenu : IMenu
             }
         }
         
-        Console.WriteLine($"Extracted contents of {loadedData.Count} SPC file(s).");
+        Console.Write($"Extracted contents of {loadedData.Count} SPC file(s).");
         Utils.PromptForEnterKey(false);
     }
 
@@ -91,7 +91,7 @@ internal sealed class SpcRootMenu : IMenu
         var paths = Utils.ParsePathsFromConsole("Type the file/directory you wish to load, or drag-and-drop it onto this window: ", true, true);
         if (paths?.Length == 0)
         {
-            Console.WriteLine("Unable to find the path specified.");
+            Console.Write("Unable to find the path specified.");
             Utils.PromptForEnterKey(false);
             return;
         }
@@ -103,7 +103,7 @@ internal sealed class SpcRootMenu : IMenu
             // If we're loading a file, open its SPC data.
             using FileStream fs = new(info.FullName, FileMode.Open, FileAccess.Read, FileShare.Read);
             SpcSerializer.Deserialize(fs, out SpcData data);
-            Console.WriteLine($"Loaded SPC archive {info.Name}.");
+            Console.Write($"Loaded SPC archive {info.Name}.");
             Utils.PromptForEnterKey(false);
             
             Program.PushMenu(new SpcDetailedOperationsMenu((info.FullName, data)));
@@ -120,7 +120,7 @@ internal sealed class SpcRootMenu : IMenu
                 string shortenedName = file.FullName.Replace(dir.FullName + Path.DirectorySeparatorChar, "");
                 archivedFiles.Add(new(shortenedName, data, 4, false, data.Length));
             }
-            Console.WriteLine($"Loaded the directory {info.Name} as a new SPC archive, not yet saved.");
+            Console.Write($"Loaded the directory {info.Name} as a new SPC archive, not yet saved.");
             Utils.PromptForEnterKey(false);
             
             Program.PushMenu(new SpcDetailedOperationsMenu((dir.FullName + ".spc", new SpcData(0, archivedFiles))));

@@ -11,13 +11,11 @@ namespace DRV3_Sharp.Menus;
 
 internal sealed class WrdMenu : IMenu
 {
-    //private (string Path, WrdData Data)? loadedData = null;
     public string HeaderText => "You can choose from the following options:";
     public int FocusedEntry { get; set; }
     
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
-        // Add always-available entries
         new("Peek", "Peek at the command contents of a WRD script.", Peek),
         new("Export", "Batch export an SPC archive of WRD scripts, alongside accompanying text data.", Export),
         new("Import", "Batch import a folder of exported scripts and generate archives for WRD scripts and STX text.", Import),
@@ -30,7 +28,7 @@ internal sealed class WrdMenu : IMenu
         var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window: ", true, false);
         if (paths?[0] is not FileInfo fileInfo)
         {
-            Console.WriteLine("Unable to find the path specified.");
+            Console.Write("Unable to find the path specified.");
             Utils.PromptForEnterKey(false);
             return;
         }
@@ -53,14 +51,14 @@ internal sealed class WrdMenu : IMenu
         var paths = Utils.ParsePathsFromConsole("Type the SPC archive containing WRD scripts you wish to load, or drag-and-drop it onto this window: ", true, false);
         if (paths?[0] is not FileInfo fileInfo)
         {
-            Console.WriteLine("Unable to find the path specified.");
+            Console.Write("Unable to find the path specified.");
             Utils.PromptForEnterKey(false);
             return;
         }
 
         if (fileInfo.Extension.ToLowerInvariant() != ".spc")
         {
-            Console.WriteLine("The specified file was not an SPC archive. It must be an SPC archive containing WRD scripts.");
+            Console.Write("The specified file was not an SPC archive. It must be an SPC archive containing WRD scripts.");
             Utils.PromptForEnterKey();
             return;
         }
@@ -179,7 +177,7 @@ internal sealed class WrdMenu : IMenu
         var paths = Utils.ParsePathsFromConsole("Type the SPC archive containing WRD scripts you wish to load, or drag-and-drop it onto this window: ", true, true);
         if (paths?[0] is not DirectoryInfo directoryInfo)
         {
-            Console.WriteLine("Unable to find the path specified. Please ensure you provided a valid folder to import.");
+            Console.Write("Unable to find the path specified. Please ensure you provided a valid folder to import.");
             Utils.PromptForEnterKey();
             return;
         }
@@ -189,7 +187,7 @@ internal sealed class WrdMenu : IMenu
         List<FileInfo> txtFiles = (from file in contents where file.Extension == ".txt" select file).ToList();
         if (txtFiles.Count == 0)
         {
-            Console.WriteLine("The specified folder does not contain any exported WRD TXT files. It must be a directory containing exported WRD scripts in TXT form.");
+            Console.Write("The specified folder does not contain any exported WRD TXT files. It must be a directory containing exported WRD scripts in TXT form.");
             Utils.PromptForEnterKey();
             return;
         }

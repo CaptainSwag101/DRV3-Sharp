@@ -42,8 +42,8 @@ internal sealed class SrdMenu : IMenu
         var paths = Utils.ParsePathsFromConsole("Type the file you wish to load, or drag-and-drop it onto this window: ", true, false);
         if (paths?[0] is not FileInfo fileInfo)
         {
-            Console.WriteLine("Unable to find the path specified. Press ENTER to continue...");
-            Console.ReadLine();
+            Console.Write("Unable to find the path specified.");
+            Utils.PromptForEnterKey(false);
             return;
         }
         
@@ -69,7 +69,7 @@ internal sealed class SrdMenu : IMenu
         loadedData = data;
         loadedDataInfo = fileInfo;
             
-        Console.WriteLine($"Loaded the SRD file successfully.");
+        Console.Write($"Loaded the SRD file successfully.");
         Utils.PromptForEnterKey(false);
     }
 
@@ -88,7 +88,7 @@ internal sealed class SrdMenu : IMenu
             ++successfulExports;
         }
         
-        Console.WriteLine($"Exported {successfulExports} textures successfully.");
+        Console.Write($"Exported {successfulExports} textures successfully.");
         Utils.PromptForEnterKey(false);
     }
 
