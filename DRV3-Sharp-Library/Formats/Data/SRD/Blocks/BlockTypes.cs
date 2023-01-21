@@ -40,6 +40,16 @@ public sealed record RsiBlock(
         List<ISrdBlock> SubBlocks)
     : ISrdBlock;
 
+public sealed record Node(
+    string Name,
+    List<Node>? Children);
+public sealed record TreBlock(
+        ushort Unknown04, ushort Unknown08,
+        Node RootNode,
+        Matrix4x4 UnknownMatrix,
+        List<ISrdBlock> SubBlocks)
+    : ISrdBlock;
+
 public enum TextureFormat
 {
     Unknown     = 0x00,

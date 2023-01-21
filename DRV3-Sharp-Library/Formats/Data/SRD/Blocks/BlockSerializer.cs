@@ -99,6 +99,7 @@ internal static class BlockSerializer
         return new MshBlock(unknown00, unknown13, specialFlagString,
             vertexBlockName, materialName, strings, mappedNodes, new());
     }
+    // TODO: Add serializer function when we understand this block type better
 
     public static RsfBlock DeserializeRsfBlock(MemoryStream mainStream)
     {
@@ -352,6 +353,106 @@ internal static class BlockSerializer
         return (mainMem.ToArray(), srdiMem.Length == 0 ? srdiMem.ToArray() : null, srdvMem.Length == 0 ? srdvMem.ToArray() : null);
     }
 
+    public static TreBlock DeserializeTreBlock(MemoryStream mainStream)
+    {
+        using BinaryReader reader = new(mainStream);
+
+        uint maxTreeDepth = reader.ReadUInt32();
+        ushort unknown04 = reader.ReadUInt16();
+        ushort totalBranchCount = reader.ReadUInt16();
+        ushort unknown08 = reader.ReadUInt16();
+        ushort totalLeafCount = reader.ReadUInt16();
+        uint unknownMatrixPtr = reader.ReadUInt32();
+        Node rootNode = null!;
+        
+        // Read and parse tree data
+        uint? stringDataStart = null;
+        for (int i = 0; i < totalBranchCount; ++i)
+        {
+            // Read branch node name pointer
+            uint nodeNamePtr = reader.ReadUInt32();
+            stringDataStart ??= nodeNamePtr;    // Set stringDataStart if it was null
+
+            uint leafPtr = reader.ReadUInt32();
+            byte currentLeafCount = reader.ReadByte();
+            byte currentNodeDepth = reader.ReadByte();
+            byte unknown0A = reader.ReadByte();
+            byte unknown0B = reader.ReadByte();
+            uint unknown0C = reader.ReadUInt32();
+            
+            // Seek to the node name and read it, then seek back
+            var returnPos = mainStream.Position;
+            mainStream.Seek(nodeNamePtr, SeekOrigin.Begin);
+            string nodeName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            mainStream.Seek(returnPos, SeekOrigin.Begin);
+            Node node = new(nodeName, new());
+            
+            // Read and append any leaf nodes
+            if (leafPtr != 0)
+            {
+                var returnPos2 = mainStream.Position;
+                mainStream.Seek(leafPtr, SeekOrigin.Begin);
+                for (int l = 0; l < currentLeafCount; ++l)
+                {
+                    // Seek to the string data and read it, then seek back
+                    uint leafNameOffset = reader.ReadUInt32();
+                    uint nodeUnknown04 = reader.ReadUInt32();
+                    var returnPos3 = mainStream.Position;
+                    mainStream.Seek(leafNameOffset, SeekOrigin.Begin);
+                    string leafNodeName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+                    mainStream.Seek(returnPos3, SeekOrigin.Begin);
+                    Node leaf = new(leafNodeName, null);
+                    node.Children!.Add(leaf);
+                }
+                
+                mainStream.Seek(returnPos2, SeekOrigin.Begin);
+            }
+            
+            // If this is the first node we've read, it is the root of the tree
+            if (i == 0)
+            {
+                rootNode = node;
+            }
+            else
+            {
+                // Seek to the end of the node tree at the current depth
+                Node parentNode = rootNode;
+                for (var depth = 0; depth < (currentNodeDepth - 1); ++depth)
+                {
+                    parentNode = parentNode.Children!.Last(n => n.Children is not null);
+                }
+                
+                // Assign this node as a child to the parent
+                parentNode.Children!.Add(node);
+            }
+        }
+        
+        // Read the unknown 4x4 matrix
+        mainStream.Seek(unknownMatrixPtr, SeekOrigin.Begin);
+        Matrix4x4 unknownMatrix = new()
+        {
+            M11 = reader.ReadSingle(),
+            M12 = reader.ReadSingle(),
+            M13 = reader.ReadSingle(),
+            M14 = reader.ReadSingle(),
+            M21 = reader.ReadSingle(),
+            M22 = reader.ReadSingle(),
+            M23 = reader.ReadSingle(),
+            M24 = reader.ReadSingle(),
+            M31 = reader.ReadSingle(),
+            M32 = reader.ReadSingle(),
+            M33 = reader.ReadSingle(),
+            M34 = reader.ReadSingle(),
+            M41 = reader.ReadSingle(),
+            M42 = reader.ReadSingle(),
+            M43 = reader.ReadSingle(),
+            M44 = reader.ReadSingle(),
+        };
+
+        return new TreBlock(unknown04, unknown08, rootNode, unknownMatrix, new());
+    }
+    // TODO: Add serializer function when we understand this block type better
+    
     public static TxrBlock DeserializeTxrBlock(MemoryStream mainStream)
     {
         using BinaryReader reader = new(mainStream);
