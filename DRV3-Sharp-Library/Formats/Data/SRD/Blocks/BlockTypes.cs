@@ -40,9 +40,14 @@ public sealed record RsiBlock(
         List<ISrdBlock> SubBlocks)
     : ISrdBlock;
 
-public sealed record Node(
-    string Name,
-    List<Node>? Children);
+public sealed record ScnBlock(
+        uint Unknown00,
+        List<string> rootNodeNames,
+        List<string> unknownStrings,
+        List<ISrdBlock> SubBlocks)
+    : ISrdBlock;
+
+public sealed record Node(string Name, List<Node>? Children);
 public sealed record TreBlock(
         ushort Unknown04, ushort Unknown08,
         Node RootNode,
@@ -75,7 +80,7 @@ public sealed record VtxBlock(
         short Unknown04, short Unknown0C, byte Unknown0E, uint Unknown18, uint Unknown1C,
         short MeshType,
         int VertexCount,
-        List<(uint Start, uint Size)> VertexSectionInfo,
+        List<(uint Start, uint DataSizePerVertex)> VertexSectionInfo,
         short RootBoneID,
         List<string> BoneList,
         List<short> UnknownShorts,

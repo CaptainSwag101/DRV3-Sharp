@@ -353,6 +353,44 @@ internal static class BlockSerializer
         return (mainMem.ToArray(), srdiMem.Length == 0 ? srdiMem.ToArray() : null, srdvMem.Length == 0 ? srdvMem.ToArray() : null);
     }
 
+    public static ScnBlock DeserializeScnBlock(MemoryStream mainStream)
+    {
+        using BinaryReader reader = new(mainStream);
+
+        uint unknown00 = reader.ReadUInt32();
+        ushort sceneRootNodeIndexOffset = reader.ReadUInt16();
+        ushort sceneRootNodeIndexCount = reader.ReadUInt16();
+        ushort unknownStringIndexOffset = reader.ReadUInt16();
+        ushort unknownStringIndexCount = reader.ReadUInt16();
+
+        // Read scene root node names
+        List<string> rootNodeNames = new();
+        mainStream.Seek(sceneRootNodeIndexOffset, SeekOrigin.Begin);
+        for (int i = 0; i < sceneRootNodeIndexCount; ++i)
+        {
+            ushort stringOffset = reader.ReadUInt16();
+            long oldPos = mainStream.Position;
+            mainStream.Seek(stringOffset, SeekOrigin.Begin);
+            rootNodeNames.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
+            mainStream.Seek(oldPos, SeekOrigin.Begin);
+        }
+
+        // Read unknown strings
+        List<string> unknownStrings = new();
+        mainStream.Seek(unknownStringIndexOffset, SeekOrigin.Begin);
+        for (int i = 0; i < unknownStringIndexCount; ++i)
+        {
+            ushort stringOffset = reader.ReadUInt16();
+            long oldPos = mainStream.Position;
+            mainStream.Seek(stringOffset, SeekOrigin.Begin);
+            unknownStrings.Add(Utils.ReadNullTerminatedString(reader, Encoding.ASCII));
+            mainStream.Seek(oldPos, SeekOrigin.Begin);
+        }
+
+        return new ScnBlock(unknown00, rootNodeNames, unknownStrings, new());
+    }
+    // TODO: Add serializer function when we understand this block type better
+
     public static TreBlock DeserializeTreBlock(MemoryStream mainStream)
     {
         using BinaryReader reader = new(mainStream);
@@ -367,7 +405,7 @@ internal static class BlockSerializer
         
         // Read and parse tree data
         uint? stringDataStart = null;
-        for (int i = 0; i < totalBranchCount; ++i)
+        for (var i = 0; i < totalBranchCount; ++i)
         {
             // Read branch node name pointer
             uint nodeNamePtr = reader.ReadUInt32();
@@ -517,7 +555,7 @@ internal static class BlockSerializer
         
         // Read vertex section info
         mainStream.Seek(vertexSectionInfoPtr, SeekOrigin.Begin);
-        List<(uint Start, uint Size)> vertexSectionInfo = new();
+        List<(uint Start, uint DataSizePerVertex)> vertexSectionInfo = new();
         for (var s = 0; s < vertexSectionInfoCount; ++s)
         {
             vertexSectionInfo.Add((reader.ReadUInt32(), reader.ReadUInt32()));

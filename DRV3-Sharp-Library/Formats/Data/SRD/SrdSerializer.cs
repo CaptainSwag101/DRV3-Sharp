@@ -61,6 +61,7 @@ public static class SrdSerializer
             "$MSH" => BlockSerializer.DeserializeMshBlock(mainDataStream),
             "$RSF" => BlockSerializer.DeserializeRsfBlock(mainDataStream),
             "$RSI" => BlockSerializer.DeserializeRsiBlock(mainDataStream, inputSrdi, inputSrdv),
+            "$SCN" => BlockSerializer.DeserializeScnBlock(mainDataStream),
             "$TRE" => BlockSerializer.DeserializeTreBlock(mainDataStream),
             "$TXR" => BlockSerializer.DeserializeTxrBlock(mainDataStream),
             "$VTX" => BlockSerializer.DeserializeVtxBlock(mainDataStream),
@@ -87,13 +88,17 @@ public static class SrdSerializer
         List<Task<ISrdResource>> resourceTasks = new();
         foreach (var block in inputBlocks)
         {
-            if (block is TxrBlock txr)
+            switch (block)
             {
-                resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeTexture(txr)));
-            }
-            else
-            {
-                resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeUnknown(block)));
+                case TxrBlock txr:
+                    resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeTexture(txr)));
+                    break;
+                case VtxBlock vtx:
+                    resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeVertex(vtx)));
+                    break;
+                default:
+                    resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeUnknown(block)));
+                    break;
             }
         }
         var outputResources = await Task.WhenAll(resourceTasks);
