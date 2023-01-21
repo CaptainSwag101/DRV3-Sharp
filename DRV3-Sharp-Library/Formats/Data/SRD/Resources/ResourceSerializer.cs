@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
 using Scarlet.Drawing;
 using Scarlet.IO;
@@ -30,7 +31,7 @@ internal static class ResourceSerializer
             throw new InvalidDataException("A TXR block within the SRD file did not have its expected RSI sub-block.");
         
         string outputName = rsi.ResourceStrings[0];
-        Console.WriteLine($"Processing texture {outputName}");
+        Console.WriteLine($"Found texture resource {outputName}");
 
         // We plan to save all images as BMP for the time being. This may change, to match the original file format.
         Configuration config = new(new BmpConfigurationModule());
@@ -216,5 +217,117 @@ internal static class ResourceSerializer
             1024, TextureFormat.BPTC, 0, 0, new() { rsi });
 
         return txr;
+    }
+
+    public static ISrdResource DeserializeVertex(VtxBlock vtx)
+    {
+        // The RSI sub-block is critical because it contains the geometry and index data.
+        if (vtx.SubBlocks[0] is not RsiBlock rsi)
+            throw new InvalidDataException("A VTX block within the SRD file did not have its expected RSI sub-block.");
+
+        string name = rsi.ResourceStrings[0];
+        Console.WriteLine($"Found vertex resource {name}");
+        
+        using MemoryStream geometryStream = new(rsi.ExternalResources[0].Data);
+        using BinaryReader geometryReader = new(geometryStream);
+
+        // Read data from each geometry section
+        List<Vector3> vertices = new();
+        List<Vector3> normals = new();
+        List<Vector2> textureCoords = new();
+        List<float> weights = new();
+        for (var sectionNum = 0; sectionNum < vtx.VertexSectionInfo.Count; ++sectionNum)
+        {
+            var sectionInfo = vtx.VertexSectionInfo[sectionNum];
+            geometryStream.Seek(sectionInfo.Start, SeekOrigin.Begin);
+
+            for (var vertexNum = 0; vertexNum < vtx.VertexCount; ++vertexNum)
+            {
+                var thisVertexDataStart = geometryStream.Position;
+                switch (sectionNum)
+                {
+                    // Vertex and Normal data (and Texture coordinates for boneless models?)
+                    case 0:
+                    {
+                        Vector3 vertex = new()
+                        {
+                            X = geometryReader.ReadSingle(),
+                            Y = geometryReader.ReadSingle(),
+                            Z = geometryReader.ReadSingle()
+                        };
+                        vertices.Add(vertex);
+
+                        Vector3 normal = new()
+                        {
+                            X = geometryReader.ReadSingle(),
+                            Y = geometryReader.ReadSingle(),
+                            Z = geometryReader.ReadSingle()
+                        };
+                        normals.Add(normal);
+
+                        if (vtx.VertexSectionInfo.Count == 1)
+                        {
+                            Vector2 textureCoord = new()
+                            {
+                                X = geometryReader.ReadSingle(),
+                                Y = geometryReader.ReadSingle()
+                            };
+                            textureCoords.Add(textureCoord);
+                        }
+
+                        break;
+                    }
+                    // Bone weights?
+                    case 1:
+                    {
+                        var weightsPerVertex = (sectionInfo.DataSizePerVertex / sizeof(float));
+                        for (var weightNum = 0; weightNum < weightsPerVertex; ++weightNum)
+                        {
+                            weights.Add(geometryReader.ReadSingle());
+                        }
+
+                        break;
+                    }
+                    // Texture coordinates (only for models with bones?)
+                    case 2:
+                    {
+                        Vector2 textureCoord = new()
+                        {
+                            X = geometryReader.ReadSingle(),
+                            Y = geometryReader.ReadSingle()
+                        };
+                        textureCoords.Add(textureCoord);
+                        break;
+                    }
+                    default:
+                        throw new InvalidDataException($"Unknown geometry data section index {sectionNum}.");
+                }
+            
+                // Skip data we don't currently use, though I may add support for this data later
+                var remainingBytes = sectionInfo.DataSizePerVertex - (geometryStream.Position - thisVertexDataStart);
+                //Console.WriteLine($"Skipping {remainingBytes} unknown bytes for this vertex.");
+                geometryStream.Seek(remainingBytes, SeekOrigin.Current);
+            }
+        }
+        
+        // Read index data
+        using MemoryStream indexStream = new(rsi.ExternalResources[1].Data);
+        using BinaryReader indexReader = new(indexStream);
+        List<Tuple<ushort, ushort, ushort>> indices = new();
+        while (indexStream.Position < indexStream.Length)
+        {
+            // We need to reverse the order of the indices to prevent the normals
+            // from becoming permanently flipped due to the clockwise/counter-clockwise
+            // order of the indices determining the face's direction.
+            ushort index3 = indexReader.ReadUInt16();
+            ushort index2 = indexReader.ReadUInt16();
+            ushort index1 = indexReader.ReadUInt16();
+            
+            Tuple<ushort, ushort, ushort> indexTriplet = new(index1, index2, index3);
+            indices.Add(indexTriplet);
+        }
+        
+
+        return new VertexResource(name, vertices, normals, textureCoords, indices, vtx.BoneList, weights);
     }
 }
