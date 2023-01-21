@@ -23,7 +23,7 @@ public static class SrdSerializer
         }
         
         // Stage 2: Read through the block list and deserialize resources from their contents.
-        var resources = DeserializeResources(blocks).Result;
+        var resources = DeserializeResources(blocks);
         
         // (To be added later) Stage 3: Build higher-level data structures from resources,
         // such as 3D models, etc.
@@ -83,27 +83,24 @@ public static class SrdSerializer
         return outputBlock;
     }
 
-    private static async Task<List<ISrdResource>> DeserializeResources(List<ISrdBlock> inputBlocks)
+    private static List<ISrdResource> DeserializeResources(List<ISrdBlock> inputBlocks)
     {
-        List<Task<ISrdResource>> resourceTasks = new();
+        List<ISrdResource> outputResources = new();
         foreach (var block in inputBlocks)
         {
-            switch (block)
+            ISrdResource resource = block switch
             {
-                case TxrBlock txr:
-                    resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeTexture(txr)));
-                    break;
-                case VtxBlock vtx:
-                    resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeVertex(vtx)));
-                    break;
-                default:
-                    resourceTasks.Add(Task.Run(() => ResourceSerializer.DeserializeUnknown(block)));
-                    break;
-            }
+                MshBlock msh => ResourceSerializer.DeserializeMesh(msh),
+                ScnBlock scn => ResourceSerializer.DeserializeScene(scn),
+                TxrBlock txr => ResourceSerializer.DeserializeTexture(txr),
+                TreBlock tre => ResourceSerializer.DeserializeTree(tre),
+                VtxBlock vtx => ResourceSerializer.DeserializeVertex(vtx),
+                _ => ResourceSerializer.DeserializeUnknown(block)
+            };
+            outputResources.Add(resource);
         }
-        var outputResources = await Task.WhenAll(resourceTasks);
 
-        return outputResources.ToList();
+        return outputResources;
     }
 
     public static void Serialize(SrdData inputData, Stream outputSrd, Stream outputSrdi, Stream outputSrdv)

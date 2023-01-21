@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
+using System.Linq;
+using Assimp;
 using DRV3_Sharp_Library.Formats.Data.SRD;
 using DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 using SixLabors.ImageSharp.Formats.Bmp;
@@ -30,7 +31,8 @@ internal sealed class SrdMenu : IMenu
             if (loadedData is not null)
             {
                 // Add loaded-data specific entries
-                entries.Insert(1, new("Export Textures", "Export all texture resources within the resource data.", ExtractTextures));
+                entries.Insert(0, new("Export Textures", "Export all texture resources within the resource data.", ExtractTextures));
+                entries.Insert(1, new("Export Models", "Export all 3D geometry within the resource data.", ExtractModels));
             }
 
             return entries.ToArray();
@@ -90,6 +92,90 @@ internal sealed class SrdMenu : IMenu
         
         Console.Write($"Exported {successfulExports} textures successfully.");
         Utils.PromptForEnterKey(false);
+    }
+
+    private void ExtractModels()
+    {
+        // Loop through the various resources in the SRD and construct an Assimp scene
+        // and associated meshes, trees, etc.
+        
+        // First, let's generate our 3D geometry meshes, from MSH blocks and their associated VTX blocks.
+        List<Mesh> constructedMeshes = new();
+        // Increase scope here to avoid variable name clutter
+        {
+            List<MeshResource> meshResources = new();
+            List<VertexResource> vertexResources = new();
+            foreach (var resource in loadedData!.Resources)
+            {
+                switch (resource)
+                {
+                    case MeshResource mesh:
+                        meshResources.Add(mesh);
+                        break;
+                    case VertexResource vertex:
+                        vertexResources.Add(vertex);
+                        break;
+                }
+            }
+
+            if (meshResources.Count != vertexResources.Count)
+            {
+                throw new InvalidDataException("The number of meshes did not match the number of vertices.");
+            }
+            
+            // Iterate through the meshes and construct Assimp meshes based on them and their vertices.
+            foreach (MeshResource meshResource in meshResources)
+            {
+                VertexResource linkedVertexResource = vertexResources.First(r => r.Name == meshResource.LinkedVertexName);
+                
+                Mesh assimpMesh = new();
+                assimpMesh.Name = meshResource.Name;
+
+                foreach (var vertex in linkedVertexResource.Vertices)
+                {
+                    assimpMesh.Vertices.Add(new Vector3D(vertex.X, vertex.Y, vertex.Z));
+                }
+
+                foreach (var normal in linkedVertexResource.Normals)
+                {
+                    assimpMesh.Normals.Add(new Vector3D(normal.X, normal.Y, normal.Z));
+                }
+
+                foreach (var index in linkedVertexResource.Indices)
+                {
+                    Face face = new();
+                    face.Indices.Add(index.Item1);
+                    face.Indices.Add(index.Item2);
+                    face.Indices.Add(index.Item3);
+                    assimpMesh.Faces.Add(face);
+                }
+                
+                constructedMeshes.Add(assimpMesh);
+            }
+        }
+
+        Scene scene = new();
+        // Increase scope here to avoid variable name clutter
+        {
+            SceneResource sceneResource = loadedData!.Resources.First(r => r is SceneResource) as SceneResource ?? throw new InvalidOperationException();
+
+            scene.RootNode = new Node(sceneResource.Name);
+
+            foreach (var treeName in sceneResource.LinkedTreeNames)
+            {
+                TreeResource tree = loadedData!.Resources.First(r => r is TreeResource tre && tre.Name == treeName) as TreeResource ?? throw new InvalidOperationException();
+                
+                scene.RootNode.Children.Add(new Node(tree.Name));
+            }
+        }
+        scene.Meshes.AddRange(constructedMeshes);
+
+        AssimpContext context = new();
+        if (!context.ExportFile(scene, "test.obj", "OBJ"))
+        {
+            Console.Write("File export failed!");
+            Utils.PromptForEnterKey(false);
+        }
     }
 
     private void Help()

@@ -11,9 +11,27 @@ public sealed record UnknownResource(
         ISrdBlock UnderlyingBlock)
     : ISrdResource;
 
+public sealed record MeshResource(
+        string Name, string LinkedVertexName, string LinkedMaterialName,
+        List<string> UnknownStrings,
+        Dictionary<string, List<string>> MappedNodes)
+    : ISrdResource;
+
+public sealed record SceneResource(
+        string Name,
+        List<string> LinkedTreeNames,
+        List<string> UnknownStrings)
+    : ISrdResource;
+
 public sealed record TextureResource(
         string Name,
         List<Image<Rgba32>> ImageMipmaps)
+    : ISrdResource;
+
+public sealed record TreeResource(
+        string Name,
+        Node RootNode,
+        Matrix4x4 UnknownMatrix)
     : ISrdResource;
 
 public sealed record VertexResource(

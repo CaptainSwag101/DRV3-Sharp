@@ -42,8 +42,8 @@ public sealed record RsiBlock(
 
 public sealed record ScnBlock(
         uint Unknown00,
-        List<string> rootNodeNames,
-        List<string> unknownStrings,
+        List<string> LinkedTreeNames,
+        List<string> UnknownStrings,
         List<ISrdBlock> SubBlocks)
     : ISrdBlock;
 

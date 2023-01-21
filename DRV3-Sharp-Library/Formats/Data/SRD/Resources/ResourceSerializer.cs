@@ -15,7 +15,7 @@ namespace DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 
 internal static class ResourceSerializer
 {
-    public static ISrdResource DeserializeUnknown(ISrdBlock block)
+    public static UnknownResource DeserializeUnknown(ISrdBlock block)
     {
         return new UnknownResource(block);
     }
@@ -23,8 +23,29 @@ internal static class ResourceSerializer
     {
         return unknown.UnderlyingBlock;
     }
+
+    public static MeshResource DeserializeMesh(MshBlock msh)
+    {
+        // The RSI sub-block is critical because it contains the mesh name and other info.
+        if (msh.SubBlocks[0] is not RsiBlock rsi)
+            throw new InvalidDataException("A MSH block within the SRD file did not have its expected RSI sub-block.");
+
+        string meshName = rsi.ResourceStrings[0];
+        return new MeshResource(meshName, msh.LinkedVertexName, msh.LinkedMaterialName, msh.Strings, msh.MappedNodes);
+    }
+
+    public static SceneResource DeserializeScene(ScnBlock scn)
+    {
+        // The RSI sub-block is critical because it contains the scene name and other data.
+        if (scn.SubBlocks[0] is not RsiBlock rsi)
+            throw new InvalidDataException("A SCN block within the SRD file did not have its expected RSI sub-block.");
+
+        string name = rsi.ResourceStrings[0];
+
+        return new SceneResource(name, scn.LinkedTreeNames, scn.UnknownStrings);
+    }
     
-    public static ISrdResource DeserializeTexture(TxrBlock txr)
+    public static TextureResource DeserializeTexture(TxrBlock txr)
     {
         // The RSI sub-block is critical because it contains the raw image data.
         if (txr.SubBlocks[0] is not RsiBlock rsi)
@@ -219,7 +240,20 @@ internal static class ResourceSerializer
         return txr;
     }
 
-    public static ISrdResource DeserializeVertex(VtxBlock vtx)
+    public static TreeResource DeserializeTree(TreBlock tre)
+    {
+        // The RSI sub-block is critical because it contains the tree name and other strings.
+        if (tre.SubBlocks[0] is not RsiBlock rsi)
+            throw new InvalidDataException("A TRE block within the SRD file did not have its expected RSI sub-block.");
+
+        string name = rsi.ResourceStrings[0];
+        // TODO: Copy over the LocalResources in the RSI block, it contains info
+        // about the tree and its associated geometry/materials.
+
+        return new TreeResource(name, tre.RootNode, tre.UnknownMatrix);
+    }
+
+    public static VertexResource DeserializeVertex(VtxBlock vtx)
     {
         // The RSI sub-block is critical because it contains the geometry and index data.
         if (vtx.SubBlocks[0] is not RsiBlock rsi)
