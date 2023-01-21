@@ -1,9 +1,20 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 
 namespace DRV3_Sharp_Library.Formats.Data.SRD.Blocks;
 
 public sealed record CfhBlock(
+        List<ISrdBlock> SubBlocks)
+    : ISrdBlock;
+
+public sealed record MshBlock(
+        uint Unknown00, byte Unknown13,
+        string SpecialFlag,
+        string LinkedVertexName,
+        string LinkedMaterialName,
+        List<string> Strings,
+        Dictionary<string, List<string>> MappedNodes,
         List<ISrdBlock> SubBlocks)
     : ISrdBlock;
 

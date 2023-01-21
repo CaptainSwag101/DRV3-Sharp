@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 using System.Text;
 
@@ -21,6 +22,82 @@ internal static class BlockSerializer
     public static byte[] SerializeUnknownBlock(UnknownBlock block)
     {
         return block.MainData;
+    }
+
+    public static MshBlock DeserializeMshBlock(MemoryStream mainStream)
+    {
+        using BinaryReader reader = new(mainStream);
+
+        uint unknown00 = reader.ReadUInt32();
+        ushort vertexBlockNamePtr = reader.ReadUInt16();
+        ushort materialNamePtr = reader.ReadUInt16();
+        ushort specialFlagNamePtr = reader.ReadUInt16();
+        ushort stringOffsetsPtr = reader.ReadUInt16();   // Still unsure about this
+        ushort nodeNameOffsetsPtr = reader.ReadUInt16();   // Still unsure about this
+        ushort nodeMappingDataPtr = reader.ReadUInt16();
+        byte stringCount = reader.ReadByte();
+        byte topLevelNodeCount = reader.ReadByte();
+        byte childNodeCount = reader.ReadByte();
+        byte unknown13 = reader.ReadByte();
+        
+        // Read strings
+        List<string> strings = new();
+        for (var i = 0; i < stringCount; ++i)
+        {
+            // Seek to the next name offset
+            mainStream.Seek(stringOffsetsPtr + (sizeof(ushort) * i), SeekOrigin.Begin);
+            ushort nameOffset = reader.ReadUInt16();
+            
+            // Seek to the name
+            mainStream.Seek(nameOffset, SeekOrigin.Begin);
+            string name = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            strings.Add(name);
+        }
+        
+        // Read top-level node names
+        Dictionary<string, List<string>> mappedNodes = new();
+        for (var i = 0; i < topLevelNodeCount; ++i)
+        {
+            // Seek to the next name offset
+            mainStream.Seek(nodeNameOffsetsPtr + (sizeof(ushort) * i), SeekOrigin.Begin);
+            ushort nameOffset = reader.ReadUInt16();
+            
+            // Seek to the name
+            mainStream.Seek(nameOffset, SeekOrigin.Begin);
+            string name = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            mappedNodes[name] = new();
+        }
+
+        // Read mapped child nodes
+        mainStream.Seek(nodeMappingDataPtr, SeekOrigin.Begin);
+        for (var pairNum = 0; pairNum < childNodeCount; ++pairNum)
+        {
+            ushort valuePtr = reader.ReadUInt16();
+            ushort keyPtr = reader.ReadUInt16();
+            var oldPos = mainStream.Position;
+            
+            mainStream.Seek(valuePtr, SeekOrigin.Begin);
+            string value = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            mainStream.Seek(keyPtr, SeekOrigin.Begin);
+            string key = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+
+            if (mappedNodes[key] is null)
+                throw new InvalidDataException("Attempted to add a child value to a node that shouldn't contain children.");
+            mappedNodes[key]!.Add(value);
+            
+            mainStream.Seek(oldPos, SeekOrigin.Begin);
+        }
+
+        // Read other strings
+        mainStream.Seek(vertexBlockNamePtr, SeekOrigin.Begin);
+        string vertexBlockName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+        mainStream.Seek(materialNamePtr, SeekOrigin.Begin);
+        string materialName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+        mainStream.Seek(specialFlagNamePtr, SeekOrigin.Begin);
+        string specialFlagString = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+
+        return new MshBlock(unknown00, unknown13, specialFlagString,
+            vertexBlockName, materialName, strings, mappedNodes, new());
     }
 
     public static RsfBlock DeserializeRsfBlock(MemoryStream mainStream)
@@ -389,4 +466,5 @@ internal static class BlockSerializer
         return new VtxBlock(unknown04, unknown0C, unknown0E, unknown18, unknown1C, meshType, vertexCount, vertexSectionInfo,
             rootBoneID, boneList, unknownShorts, unknownVectors, mappingStrings, new());
     }
+    // TODO: Add serializer function when we understand this block type better
 }

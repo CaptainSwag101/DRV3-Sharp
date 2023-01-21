@@ -11,7 +11,7 @@ public sealed record UnknownResource(
 
 public sealed record TextureResource(
         string Name,
-        List<Image<Rgba32>> ImageMipmaps )
+        List<Image<Rgba32>> ImageMipmaps)
     : ISrdResource;
 
 public interface ISrdResource

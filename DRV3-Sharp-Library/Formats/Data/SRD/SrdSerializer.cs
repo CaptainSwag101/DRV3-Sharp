@@ -58,10 +58,11 @@ public static class SrdSerializer
         ISrdBlock? outputBlock = blockType switch
         {
             "$CFH" => new CfhBlock(new()),
+            "$MSH" => BlockSerializer.DeserializeMshBlock(mainDataStream),
             "$RSF" => BlockSerializer.DeserializeRsfBlock(mainDataStream),
             "$RSI" => BlockSerializer.DeserializeRsiBlock(mainDataStream, inputSrdi, inputSrdv),
             "$TXR" => BlockSerializer.DeserializeTxrBlock(mainDataStream),
-            //"$VTX" => BlockSerializer.DeserializeVtxBlock(mainDataStream),
+            "$VTX" => BlockSerializer.DeserializeVtxBlock(mainDataStream),
             "$CT0" => null,
             _ => BlockSerializer.DeserializeUnknownBlock(blockType, mainDataStream),
         };
