@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,6 +7,8 @@ using Assimp;
 using DRV3_Sharp_Library.Formats.Data.SRD;
 using DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 using SixLabors.ImageSharp.Formats.Bmp;
+using AssimpNode = Assimp.Node;
+using Node = DRV3_Sharp_Library.Formats.Data.SRD.Blocks.Node;
 
 namespace DRV3_Sharp.Menus;
 
@@ -101,81 +104,114 @@ internal sealed class SrdMenu : IMenu
         
         // First, let's generate our 3D geometry meshes, from MSH blocks and their associated VTX blocks.
         List<Mesh> constructedMeshes = new();
-        // Increase scope here to avoid variable name clutter
+        List<MeshResource> meshResources = new();
+        List<VertexResource> vertexResources = new();
+        foreach (var resource in loadedData!.Resources)
         {
-            List<MeshResource> meshResources = new();
-            List<VertexResource> vertexResources = new();
-            foreach (var resource in loadedData!.Resources)
+            switch (resource)
             {
-                switch (resource)
-                {
-                    case MeshResource mesh:
-                        meshResources.Add(mesh);
-                        break;
-                    case VertexResource vertex:
-                        vertexResources.Add(vertex);
-                        break;
-                }
+                case MeshResource mesh:
+                    meshResources.Add(mesh);
+                    break;
+                case VertexResource vertex:
+                    vertexResources.Add(vertex);
+                    break;
+            }
+        }
+
+        if (meshResources.Count != vertexResources.Count)
+        {
+            throw new InvalidDataException("The number of meshes did not match the number of vertices.");
+        }
+        
+        // Iterate through the meshes and construct Assimp meshes based on them and their vertices.
+        foreach (MeshResource meshResource in meshResources)
+        {
+            VertexResource linkedVertexResource = vertexResources.First(r => r.Name == meshResource.LinkedVertexName);
+            
+            Mesh assimpMesh = new();
+            assimpMesh.Name = meshResource.Name;
+            assimpMesh.PrimitiveType = PrimitiveType.Triangle;
+            assimpMesh.MaterialIndex = 0;   // TODO: Map this to a real material and not just the placeholder later
+
+            foreach (var vertex in linkedVertexResource.Vertices)
+            {
+                assimpMesh.Vertices.Add(new Vector3D(vertex.X, vertex.Y, vertex.Z));
             }
 
-            if (meshResources.Count != vertexResources.Count)
+            foreach (var normal in linkedVertexResource.Normals)
             {
-                throw new InvalidDataException("The number of meshes did not match the number of vertices.");
+                assimpMesh.Normals.Add(new Vector3D(normal.X, normal.Y, normal.Z));
+            }
+
+            foreach (var index in linkedVertexResource.Indices)
+            {
+                Face face = new();
+                face.Indices.Add(index.Item1);
+                face.Indices.Add(index.Item2);
+                face.Indices.Add(index.Item3);
+                assimpMesh.Faces.Add(face);
             }
             
-            // Iterate through the meshes and construct Assimp meshes based on them and their vertices.
-            foreach (MeshResource meshResource in meshResources)
-            {
-                VertexResource linkedVertexResource = vertexResources.First(r => r.Name == meshResource.LinkedVertexName);
-                
-                Mesh assimpMesh = new();
-                assimpMesh.Name = meshResource.Name;
-
-                foreach (var vertex in linkedVertexResource.Vertices)
-                {
-                    assimpMesh.Vertices.Add(new Vector3D(vertex.X, vertex.Y, vertex.Z));
-                }
-
-                foreach (var normal in linkedVertexResource.Normals)
-                {
-                    assimpMesh.Normals.Add(new Vector3D(normal.X, normal.Y, normal.Z));
-                }
-
-                foreach (var index in linkedVertexResource.Indices)
-                {
-                    Face face = new();
-                    face.Indices.Add(index.Item1);
-                    face.Indices.Add(index.Item2);
-                    face.Indices.Add(index.Item3);
-                    assimpMesh.Faces.Add(face);
-                }
-                
-                constructedMeshes.Add(assimpMesh);
-            }
+            // Finally add the constructed Assimp mesh to the list.
+            constructedMeshes.Add(assimpMesh);
         }
 
         Scene scene = new();
-        // Increase scope here to avoid variable name clutter
-        {
-            SceneResource sceneResource = loadedData!.Resources.First(r => r is SceneResource) as SceneResource ?? throw new InvalidOperationException();
+        SceneResource sceneResource = loadedData!.Resources.First(r => r is SceneResource) as SceneResource ?? throw new InvalidOperationException();
 
-            scene.RootNode = new Node(sceneResource.Name);
-
-            foreach (var treeName in sceneResource.LinkedTreeNames)
-            {
-                TreeResource tree = loadedData!.Resources.First(r => r is TreeResource tre && tre.Name == treeName) as TreeResource ?? throw new InvalidOperationException();
-                
-                scene.RootNode.Children.Add(new Node(tree.Name));
-            }
-        }
+        scene.Clear();
+        scene.RootNode = new AssimpNode(sceneResource.Name);
         scene.Meshes.AddRange(constructedMeshes);
+        // This placeholder material is mandatory or else we get an access violation error when trying to save the model. Thanks, Assimp!
+        Material placeholderMaterial = new();
+        placeholderMaterial.Name = "PlaceholderMaterial";
+        scene.Materials.Add(placeholderMaterial);
+
+        foreach (var treeName in sceneResource.LinkedTreeNames)
+        {
+            TreeResource tree = loadedData!.Resources.First(r => r is TreeResource tre && tre.Name == treeName) as TreeResource ?? throw new InvalidOperationException();
+
+            // Perform a depth-first traverse through the tree to create all the Assimp nodes.
+            AssimpNode treeRoot = DepthFirstTreeNodeConversion(tree.RootNode, meshResources);
+            
+            scene.RootNode.Children.Add(treeRoot);
+        }
 
         AssimpContext context = new();
-        if (!context.ExportFile(scene, "test.obj", "OBJ"))
+        var exportFormats = context.GetSupportedExportFormats();
+        foreach (var format in exportFormats)
         {
-            Console.Write("File export failed!");
-            Utils.PromptForEnterKey(false);
+            if (format.FileExtension != "gltf") continue;
+
+            string exportName = $"{loadedDataInfo!.FullName}";
+            context.ExportFile(scene, $"{exportName}.{format.FileExtension}", format.FormatId);
+            break;
         }
+    }
+
+    private AssimpNode DepthFirstTreeNodeConversion(Node inputNode, List<MeshResource> meshResources)
+    {
+        AssimpNode outputNode = new(inputNode.Name);
+
+        for (var meshNum = 0; meshNum < meshResources.Count; ++meshNum)
+        {
+            if (meshResources[meshNum].Name == inputNode.Name)
+            {
+                outputNode.MeshIndices.Add(meshNum);
+            }
+        }
+        
+        // Shortcut out if we have reached a leaf node.
+        if (inputNode.Children is null) return outputNode;
+        
+        // Recursively traverse all child nodes.
+        foreach (var child in inputNode.Children)
+        {
+            outputNode.Children.Add(DepthFirstTreeNodeConversion(child, meshResources));
+        }
+
+        return outputNode;
     }
 
     private void Help()
