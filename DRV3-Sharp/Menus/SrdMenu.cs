@@ -231,13 +231,27 @@ internal sealed class SrdMenu : IMenu
                 face.Indices.Add(index.Item3);
                 assimpMesh.Faces.Add(face);
             }
+
+            assimpMesh.UVComponentCount[0] = 2;
+            assimpMesh.TextureCoordinateChannels[0] = new();
+            foreach (var uv in linkedVertexResource.TextureCoords)
+            {
+                Vector3D texCoord3d = new(uv.X, uv.Y, 0.0f);
+                assimpMesh.TextureCoordinateChannels[0].Add(texCoord3d);
+            }
             
             // Finally add the constructed Assimp mesh to the list.
             constructedMeshes.Add(assimpMesh);
         }
 
         Scene scene = new();
-        SceneResource sceneResource = loadedData!.Resources.First(r => r is SceneResource) as SceneResource ?? throw new InvalidOperationException();
+        SceneResource? sceneResource = loadedData!.Resources.First(r => r is SceneResource) as SceneResource;
+        if (sceneResource is null)
+        {
+            Console.Write("ERROR: The current SRD file contains no scene, meaning it does not contain any 3D model data.");
+            Utils.PromptForEnterKey();
+            return;
+        }
 
         scene.Clear();
         scene.RootNode = new AssimpNode(sceneResource.Name);
