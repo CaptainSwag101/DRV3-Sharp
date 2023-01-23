@@ -317,7 +317,7 @@ internal static class ResourceSerializer
                     {
                         Vector3 vertex = new()
                         {
-                            X = geometryReader.ReadSingle(),
+                            X = geometryReader.ReadSingle() * -1.0f,
                             Y = geometryReader.ReadSingle(),
                             Z = geometryReader.ReadSingle()
                         };
@@ -325,7 +325,7 @@ internal static class ResourceSerializer
 
                         Vector3 normal = new()
                         {
-                            X = geometryReader.ReadSingle(),
+                            X = geometryReader.ReadSingle() * -1.0f,
                             Y = geometryReader.ReadSingle(),
                             Z = geometryReader.ReadSingle()
                         };
