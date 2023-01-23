@@ -92,10 +92,12 @@ public static class SrdSerializer
         {
             ISrdResource resource = block switch
             {
+                MatBlock mat => ResourceSerializer.DeserializeMaterial(mat),
                 MshBlock msh => ResourceSerializer.DeserializeMesh(msh),
                 ScnBlock scn => ResourceSerializer.DeserializeScene(scn),
-                TxrBlock txr => ResourceSerializer.DeserializeTexture(txr),
                 TreBlock tre => ResourceSerializer.DeserializeTree(tre),
+                TxiBlock txi => ResourceSerializer.DeserializeTextureInstance(txi),
+                TxrBlock txr => ResourceSerializer.DeserializeTexture(txr),
                 VtxBlock vtx => ResourceSerializer.DeserializeVertex(vtx),
                 _ => ResourceSerializer.DeserializeUnknown(block)
             };

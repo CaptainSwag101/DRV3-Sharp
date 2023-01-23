@@ -8,6 +8,8 @@ using Scarlet.Drawing;
 using Scarlet.IO;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.PixelFormats;
 using ScarletImage = Scarlet.Drawing.ImageBinary;
 
@@ -22,6 +24,19 @@ internal static class ResourceSerializer
     public static ISrdBlock SerializeUnknown(UnknownResource unknown)
     {
         return unknown.UnderlyingBlock;
+    }
+
+    public static MaterialResource DeserializeMaterial(MatBlock mat)
+    {
+        // The RSI sub-block is critical because it contains the material name and property data.
+        if (mat.SubBlocks[0] is not RsiBlock rsi)
+            throw new InvalidDataException("A MAT block within the SRD file did not have its expected RSI sub-block.");
+
+        string name = rsi.ResourceStrings[0];
+        var materialProperties = rsi.LocalResources;
+        var shaderReferences = rsi.ResourceStrings.GetRange(1, rsi.ResourceStrings.Count - 1);
+
+        return new MaterialResource(name, shaderReferences, mat.MapTexturePairs, materialProperties);
     }
 
     public static MeshResource DeserializeMesh(MshBlock msh)
@@ -44,6 +59,30 @@ internal static class ResourceSerializer
 
         return new SceneResource(name, scn.LinkedTreeNames, scn.UnknownStrings);
     }
+
+    public static TreeResource DeserializeTree(TreBlock tre)
+    {
+        // The RSI sub-block is critical because it contains the tree name and other strings.
+        if (tre.SubBlocks[0] is not RsiBlock rsi)
+            throw new InvalidDataException("A TRE block within the SRD file did not have its expected RSI sub-block.");
+
+        string name = rsi.ResourceStrings[0];
+        // TODO: Copy over the LocalResources in the RSI block, it contains info
+        // about the tree and its associated geometry/materials.
+
+        return new TreeResource(name, tre.RootNode, tre.UnknownMatrix, rsi.LocalResources);
+    }
+
+    public static TextureInstanceResource DeserializeTextureInstance(TxiBlock txi)
+    {
+        // The RSI sub-block is critical because it contains the material name.
+        if (txi.SubBlocks[0] is not RsiBlock rsi)
+            throw new InvalidDataException("A TXI block within the SRD file did not have its expected RSI sub-block.");
+
+        string linkedMaterialName = rsi.ResourceStrings[0];
+
+        return new TextureInstanceResource(txi.LinkedTextureName, linkedMaterialName);
+    }
     
     public static TextureResource DeserializeTexture(TxrBlock txr)
     {
@@ -54,8 +93,13 @@ internal static class ResourceSerializer
         string outputName = rsi.ResourceStrings[0];
         Console.WriteLine($"Found texture resource {outputName}");
 
-        // We plan to save all images as BMP for the time being. This may change, to match the original file format.
-        Configuration config = new(new BmpConfigurationModule());
+        string textureExtension = outputName.Split('.').Last().ToLowerInvariant();
+        Configuration config = textureExtension switch
+        {
+            "bmp" => new(new BmpConfigurationModule()),
+            "tga" => new(new TgaConfigurationModule()),
+            "png" => new(new PngConfigurationModule())
+        };
         
         // Separate the palette data from the list beforehand if it exists
         byte[] paletteData = Array.Empty<byte>();
@@ -238,19 +282,6 @@ internal static class ResourceSerializer
             1024, TextureFormat.BPTC, 0, 0, new() { rsi });
 
         return txr;
-    }
-
-    public static TreeResource DeserializeTree(TreBlock tre)
-    {
-        // The RSI sub-block is critical because it contains the tree name and other strings.
-        if (tre.SubBlocks[0] is not RsiBlock rsi)
-            throw new InvalidDataException("A TRE block within the SRD file did not have its expected RSI sub-block.");
-
-        string name = rsi.ResourceStrings[0];
-        // TODO: Copy over the LocalResources in the RSI block, it contains info
-        // about the tree and its associated geometry/materials.
-
-        return new TreeResource(name, tre.RootNode, tre.UnknownMatrix);
     }
 
     public static VertexResource DeserializeVertex(VtxBlock vtx)

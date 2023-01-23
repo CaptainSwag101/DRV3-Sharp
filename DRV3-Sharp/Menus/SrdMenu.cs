@@ -7,6 +7,8 @@ using Assimp;
 using DRV3_Sharp_Library.Formats.Data.SRD;
 using DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 using SixLabors.ImageSharp.Formats.Bmp;
+using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Tga;
 using AssimpNode = Assimp.Node;
 using Node = DRV3_Sharp_Library.Formats.Data.SRD.Blocks.Node;
 
@@ -78,7 +80,7 @@ internal sealed class SrdMenu : IMenu
         Utils.PromptForEnterKey(false);
     }
 
-    private async void ExtractTextures()
+    private void ExtractTextures()
     {
         if (loadedData is null || loadedDataInfo is null) return;
 
@@ -87,9 +89,20 @@ internal sealed class SrdMenu : IMenu
         {
             if (resource is not TextureResource texture) continue;
             
-            string outputPath = Path.Combine(loadedDataInfo.DirectoryName!, texture.Name.Replace(".tga", ".bmp"));
-            await using FileStream fs = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.Read);
-            await texture.ImageMipmaps[0].SaveAsync(fs, new BmpEncoder());
+            string outputPath = Path.Combine(loadedDataInfo.DirectoryName!, texture.Name);
+            using FileStream fs = new(outputPath, FileMode.Create, FileAccess.Write, FileShare.Read);
+            if (texture.Name.EndsWith(".tga"))
+            {
+                texture.ImageMipmaps[0].Save(fs, new TgaEncoder());
+            }
+            else if (texture.Name.EndsWith(".bmp"))
+            {
+                texture.ImageMipmaps[0].Save(fs, new BmpEncoder());
+            }
+            else if (texture.Name.EndsWith(".png"))
+            {
+                texture.ImageMipmaps[0].Save(fs, new PngEncoder());
+            }
             ++successfulExports;
         }
         
@@ -102,23 +115,88 @@ internal sealed class SrdMenu : IMenu
         // Loop through the various resources in the SRD and construct an Assimp scene
         // and associated meshes, trees, etc.
         
-        // First, let's generate our 3D geometry meshes, from MSH blocks and their associated VTX blocks.
-        List<Mesh> constructedMeshes = new();
+        // First, let's populate some lists of the various resources we will use.
+        List<MaterialResource> materialResources = new();
         List<MeshResource> meshResources = new();
+        List<TextureInstanceResource> textureInstanceResources = new();
         List<VertexResource> vertexResources = new();
         foreach (var resource in loadedData!.Resources)
         {
             switch (resource)
             {
+                case MaterialResource mat:
+                    materialResources.Add(mat);
+                    break;
                 case MeshResource mesh:
                     meshResources.Add(mesh);
+                    break;
+                case TextureInstanceResource txi:
+                    textureInstanceResources.Add(txi);
                     break;
                 case VertexResource vertex:
                     vertexResources.Add(vertex);
                     break;
             }
         }
+        
+        // Second, let's generate our material data from MAT and TXI resources.
+        List<Material> constructedMaterials = new();
+        foreach (MaterialResource materialResource in materialResources)
+        {
+            Material constructedMaterial = new();
+            constructedMaterial.Name = materialResource.Name;
+            
+            foreach ((string mapName, string textureName) in materialResource.MapTexturePairs)
+            {
+                // Find the TXI resource associated with the current map
+                var matchingTexture = textureInstanceResources.First(txi => txi.LinkedMaterialName == textureName);
 
+                TextureSlot texSlot = new()
+                {
+                    FilePath = matchingTexture.LinkedTextureName,
+                    Mapping = TextureMapping.FromUV,
+                    UVIndex = 0,
+                };
+
+                // Determine map type
+                if (mapName.StartsWith("COLORMAP"))
+                {
+                    if (matchingTexture.LinkedTextureName.StartsWith("lm"))
+                        texSlot.TextureType = TextureType.Lightmap;
+                    else
+                        texSlot.TextureType = TextureType.Diffuse;
+                }
+                else if (mapName.StartsWith("NORMALMAP"))
+                {
+                    texSlot.TextureType = TextureType.Normals;
+                }
+                else if (mapName.StartsWith("SPECULARMAP"))
+                {
+                    texSlot.TextureType = TextureType.Specular;
+                }
+                else if (mapName.StartsWith("TRANSPARENCYMAP"))
+                {
+                    texSlot.TextureType = TextureType.Opacity;
+                }
+                else if (mapName.StartsWith("REFLECTMAP"))
+                {
+                    texSlot.TextureType = TextureType.Reflection;
+                }
+                else
+                {
+                    Console.WriteLine($"WARNING: Texture map type {mapName} is not currently supported.");
+                }
+                texSlot.TextureIndex = constructedMaterial.GetMaterialTextureCount(texSlot.TextureType);
+
+                if (!constructedMaterial.AddMaterialTexture(texSlot))
+                    Console.WriteLine($"WARNING: Adding map ({mapName}, {textureName}) did not update or create new data!");
+            }
+            
+            constructedMaterials.Add(constructedMaterial);
+        }
+        
+        // Third, let's generate our 3D geometry meshes, from MSH resources and their associated VTX resources.
+        List<Mesh> constructedMeshes = new();
         if (meshResources.Count != vertexResources.Count)
         {
             throw new InvalidDataException("The number of meshes did not match the number of vertices.");
@@ -132,7 +210,8 @@ internal sealed class SrdMenu : IMenu
             Mesh assimpMesh = new();
             assimpMesh.Name = meshResource.Name;
             assimpMesh.PrimitiveType = PrimitiveType.Triangle;
-            assimpMesh.MaterialIndex = 0;   // TODO: Map this to a real material and not just the placeholder later
+            assimpMesh.MaterialIndex = constructedMaterials.IndexOf(constructedMaterials.First(mat =>
+                mat.Name == meshResource.LinkedMaterialName));
 
             foreach (var vertex in linkedVertexResource.Vertices)
             {
@@ -163,10 +242,7 @@ internal sealed class SrdMenu : IMenu
         scene.Clear();
         scene.RootNode = new AssimpNode(sceneResource.Name);
         scene.Meshes.AddRange(constructedMeshes);
-        // This placeholder material is mandatory or else we get an access violation error when trying to save the model. Thanks, Assimp!
-        Material placeholderMaterial = new();
-        placeholderMaterial.Name = "PlaceholderMaterial";
-        scene.Materials.Add(placeholderMaterial);
+        scene.Materials.AddRange(constructedMaterials);
 
         foreach (var treeName in sceneResource.LinkedTreeNames)
         {

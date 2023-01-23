@@ -11,6 +11,13 @@ public sealed record UnknownResource(
         ISrdBlock UnderlyingBlock)
     : ISrdResource;
 
+public sealed record MaterialResource(
+        string Name,
+        List<string> ShaderReferences,
+        List<(string MapName, string TextureName)> MapTexturePairs,
+        List<LocalResource> MaterialProperties)
+    : ISrdResource;
+
 public sealed record MeshResource(
         string Name, string LinkedVertexName, string LinkedMaterialName,
         List<string> UnknownStrings,
@@ -23,6 +30,10 @@ public sealed record SceneResource(
         List<string> UnknownStrings)
     : ISrdResource;
 
+public sealed record TextureInstanceResource(
+        string LinkedTextureName, string LinkedMaterialName)
+    : ISrdResource;
+
 public sealed record TextureResource(
         string Name,
         List<Image<Rgba32>> ImageMipmaps)
@@ -31,7 +42,8 @@ public sealed record TextureResource(
 public sealed record TreeResource(
         string Name,
         Node RootNode,
-        Matrix4x4 UnknownMatrix)
+        Matrix4x4 UnknownMatrix,
+        List<LocalResource> ExtraProperties)
     : ISrdResource;
 
 public sealed record VertexResource(
