@@ -98,7 +98,8 @@ internal static class ResourceSerializer
         {
             "bmp" => new(new BmpConfigurationModule()),
             "tga" => new(new TgaConfigurationModule()),
-            "png" => new(new PngConfigurationModule())
+            "png" => new(new PngConfigurationModule()),
+            _ => new(new BmpConfigurationModule())
         };
         
         // Separate the palette data from the list beforehand if it exists
