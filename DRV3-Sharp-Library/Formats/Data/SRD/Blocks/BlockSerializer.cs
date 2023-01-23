@@ -24,6 +24,41 @@ internal static class BlockSerializer
         return block.MainData;
     }
 
+    public static MatBlock DeserializeMatBlock(MemoryStream mainStream)
+    {
+        using BinaryReader reader = new(mainStream);
+
+        uint unknown00 = reader.ReadUInt32();
+        float unknown04 = reader.ReadSingle();
+        float unknown08 = reader.ReadSingle();
+        float unknown0C = reader.ReadSingle();
+        ushort unknown10 = reader.ReadUInt16();
+        ushort unknown12 = reader.ReadUInt16();
+        ushort stringMapStart = reader.ReadUInt16();
+        ushort stringMapCount = reader.ReadUInt16();
+
+        List<(string MapName, string TextureName)> mapTexturePairs = new();
+        mainStream.Seek(stringMapStart, SeekOrigin.Begin);
+        for (var m = 0; m < stringMapCount; ++m)
+        {
+            ushort textureNameOffset = reader.ReadUInt16();
+            ushort mapNameOffset = reader.ReadUInt16();
+
+            long returnPos = mainStream.Position;
+            mainStream.Seek(textureNameOffset, SeekOrigin.Begin);
+            string textureName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+            mainStream.Seek(mapNameOffset, SeekOrigin.Begin);
+            string mapName = Utils.ReadNullTerminatedString(reader, Encoding.ASCII);
+
+            mapTexturePairs.Add((mapName, textureName));
+
+            mainStream.Seek(returnPos, SeekOrigin.Begin);
+        }
+
+        return new MatBlock(unknown00, unknown04, unknown08, unknown0C, unknown10, unknown12, mapTexturePairs, new());
+    }
+    // TODO: Add serializer function when we understand this block type better
+    
     public static MshBlock DeserializeMshBlock(MemoryStream mainStream)
     {
         using BinaryReader reader = new(mainStream);
@@ -488,6 +523,37 @@ internal static class BlockSerializer
         };
 
         return new TreBlock(unknown04, unknown08, rootNode, unknownMatrix, new());
+    }
+    // TODO: Add serializer function when we understand this block type better
+
+    public static TxiBlock DeserializeTxiBlock(MemoryStream mainStream)
+    {
+        using BinaryReader reader = new(mainStream);
+        
+        int unknown00 = reader.ReadInt32();
+        Debug.Assert(unknown00 == 1);
+        int unknown04 = reader.ReadInt32();
+        Debug.Assert(unknown04 == 16);
+        int unknown08 = reader.ReadInt32();
+        Debug.Assert(unknown08 == 0);
+        byte unknown0C = reader.ReadByte();
+        Debug.Assert(unknown0C == 1);
+        byte unknown0D = reader.ReadByte();
+        Debug.Assert(unknown0D == 1);
+        byte unknown0E = reader.ReadByte();
+        Debug.Assert(unknown0E is 1 or 2);
+        byte unknown0F = reader.ReadByte();
+        Debug.Assert(unknown0F is 1 or 3 or 4 or 5 or 6);
+        int unknown10 = reader.ReadInt32();
+        Debug.Assert(unknown10 == 20);
+        string linkedTextureName = Utils.ReadNullTerminatedString(reader, Encoding.GetEncoding("shift-jis"));
+
+        // Is there more data after that texture filename reference?
+        // If so, it would lend credence to the idea that each $TXI could contain a LIST
+        // of texture instances rather than just one per block.
+        Debug.Assert(reader.BaseStream.Position == reader.BaseStream.Length);
+
+        return new TxiBlock(unknown00, unknown04, unknown08, unknown0C, unknown0D, unknown0E, unknown0F, unknown10, linkedTextureName, new());
     }
     // TODO: Add serializer function when we understand this block type better
     

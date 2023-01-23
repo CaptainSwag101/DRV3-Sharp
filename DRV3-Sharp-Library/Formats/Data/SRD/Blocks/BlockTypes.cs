@@ -8,6 +8,14 @@ public sealed record CfhBlock(
         List<ISrdBlock> SubBlocks)
     : ISrdBlock;
 
+public sealed record MatBlock(
+        uint Unknown00,
+        float Unknown04, float Unknown08, float Unknown0C,
+        ushort Unknown10, ushort Unknown12,
+        List<(string, string)> MapTexturePairs,
+        List<ISrdBlock> SubBlocks)
+    : ISrdBlock;
+
 public sealed record MshBlock(
         uint Unknown00, byte Unknown13,
         string SpecialFlag,
@@ -52,6 +60,14 @@ public sealed record TreBlock(
         ushort Unknown04, ushort Unknown08,
         Node RootNode,
         Matrix4x4 UnknownMatrix,
+        List<ISrdBlock> SubBlocks)
+    : ISrdBlock;
+
+public sealed record TxiBlock(
+        int Unknown00, int Unknown04, int Unknown08,
+        byte Unknown0C, byte Unknown0D, byte Unknown0E, byte Unknown0F,
+        int Unknown10,
+        string LinkedTextureName,
         List<ISrdBlock> SubBlocks)
     : ISrdBlock;
 
