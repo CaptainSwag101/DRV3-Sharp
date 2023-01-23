@@ -278,6 +278,9 @@ internal sealed class SrdMenu : IMenu
             context.ExportFile(scene, $"{exportName}.{format.FileExtension}", format.FormatId);
             break;
         }
+        
+        Console.Write("Successfully exported 3D model.");
+        Utils.PromptForEnterKey(false);
     }
 
     private AssimpNode DepthFirstTreeNodeConversion(Node inputNode, List<MeshResource> meshResources)
