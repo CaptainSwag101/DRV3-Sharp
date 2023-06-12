@@ -15,7 +15,6 @@ public static class Utils
         while (stringReader.BaseStream.Position < stringReader.BaseStream.Length)
         {
             char c = stringReader.ReadChar();
-
             // Break on null terminator
             if (c == 0) break;
 
@@ -28,22 +27,23 @@ public static class Utils
     public static void SkipToNearest(BinaryReader reader, int multipleOf)
     {
         int padLength = multipleOf - (int)(reader.BaseStream.Position % multipleOf);
-        if (padLength != multipleOf)
-        {
-            reader.BaseStream.Seek(padLength, SeekOrigin.Current);
-        }
+        // Don't pad if we're already aligned to the proper multiple
+        if (padLength == multipleOf || padLength == 0) return;
+        
+        reader.BaseStream.Seek(padLength, SeekOrigin.Current);
     }
 
     public static void PadToNearest(BinaryWriter writer, int multipleOf, byte padValue = 0)
     {
         int padLength = multipleOf - (int)(writer.BaseStream.Position % multipleOf);
-        if (padLength != multipleOf)
-        {
-            Span<byte> padding = new byte[padLength];
-            padding.Fill(padValue);
+        // Don't pad if we're already aligned to the proper multiple
+        if (padLength == multipleOf || padLength == 0) return;
+        
+        // Use a Span to conveniently fill a contiguous array with our desired value
+        Span<byte> padding = new byte[padLength];
+        padding.Fill(padValue);
 
-            writer.Write(padding);
-        }
+        writer.Write(padding);
     }
 
     public static int PowerOfTwo(int x)

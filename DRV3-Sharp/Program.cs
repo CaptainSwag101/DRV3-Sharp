@@ -43,7 +43,8 @@ internal sealed class Program
     }
 
     /// <summary>
-    /// While there exists a valid menu, loop through its possible entries and show the user what can be performed.
+    /// While there exists a valid menu, loop through its possible entries
+    /// and show the user what can be performed.
     /// </summary>
     private static void MainLoop()
     {
@@ -96,6 +97,8 @@ internal sealed class Program
                     if (currentMenu.FocusedEntry == entry)
                     {
                         // Swap the foreground and background colors to highlight the entry
+                        // (Note: This doesn't work on all platforms, terminals, or operating systems,
+                        // so we also denote the focused entry with an arrow just to be safe.)
                         var fgColor = Console.ForegroundColor;
                         var bgColor = Console.BackgroundColor;
 
@@ -172,7 +175,7 @@ internal sealed class Program
     /// Pushes a new menu onto the top of the menu stack, thereby making it the new focus.
     /// Also resets the highlighted entry to the first position.
     /// </summary>
-    /// <param name="menu"></param>
+    /// <param name="menu">The new menu to show</param>
     public static void PushMenu(IMenu menu)
     {
         menuStack.Push(menu);

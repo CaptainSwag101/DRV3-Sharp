@@ -349,3 +349,5 @@ healthchecksdb
 # Backup folder for Package Reference Convert tool in Visual Studio 2017
 MigrationBackup/
 /DRV3-Sharp/Properties/launchSettings.json
+
+.idea/.idea.folder.dir/.idea/

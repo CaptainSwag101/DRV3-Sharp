@@ -9,8 +9,7 @@ internal static class Utils
 {
     public static FileSystemInfo[]? ParsePathsFromConsole(string? promptMessage, bool mustExist, bool canBeDirectory)
     {
-        if (promptMessage is not null)
-            Console.WriteLine(promptMessage);
+        if (promptMessage is not null) Console.WriteLine(promptMessage);
 
         string? input = Console.ReadLine();
         if (string.IsNullOrWhiteSpace(input)) return null;
@@ -28,13 +27,15 @@ internal static class Utils
             foundPaths.Add(m.Value);
         }
         
-        // Now that we've found all quoted matches, remove them from the string to isolate any remaining unquoted paths.
+        // Now that we've found all quoted matches, remove them from the string
+        // to isolate any remaining unquoted paths.
         foreach (string s in foundPaths)
         {
             input = input.Replace(s, "");
         }
         
-        // Trim any leading or trailing whitespace, then add all remaining string segments, split by spaces.
+        // Trim any leading or trailing whitespace, then add
+        // all remaining string segments, split by spaces.
         input = input.Trim(' ');
         foundPaths.AddRange(input.Split());
         
@@ -52,14 +53,9 @@ internal static class Utils
                 FileInfo fi = new(path);
                 DirectoryInfo di = new(path);
 
-                if (fi.Exists || !mustExist)
-                {
-                    results.Add(fi);
-                }
-                else if (canBeDirectory && di.Exists)
-                {
-                    results.Add(di);
-                }
+                // If the file or directory matches our requirements, add it to the results
+                if (fi.Exists || !mustExist) results.Add(fi);
+                else if (canBeDirectory && di.Exists) results.Add(di);
             }
             catch (Exception ex)
             {
@@ -68,6 +64,7 @@ internal static class Utils
             }
         }
 
+        // Return null if we ended up with zero results, otherwise return the results
         return results.Count == 0 ? null : results.ToArray();
     }
 
