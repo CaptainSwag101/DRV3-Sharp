@@ -103,7 +103,7 @@ internal static class ResourceSerializer
         };
         
         // Separate the palette data from the list beforehand if it exists
-        byte[] paletteData = Array.Empty<byte>();
+        byte[]? paletteData = null;
         if (txr.Palette == 1)
         {
             var paletteInfo = rsi.ExternalResources[txr.PaletteID];
@@ -113,7 +113,7 @@ internal static class ResourceSerializer
         
         // Read image data/mipmaps
         List<Image<Rgba32>> outputImages = new();
-        bool processSmallerMipmaps = false;
+        const bool processSmallerMipmaps = false;
         for (var m = 0; m < (processSmallerMipmaps ? rsi.ExternalResources.Count : 1); ++m) // Ignore mipmaps for now
         {
             var imageResourceInfo = rsi.ExternalResources[m];

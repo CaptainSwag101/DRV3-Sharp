@@ -1,8 +1,8 @@
 namespace DRV3_Sharp.Menus;
 
-internal sealed class SelectContextMenu : IMenu
+internal sealed class SelectFileTypeMenu : IMenu
 {
-    public string HeaderText => "You can choose from the following options:";
+    public string HeaderText => "You can choose from the following file types:";
     public int FocusedEntry { get; set; }
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {

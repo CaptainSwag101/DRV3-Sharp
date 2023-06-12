@@ -8,7 +8,7 @@ internal sealed class MainMenu : IMenu
     public string HeaderText => "You can choose from the following options:";
     public MenuEntry[] AvailableEntries => new MenuEntry[]
     {
-        new("Select File Type Context", "Select which kind of file you wish to work with.", SelectContext),
+        new("Select File Type", "Select which kind of file you wish to work with.", SelectFileType),
         new("Help", "View descriptions of currently-available operations.", Help),
         new("About", "Displays information about DRV3-Sharp.", About),
         new("Exit", "Exits the program.", Program.PopMenu)
@@ -16,9 +16,9 @@ internal sealed class MainMenu : IMenu
     
     public int FocusedEntry { get; set; }
 
-    private static void SelectContext()
+    private static void SelectFileType()
     {
-        Program.PushMenu(new SelectContextMenu());
+        Program.PushMenu(new SelectFileTypeMenu());
     }
     
     private void Help()

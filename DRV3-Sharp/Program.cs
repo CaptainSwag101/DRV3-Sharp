@@ -22,7 +22,7 @@ using System.Text;
 
 namespace DRV3_Sharp;
 
-internal sealed class Program
+internal static class Program
 {
     private static readonly Stack<IMenu> menuStack = new(); // Stack which holds the menus, which determines what entries can be performed, and how.
     private static MenuEntry[]? cachedEntries = null;   // Cache for entries so that we're not querying them every keyinput but only when we perform an actual refresh of the text.
@@ -30,7 +30,7 @@ internal sealed class Program
     private const int HEADER_LINES = 3;         // How much header/footer space do we need to account for to avoid drawing over it?
     private const int FAST_SCROLL_AMOUNT = 10;  // Speed at which the menus scroll when using Page Up/Page Down
     
-    static void Main(string[] args)
+    private static void Main(string[] args)
     {
         // Setup text encoding so we can use Shift-JIS encoding for certain files later on.
         Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
