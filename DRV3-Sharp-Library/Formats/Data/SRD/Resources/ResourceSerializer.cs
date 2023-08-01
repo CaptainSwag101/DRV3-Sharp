@@ -11,7 +11,7 @@ using SixLabors.ImageSharp.Formats.Bmp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.Formats.Tga;
 using SixLabors.ImageSharp.PixelFormats;
-using ScarletImage = Scarlet.Drawing.ImageBinary;
+using ScarletImage = Scarlet.Drawing.ImageBinary;   // Alias the Scarlet library's ImageBinary class
 
 namespace DRV3_Sharp_Library.Formats.Data.SRD.Resources;
 
@@ -113,8 +113,7 @@ internal static class ResourceSerializer
         
         // Read image data/mipmaps
         List<Image<Rgba32>> outputImages = new();
-        const bool processSmallerMipmaps = false;
-        for (var m = 0; m < (processSmallerMipmaps ? rsi.ExternalResources.Count : 1); ++m) // Ignore mipmaps for now
+        for (var m = 0; m < rsi.ExternalResources.Count; ++m)
         {
             var imageResourceInfo = rsi.ExternalResources[m];
             var imageRawData = imageResourceInfo.Data;
@@ -194,6 +193,10 @@ internal static class ResourceSerializer
                     Rgba32 pixelColor;
                     if (pixelFormat == PixelDataFormat.FormatIndexed8)
                     {
+                        if (paletteData is null)
+                            throw new NullReferenceException(
+                                "Texture was indicated as using a palette, but the palette data was null.");
+                        
                         int pixelDataOffset = (y * mipWidth) + x;
 
                         // Apply the previously-loaded palette
