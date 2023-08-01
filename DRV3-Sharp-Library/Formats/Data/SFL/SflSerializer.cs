@@ -5,7 +5,7 @@ using DRV3_Sharp_Library.Formats.Data.SFL.Entries;
 
 namespace DRV3_Sharp_Library.Formats.Data.SFL;
 
-internal static class SflSerializer
+public static class SflSerializer
 {
     private const string CONST_FILE_MAGIC = "LLFS";
     

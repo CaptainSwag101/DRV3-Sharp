@@ -10,6 +10,7 @@ internal sealed class SelectFileTypeMenu : IMenu
         new("CPK", "The outer layer archive format, which stores all the game data.", CPK),
         new("SRD", "The primary resource container format, used to store images, 3D models, fonts, and more.", SRD),
         new("STX", "The primary text format, used to store dialogue.", STX),
+        new("SFL", "The primary animation/2D cutscene format. Still largely unknown.", SFL),
         new("WRD", "The primary script format, used to control game behavior, map transitions, text displays, and more.", WRD),
         new("Help", "View descriptions of currently-available operations.", Help),
         new("Back", "Return to the previous menu.", Program.PopMenu)
@@ -33,6 +34,11 @@ internal sealed class SelectFileTypeMenu : IMenu
     private static void STX()
     {
         Program.PushMenu(new StxMenu());
+    }
+
+    private static void SFL()
+    {
+        Program.PushMenu(new SflMenu());
     }
 
     private static void WRD()

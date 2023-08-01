@@ -8,7 +8,4 @@ public sealed record TransformOperation(ushort Opcode, byte[] Data);
 public sealed record TransformSequence(string Name, List<TransformOperation> Operations);
 public sealed record TransformationEntry(ushort Unknown, List<TransformSequence> Sequences) : ISflEntry;
 
-public interface ISflEntry
-{
-    public ushort Unknown { get; }
-}
+public abstract record ISflEntry();
