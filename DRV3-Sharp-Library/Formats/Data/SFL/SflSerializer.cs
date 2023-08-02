@@ -27,9 +27,13 @@ public static class SflSerializer
 
         // Read tables
         uint tableCount = reader.ReadUInt32();
-        Dictionary<uint, Table> tables = new();
+        Dictionary<uint, DataTable> dataTables = new();
+        Dictionary<uint, TransformationTable> transformTables = new();
         for (uint tNum = 0; tNum < tableCount; ++tNum)
         {
+            Dictionary<uint, DataEntry> dataEntries = new();
+            Dictionary<uint, TransformationEntry> transformEntries = new();
+            
             // Read table header
             uint tableId = reader.ReadUInt32();
             uint tableLength = reader.ReadUInt32();
@@ -40,7 +44,6 @@ public static class SflSerializer
             long endPos = reader.BaseStream.Position + tableLength;
 
             // Read entries
-            Dictionary<uint, ISflEntry> entries = new();
             for (uint eNum = 0; eNum < tableEntryCount; ++eNum)
             {
                 // If we've reached the end of the table before leaving this loop, something has gone wrong
@@ -58,7 +61,7 @@ public static class SflSerializer
                 // First 3 or 4 tables contain single- or multi-data entries
                 if (tableId < tableCount - 1)
                 {
-                    entries.Add(entryId, new DataEntry(entryUnknown, reader.ReadBytes(entryLength)));
+                    dataEntries.Add(entryId, new DataEntry(entryUnknown, reader.ReadBytes(entryLength)));
                 }
                 else // Final two tables contain transformation entries
                 {
@@ -85,12 +88,20 @@ public static class SflSerializer
                         
                         sequences.Add(new TransformSequence(sequenceName, operations));
                     }
-                    entries.Add(entryId, new TransformationEntry(entryUnknown, sequences));
+                    transformEntries.Add(entryId, new TransformationEntry(entryUnknown, sequences));
                 }
             }
-            tables.Add(tableId, new Table(tableUnknown1, tableUnknown2, entries));
+
+            if (tableId < tableCount - 1)
+            {
+                dataTables.Add(tableId, new DataTable(tableUnknown1, tableUnknown2, dataEntries));
+            }
+            else
+            {
+                transformTables.Add(tableId, new TransformationTable(tableUnknown1, tableUnknown2, transformEntries));
+            }
         }
 
-        outputData = new(version, tables);
+        outputData = new(version, dataTables, transformTables);
     }
 }

@@ -70,10 +70,10 @@ internal sealed class SflMenu : IMenu
             }
         }
         
-        // Print an error if we didn't actually find any valid STX data from the provided paths.
+        // Print an error if we didn't actually find any valid SFL data from the provided paths.
         if (loadedData.Count == 0)
         {
-            Console.Write("Unable to load any valid STX data from the paths provided. Please ensure the files/directories exist.");
+            Console.Write("Unable to load any valid SFL data from the paths provided. Please ensure the files/directories exist.");
             Utils.PromptForEnterKey();
             return;
         }
@@ -85,9 +85,9 @@ internal sealed class SflMenu : IMenu
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping
         };
 
-        foreach ((string name, SflData stx) in loadedData)
+        foreach ((string name, SflData sfl) in loadedData)
         {
-            string output = JsonSerializer.Serialize(stx, options);
+            string output = JsonSerializer.Serialize(sfl, options);
 
             using StreamWriter writer = new(new FileStream(name + ".json", FileMode.Create, FileAccess.Write, FileShare.Read), Encoding.UTF8);
             writer.Write(output);
