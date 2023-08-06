@@ -86,7 +86,7 @@ public static class SflSerializer
                         values[i] = BitConverter.ToInt16(dataSpan[(i * 4)..((i + 1) * 4)]);
                     }
                     
-                    intEntries.Add(entryId, new(rawEntry.Unknown, values));
+                    intEntries.Add(entryId, new(rawEntry.EventNumber, values));
                 }
                 
                 imageIdTable = new(rawTable.Unknown1, rawTable.Unknown2, intEntries);
@@ -106,7 +106,7 @@ public static class SflSerializer
                         values[i] = BitConverter.ToInt16(dataSpan[(i * 2)..((i + 1) * 2)]);
                     }
                     
-                    shortEntries.Add(entryId, new(rawEntry.Unknown, values));
+                    shortEntries.Add(entryId, new(rawEntry.EventNumber, values));
                 }
                 
                 imageResolutionTable = new(rawTable.Unknown1, rawTable.Unknown2, shortEntries);
@@ -147,7 +147,7 @@ public static class SflSerializer
                         sequences.Add(new TransformSequence(sequenceName, operations));
                     }
                     
-                    transformEntries.Add(entryId, new TransformationEntry(rawEntry.Unknown, sequences));
+                    transformEntries.Add(entryId, new TransformationEntry(rawEntry.EventNumber, sequences));
                 }
                 
                 transformationTables.Add(tableId, new(rawTable.Unknown1, rawTable.Unknown2, transformEntries));

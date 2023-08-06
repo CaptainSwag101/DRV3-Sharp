@@ -8,3 +8,5 @@ public sealed record IntegerTable(ushort Unknown1, uint Unknown2, Dictionary<uin
 public sealed record ShortTable(ushort Unknown1, uint Unknown2, Dictionary<uint, ShortDataEntry> Entries);
 
 public sealed record TransformationTable(ushort Unknown1, uint Unknown2, Dictionary<uint, TransformationEntry> Entries);
+
+public sealed record ImagePositionTable(ushort Unknown1, uint Unknown2, Dictionary<uint, ImagePositionEntry> Entries);
