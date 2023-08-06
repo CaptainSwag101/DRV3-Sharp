@@ -38,6 +38,9 @@ public static class SflSerializer
             ushort tableEntryCount = reader.ReadUInt16();
             ushort tableUnknown1 = reader.ReadUInt16();
             uint tableUnknown2 = reader.ReadUInt32();
+            
+            Debug.Assert(tableUnknown1 == 0);
+            Debug.Assert(tableUnknown2 == 0);
 
             long endPos = reader.BaseStream.Position + tableLength;
 
@@ -53,28 +56,29 @@ public static class SflSerializer
                 // Read entry data to be stored in proper type later
                 uint entryId = reader.ReadUInt32();
                 int entryLength = reader.ReadInt32();
-                ushort entryUnknown = reader.ReadUInt16();
-                ushort entrySequenceCount = reader.ReadUInt16();
+                ushort entryEventNumber = reader.ReadUInt16();
+                ushort entryDataCount = reader.ReadUInt16();
                 uint entryUsesSequences = reader.ReadUInt32();
 
-                entries.Add(entryId, new(entryUnknown, entrySequenceCount, reader.ReadBytes(entryLength)));
+                entries.Add(entryId, new(entryEventNumber, entryDataCount, reader.ReadBytes(entryLength)));
             }
             
-            unprocessedTables.Add(tableId, new(tableUnknown1, tableUnknown2, entries));
+            unprocessedTables.Add(tableId, new(entries));
         }
         
         // Now, parse the tables and their entries into their proper types
         IntegerTable? imageIdTable = null;
         ShortTable? imageResolutionTable = null;
+        PositionTable? imagePositionTable = null;
         Dictionary<uint, GenericTable> unknownTables = new();
         Dictionary<uint, TransformationTable> transformationTables = new();
-        foreach ((var tableId, var rawTable) in unprocessedTables)
+        foreach (var (tableId, rawTable) in unprocessedTables)
         {
             // Determine the table type based on total table count and absolute ID
             if (tableId == 1)
             {
                 Dictionary<uint, IntegerDataEntry> intEntries = new();
-                foreach ((var entryId, var rawEntry) in rawTable.Entries)
+                foreach (var (entryId, rawEntry) in rawTable.Entries)
                 {
                     // Data length must be evenly divisible by 4 (length of 32-bit int)
                     Debug.Assert(rawEntry.Data.Length % 4 == 0);
@@ -89,12 +93,12 @@ public static class SflSerializer
                     intEntries.Add(entryId, new(rawEntry.EventNumber, values));
                 }
                 
-                imageIdTable = new(rawTable.Unknown1, rawTable.Unknown2, intEntries);
+                imageIdTable = new(intEntries);
             }
             else if (tableId == 2)
             {
                 Dictionary<uint, ShortDataEntry> shortEntries = new();
-                foreach ((var entryId, var rawEntry) in rawTable.Entries)
+                foreach (var (entryId, rawEntry) in rawTable.Entries)
                 {
                     // Data length must be evenly divisible by 2 (length of 16-bit int)
                     Debug.Assert(rawEntry.Data.Length % 2 == 0);
@@ -109,7 +113,32 @@ public static class SflSerializer
                     shortEntries.Add(entryId, new(rawEntry.EventNumber, values));
                 }
                 
-                imageResolutionTable = new(rawTable.Unknown1, rawTable.Unknown2, shortEntries);
+                imageResolutionTable = new(shortEntries);
+            }
+            else if (tableId == 3)
+            {
+                Dictionary<uint, ImagePositionEntry> positionEntries = new();
+                foreach (var (entryId, rawEntry) in rawTable.Entries)
+                {
+                    // Read sub-entries
+                    BinaryReader entryReader = new(new MemoryStream(rawEntry.Data));
+                    List<ImagePositionSubEntry> subEntries = new();
+                    for (var i = 0; i < rawEntry.DataCount; ++i)
+                    {
+                        uint imageId = entryReader.ReadUInt32();
+                        byte[] imageUnknown = entryReader.ReadBytes(4);
+                        int imageTopLeft = entryReader.ReadInt32();
+                        int imageTopRight = entryReader.ReadInt32();
+                        int imageBottomLeft = entryReader.ReadInt32();
+                        int imageBottomRight = entryReader.ReadInt32();
+                        
+                        subEntries.Add(new(imageId, imageUnknown, imageTopLeft, imageTopRight, imageBottomLeft, imageBottomRight));
+                    }
+                    
+                    positionEntries.Add(entryId, new(rawEntry.EventNumber, subEntries));
+                }
+
+                imagePositionTable = new(positionEntries);
             }
             else if (tableId < unprocessedTables.Count - 1)
             {
@@ -120,12 +149,12 @@ public static class SflSerializer
             else
             {
                 Dictionary<uint, TransformationEntry> transformEntries = new();
-                foreach ((var entryId, var rawEntry) in rawTable.Entries)
+                foreach (var (entryId, rawEntry) in rawTable.Entries)
                 {
                     // Read sequences
                     BinaryReader entryReader = new(new MemoryStream(rawEntry.Data));
                     List<TransformSequence> sequences = new();
-                    for (uint sub = 0; sub < rawEntry.SequenceCount; ++sub)
+                    for (uint sub = 0; sub < rawEntry.DataCount; ++sub)
                     {
                         int sequenceDataLength = entryReader.ReadInt32();
                         ushort sequenceHeaderLength = entryReader.ReadUInt16();
@@ -150,10 +179,10 @@ public static class SflSerializer
                     transformEntries.Add(entryId, new TransformationEntry(rawEntry.EventNumber, sequences));
                 }
                 
-                transformationTables.Add(tableId, new(rawTable.Unknown1, rawTable.Unknown2, transformEntries));
+                transformationTables.Add(tableId, new(transformEntries));
             }
         }
 
-        outputData = new(version, imageIdTable!, imageResolutionTable!, unknownTables, transformationTables);
+        outputData = new(version, imageIdTable!, imageResolutionTable!, imagePositionTable!, unknownTables, transformationTables);
     }
 }
