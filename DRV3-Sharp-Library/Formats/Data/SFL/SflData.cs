@@ -7,6 +7,6 @@ public sealed record SflData(
     IntegerTable ImageIdTable,
     ShortTable ImageResolutionTable,
     PositionTable ImagePositionTable,
-    Dictionary<uint, GenericTable> UnknownTables,
-    Dictionary<uint, TransformationTable> TransformationTables
+    List<GenericTable> UnknownTables,
+    List<TransformationTable> TransformationTables
     );
