@@ -29,7 +29,7 @@ public static class SflSerializer
         // Read tables as containing generic binary data entries, so we can decode
         // and deserialize their data in a second pass.
         uint tableCount = reader.ReadUInt32();
-        List<GenericTable> unprocessedTables = new();
+        Dictionary<uint, List<(ushort EventNum, UnknownDataEntry Entry)>> unprocessedTables = new();
         for (uint tNum = 0; tNum < tableCount; ++tNum)
         {
             // Read table header
@@ -45,7 +45,7 @@ public static class SflSerializer
             long endPos = reader.BaseStream.Position + tableLength;
 
             // Read entries
-            List<UnknownDataEntry> entries = new();
+            List<(ushort EventNum, UnknownDataEntry)> unprocessedEntries = new();
             for (var eNum = 0; eNum < tableEntryCount; ++eNum)
             {
                 // If we've reached the end of the table before leaving this loop, something has gone wrong
@@ -60,70 +60,72 @@ public static class SflSerializer
                 ushort entryDataCount = reader.ReadUInt16();
                 uint entryUsesSequences = reader.ReadUInt32();
 
-                entries.Add(new(entryId, entryEventNumber, entryDataCount, reader.ReadBytes(entryLength)));
+                unprocessedEntries.Add((entryEventNumber, new(entryId, entryDataCount, reader.ReadBytes(entryLength))));
             }
             
-            unprocessedTables.Add(new(tableId, entries));
+            unprocessedTables.Add(tableId, unprocessedEntries);
         }
         
-        // Now, parse the tables and their entries into their proper types
-        IntegerTable? imageIdTable = null;
-        ShortTable? imageResolutionTable = null;
-        PositionTable? imagePositionTable = null;
-        List<GenericTable> unknownTables = new();
-        List<TransformationTable> transformationTables = new();
-        foreach (var rawTable in unprocessedTables)
+        // Now, parse the tables and their entries into their proper types,
+        // and arrange them in order of event number
+        SortedDictionary<uint, List<Entry>> sortedEntries = new();
+        foreach (var (tableId, table) in unprocessedTables)
         {
             // Determine the table type based on total table count and absolute ID
-            if (rawTable.Id == 1)
+            if (tableId == 1)
             {
-                List<IntegerDataEntry> intEntries = new();
-                foreach (var rawEntry in rawTable.Entries)
+                foreach (var (eventNum, entry) in table)
                 {
                     // Data length must be evenly divisible by 4 (length of 32-bit int)
-                    Debug.Assert(rawEntry.Data.Length % 4 == 0);
+                    Debug.Assert(entry.Data.Length % 4 == 0);
 
-                    var values = new int[rawEntry.Data.Length / 4];
-                    ReadOnlySpan<byte> dataSpan = rawEntry.Data;
+                    var values = new int[entry.Data.Length / 4];
+                    ReadOnlySpan<byte> dataSpan = entry.Data;
                     for (var i = 0; i < values.Length; ++i)
                     {
                         values[i] = BitConverter.ToInt16(dataSpan[(i * 4)..((i + 1) * 4)]);
                     }
                     
-                    intEntries.Add(new(rawEntry.Id, rawEntry.EventNumber, values));
+                    // If the event number doesn't yet exist in our dictionary, create a
+                    // new list to store all events that occur on that event number
+                    if (!sortedEntries.ContainsKey(eventNum))
+                        sortedEntries.Add(eventNum, new());
+                    
+                    // Add the entry to our dictionary
+                    sortedEntries[eventNum].Add(new IntegerDataEntry(entry.Id, values));
                 }
-                
-                imageIdTable = new(rawTable.Id, intEntries);
             }
-            else if (rawTable.Id == 2)
+            else if (tableId == 2)
             {
-                List<ShortDataEntry> shortEntries = new();
-                foreach (var rawEntry in rawTable.Entries)
+                foreach (var (eventNum, entry) in table)
                 {
                     // Data length must be evenly divisible by 2 (length of 16-bit int)
-                    Debug.Assert(rawEntry.Data.Length % 2 == 0);
+                    Debug.Assert(entry.Data.Length % 2 == 0);
 
-                    var values = new short[rawEntry.Data.Length / 2];
-                    ReadOnlySpan<byte> dataSpan = rawEntry.Data;
+                    var values = new short[entry.Data.Length / 2];
+                    ReadOnlySpan<byte> dataSpan = entry.Data;
                     for (var i = 0; i < values.Length; ++i)
                     {
                         values[i] = BitConverter.ToInt16(dataSpan[(i * 2)..((i + 1) * 2)]);
                     }
                     
-                    shortEntries.Add(new(rawEntry.Id, rawEntry.EventNumber, values));
+                    // If the event number doesn't yet exist in our dictionary, create a
+                    // new list to store all events that occur on that event number
+                    if (!sortedEntries.ContainsKey(eventNum))
+                        sortedEntries.Add(eventNum, new());
+                    
+                    // Add the entry to our dictionary
+                    sortedEntries[eventNum].Add(new ShortDataEntry(entry.Id, values));
                 }
-                
-                imageResolutionTable = new(rawTable.Id, shortEntries);
             }
-            else if (rawTable.Id == 3)
+            else if (tableId == 3)
             {
-                List<ImagePositionEntry> positionEntries = new();
-                foreach (var rawEntry in rawTable.Entries)
+                foreach (var (eventNum, entry) in table)
                 {
                     // Read sub-entries
-                    BinaryReader entryReader = new(new MemoryStream(rawEntry.Data));
-                    List<ImagePositionSubEntry> subEntries = new();
-                    for (var i = 0; i < rawEntry.DataCount; ++i)
+                    BinaryReader entryReader = new(new MemoryStream(entry.Data));
+                    List<ImageRectSubentry> subEntries = new();
+                    for (var i = 0; i < entry.DataCount; ++i)
                     {
                         uint imageId = entryReader.ReadUInt32();
                         byte[] imageUnknown = entryReader.ReadBytes(4);
@@ -135,26 +137,38 @@ public static class SflSerializer
                         subEntries.Add(new(imageId, imageUnknown, imageTopLeft, imageTopRight, imageBottomLeft, imageBottomRight));
                     }
                     
-                    positionEntries.Add(new(rawEntry.Id, rawEntry.EventNumber, subEntries));
+                    // If the event number doesn't yet exist in our dictionary, create a
+                    // new list to store all events that occur on that event number
+                    if (!sortedEntries.ContainsKey(eventNum))
+                        sortedEntries.Add(eventNum, new());
+                    
+                    // Add the entry to our dictionary
+                    sortedEntries[eventNum].Add(new ImageRectEntry(entry.Id, subEntries));
                 }
-
-                imagePositionTable = new(rawTable.Id, positionEntries);
             }
-            else if (rawTable.Id < unprocessedTables.Count - 1)
+            else if (tableId < unprocessedTables.Count - 1)
             {
                 // We don't understand these tables yet,
                 // add them without further processing
-                unknownTables.Add(rawTable);
+                foreach (var (eventNum, entry) in table)
+                {
+                    // If the event number doesn't yet exist in our dictionary, create a
+                    // new list to store all events that occur on that event number
+                    if (!sortedEntries.ContainsKey(eventNum))
+                        sortedEntries.Add(eventNum, new());
+                    
+                    // Add the entry to our dictionary
+                    sortedEntries[eventNum].Add(entry);
+                }
             }
             else
             {
-                List<TransformationEntry> transformEntries = new();
-                foreach (var rawEntry in rawTable.Entries)
+                foreach (var (eventNum, entry) in table)
                 {
                     // Read sequences
-                    BinaryReader entryReader = new(new MemoryStream(rawEntry.Data));
+                    BinaryReader entryReader = new(new MemoryStream(entry.Data));
                     List<TransformSequence> sequences = new();
-                    for (uint sub = 0; sub < rawEntry.DataCount; ++sub)
+                    for (uint sub = 0; sub < entry.DataCount; ++sub)
                     {
                         int sequenceDataLength = entryReader.ReadInt32();
                         ushort sequenceHeaderLength = entryReader.ReadUInt16();
@@ -176,13 +190,17 @@ public static class SflSerializer
                         sequences.Add(new TransformSequence(sequenceName, operations));
                     }
                     
-                    transformEntries.Add(new TransformationEntry(rawEntry.Id, rawEntry.EventNumber, sequences));
+                    // If the event number doesn't yet exist in our dictionary, create a
+                    // new list to store all events that occur on that event number
+                    if (!sortedEntries.ContainsKey(eventNum))
+                        sortedEntries.Add(eventNum, new());
+                    
+                    // Add the entry to our dictionary
+                    sortedEntries[eventNum].Add(new TransformationEntry(entry.Id, sequences));
                 }
-                
-                transformationTables.Add(new(rawTable.Id, transformEntries));
             }
         }
 
-        outputData = new(version, imageIdTable!, imageResolutionTable!, imagePositionTable!, unknownTables, transformationTables);
+        outputData = new(version, sortedEntries);
     }
 }
