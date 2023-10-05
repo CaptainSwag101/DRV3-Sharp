@@ -268,13 +268,7 @@ internal sealed class WrdMenu : IMenu
             stringCount ??= 0;
             WrdSerializer.Serialize(wrd, (ushort)stringCount, wrdDataStream);
             byte[] wrdBytes = wrdDataStream.ToArray();
-            ArchivedFile wrdArchiveFile = new()
-            {
-                Name = name + ".wrd",
-                Data = wrdBytes,
-                OriginalSize = wrdBytes.Length,
-                UnknownFlag = 4,
-            };
+            ArchivedFile wrdArchiveFile = new(name + ".wrd", 4, wrdBytes.Length, wrdBytes);
             wrdSpcContents.Add(wrdArchiveFile);
 
             // If we don't have any strings or the STX SPC is null, skip to the next file
@@ -283,13 +277,7 @@ internal sealed class WrdMenu : IMenu
             using MemoryStream stxDataStream = new();
             StxSerializer.Serialize(stx, stxDataStream);
             byte[] stxBytes = stxDataStream.ToArray();
-            ArchivedFile stxArchivedFile = new()
-            {
-                Name = name + ".stx",
-                Data = stxBytes,
-                OriginalSize = stxBytes.Length,
-                UnknownFlag = 4,
-            };
+            ArchivedFile stxArchivedFile = new(name + ".stx", 4, stxBytes.Length, stxBytes);
             stxSpcContents.Add(stxArchivedFile);
         }
         

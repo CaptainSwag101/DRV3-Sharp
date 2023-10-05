@@ -114,13 +114,7 @@ internal sealed class SpcRootMenu : IMenu
                 // Load the data
                 var data = File.ReadAllBytes(file.FullName);
                 string shortenedName = file.FullName.Replace(dir.FullName + Path.DirectorySeparatorChar, "");
-                ArchivedFile archivedFile = new()
-                {
-                    Name = shortenedName,
-                    Data = data, // This will auto-compress the data if possible
-                    OriginalSize = data.Length,
-                    UnknownFlag = 4,
-                };
+                ArchivedFile archivedFile = new(shortenedName, 4, data.Length, data);
                 archivedFiles.Add(archivedFile);
             }
             Console.Write($"Loaded the directory {info.Name} as a new SPC archive, not yet saved.");

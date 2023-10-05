@@ -71,13 +71,7 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
             
             // Load the data but do not compress it, that will be done when saving to save on performance.
             var data = File.ReadAllBytes(file.FullName);
-            ArchivedFile archivedFile = new()
-            {
-                Name = file.Name,
-                Data = data,    // This will auto-compress the data if possible
-                OriginalSize = data.Length,
-                UnknownFlag = 4,
-            };
+            ArchivedFile archivedFile = new(file.Name, 4, data.Length, data);
             loadedData.Data.Files.Add(archivedFile);
             someSuccess = true;
         }

@@ -10,7 +10,7 @@ public class ArchivedFile
      public int OriginalSize;
      private Memory<byte> _rawData;
 
-     public ArchivedFile(string name, short unknownFlag, int originalSize, bool isCompressed, byte[] rawData)
+     public ArchivedFile(string name, short unknownFlag, int originalSize, byte[] rawData, bool isCompressed)
      {
           Name = name;
           UnknownFlag = unknownFlag;
@@ -19,13 +19,12 @@ public class ArchivedFile
           _rawData = rawData;
      }
 
-     public ArchivedFile()
+     public ArchivedFile(string name, short unknownFlag, int originalSize, byte[] dataToCompress) 
      {
-          Name = string.Empty;
-          UnknownFlag = 4;
-          OriginalSize = 0;
-          IsCompressed = false;
-          _rawData = Array.Empty<byte>();
+          Name = name;
+          UnknownFlag = unknownFlag;
+          OriginalSize = originalSize;
+          Data = dataToCompress;
      }
 
      public bool IsCompressed

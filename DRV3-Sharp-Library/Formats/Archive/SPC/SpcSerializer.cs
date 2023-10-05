@@ -73,7 +73,7 @@ public static class SpcSerializer
             byte[] data = reader.ReadBytes(currentSize);
             reader.BaseStream.Seek(dataPadding, SeekOrigin.Current);
 
-            readFiles.Add(new(name, unknownFlag, originalSize, (compressionFlag == 2), data));
+            readFiles.Add(new(name, unknownFlag, originalSize, data, (compressionFlag == 2)));
         }
 
         outputData = new(unknown2, readFiles);
