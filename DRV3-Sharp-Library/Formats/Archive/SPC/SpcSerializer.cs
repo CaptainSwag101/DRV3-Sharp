@@ -73,7 +73,7 @@ public static class SpcSerializer
             byte[] data = reader.ReadBytes(currentSize);
             reader.BaseStream.Seek(dataPadding, SeekOrigin.Current);
 
-            readFiles.Add(new(name, data, unknownFlag, (compressionFlag == 2), originalSize));
+            readFiles.Add(new(name, unknownFlag, originalSize, (compressionFlag == 2), data));
         }
 
         outputData = new(unknown2, readFiles);
@@ -112,7 +112,7 @@ public static class SpcSerializer
             writer.Write(new byte[namePadding + 1]);
 
             int dataPadding = (0x10 - entry.Data.Length % 0x10) % 0x10;
-            writer.Write(entry.Data);
+            writer.Write(entry.Data.ToArray());
             writer.Write(new byte[dataPadding]);
         }
     }

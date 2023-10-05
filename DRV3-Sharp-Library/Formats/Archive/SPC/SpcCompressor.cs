@@ -13,7 +13,7 @@ public static class SpcCompressor
     private const int SPC_WINDOW_MAX_SIZE = 1024;
     private const int SPC_SEQUENCE_MAX_SIZE = 65;
 
-    public static byte[] Decompress(byte[] compressedData)
+    public static byte[] Decompress(ReadOnlySpan<byte> compressedData)
     {
         List<byte> decompressedData = new();
 
@@ -70,14 +70,11 @@ public static class SpcCompressor
         return decompressedData.ToArray();
     }
 
-    public static byte[] Compress(byte[] uncompressedData)
+    public static byte[] Compress(ReadOnlySpan<byte> uncompressedData)
     {
         List<byte> compressedData = new();
 
         int uncompressedSize = uncompressedData.Length;
-
-        // Make a Span<byte> of the original uncompressed data so we can slice into it for our sliding window
-        ReadOnlySpan<byte> uncompressedDataSpan = uncompressedData;
 
         // Keep track of the current compression state
         int pos = 0;    // Current reading position in uncompressed data
@@ -118,7 +115,7 @@ public static class SpcCompressor
                 // The sliding window is a slice into the uncompressed data that we search for duplicate instances of the sequence
                 // The readahead length MUST be at least one byte shorter than the current sequence length
                 int readaheadLen = Math.Min(seqLen - 1, uncompressedSize - pos);
-                ReadOnlySpan<byte> window = uncompressedDataSpan.Slice(pos - searchbackLen, searchbackLen + readaheadLen);
+                ReadOnlySpan<byte> window = uncompressedData.Slice(pos - searchbackLen, searchbackLen + readaheadLen);
 
                 // If we've reached the end of the file, don't try to compress any more data, just use what we've got
                 // NOTE: We do NOT need to backup/restore foundAt here because it hasn't been touched yet this iteration!
@@ -129,7 +126,7 @@ public static class SpcCompressor
                 }
 
                 // Slice the sequence we're searching for from the uncompressed data
-                ReadOnlySpan<byte> seq = uncompressedDataSpan.Slice(pos, seqLen);
+                ReadOnlySpan<byte> seq = uncompressedData.Slice(pos, seqLen);
                 int lastFoundAt = foundAt;  // Back up last found value
                 foundAt = window.LastIndexOf(seq);
 
@@ -161,7 +158,7 @@ public static class SpcCompressor
             {
                 // We found a new raw byte
                 flag |= (1 << curFlagBit);
-                curBlock.Add(uncompressedDataSpan[pos]);
+                curBlock.Add(uncompressedData[pos]);
             }
 
             // Increment the current read position by the size of whatever sequence we found (even if it's non-compressable)
