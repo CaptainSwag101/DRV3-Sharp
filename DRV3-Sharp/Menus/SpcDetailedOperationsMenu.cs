@@ -71,11 +71,18 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
             
             // Load the data but do not compress it, that will be done when saving to save on performance.
             var data = File.ReadAllBytes(file.FullName);
-            loadedData.Data.Files.Add(new(file.Name, data, 4, false, data.Length));
+            ArchivedFile archivedFile = new()
+            {
+                Name = file.Name,
+                Data = data,    // This will auto-compress the data if possible
+                OriginalSize = data.Length,
+                UnknownFlag = 4,
+            };
+            loadedData.Data.Files.Add(archivedFile);
             someSuccess = true;
         }
         
-        if (someSuccess) Console.Write($"Added files to the archive, not yet saved or compressed.");
+        if (someSuccess) Console.Write($"Compressed and added files to the archive.");
         Utils.PromptForEnterKey(false);
     }
 
@@ -86,25 +93,11 @@ internal sealed class SpcDetailedOperationsMenu : ISelectableMenu
 
     private void Save()
     {
-        Console.WriteLine("Compressing data and saving, please wait...");
-
-        for (var i = 0; i < loadedData.Data.Files.Count; ++i)
-        {
-            var originalFile = loadedData.Data.Files[i];
-            
-            // Attempt to compress the file; see if it makes the data smaller.
-            if (originalFile.IsCompressed) continue;
-            byte[] compressedData = SpcCompressor.Compress(originalFile.Data);
-            if (compressedData.Length < originalFile.Data.Length)
-            {
-                loadedData.Data.Files[i] = originalFile with { Data = compressedData, IsCompressed = true };
-            }
-        }
+        Console.WriteLine("Saving, please wait...");
 
         using FileStream outStream = new(loadedData.Path, FileMode.Create, FileAccess.Write, FileShare.Read);
         SpcSerializer.Serialize(loadedData.Data, outStream);
         outStream.Flush();
-        outStream.Dispose();
         
         Console.Write("Done!");
         Utils.PromptForEnterKey(false);

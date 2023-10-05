@@ -63,7 +63,7 @@ internal sealed class WrdMenu : IMenu
         {
             if (!file.Name.EndsWith(".wrd")) continue;
             
-            byte[] data = file.IsCompressed ? SpcCompressor.Decompress(file.Data) : file.Data;
+            var data = file.Data.ToArray();
             using MemoryStream ms = new(data);
             WrdSerializer.Deserialize(ms, out WrdData wrd);
             loadedWrds.Add(file.Name.Replace(".wrd", ""), wrd);
@@ -74,7 +74,7 @@ internal sealed class WrdMenu : IMenu
             {
                 if (!file.Name.EndsWith(".stx")) continue;
             
-                byte[] data = file.IsCompressed ? SpcCompressor.Decompress(file.Data) : file.Data;
+                var data = file.Data.ToArray();
                 using MemoryStream ms = new(data);
                 StxSerializer.Deserialize(ms, out StxData stx);
                 loadedStxs.Add(file.Name.Replace(".stx", ""), stx);
@@ -86,7 +86,7 @@ internal sealed class WrdMenu : IMenu
         {
             string name = pair.Key;
             WrdData wrd = pair.Value;
-            StxData? stx = loadedStxs.ContainsKey(name) ? loadedStxs[name] : null;
+            loadedStxs.TryGetValue(name, out var stx);
 
             string outputPath = outputFolderName + Path.DirectorySeparatorChar + name + "_wrdExport.txt";
             using StreamWriter outputWriter = new(new FileStream(outputPath, FileMode.Create, FileAccess.Write, FileShare.Read));
@@ -267,33 +267,30 @@ internal sealed class WrdMenu : IMenu
             var stringCount = useInternalStrings ? wrd.InternalStrings?.Count : stx?.Tables[0].Strings.Length;
             stringCount ??= 0;
             WrdSerializer.Serialize(wrd, (ushort)stringCount, wrdDataStream);
-            // Compress the data while storing the original size.
             byte[] wrdBytes = wrdDataStream.ToArray();
-            byte[] wrdBytesCompressed = SpcCompressor.Compress(wrdBytes);
-            if (wrdBytesCompressed.Length < wrdBytes.Length)
+            ArchivedFile wrdArchiveFile = new()
             {
-                wrdSpcContents.Add(new(name + ".wrd", wrdBytesCompressed, 4, true, wrdBytes.Length));
-            }
-            else
-            {
-                wrdSpcContents.Add(new(name + ".wrd", wrdBytes, 4, false, wrdBytes.Length));
-            }
+                Name = name + ".wrd",
+                Data = wrdBytes,
+                OriginalSize = wrdBytes.Length,
+                UnknownFlag = 4,
+            };
+            wrdSpcContents.Add(wrdArchiveFile);
 
+            // If we don't have any strings or the STX SPC is null, skip to the next file
             if (stx is null || stringCount == 0) continue;
 
             using MemoryStream stxDataStream = new();
             StxSerializer.Serialize(stx, stxDataStream);
-            // Compress the data while storing the original size.
             byte[] stxBytes = stxDataStream.ToArray();
-            byte[] stxBytesCompressed = SpcCompressor.Compress(stxBytes);
-            if (stxBytesCompressed.Length < stxBytes.Length)
+            ArchivedFile stxArchivedFile = new()
             {
-                stxSpcContents.Add(new(name + ".stx", stxBytesCompressed, 4, true, stxBytes.Length));
-            }
-            else
-            {
-                stxSpcContents.Add(new(name + ".stx", stxBytes, 4, false, stxBytes.Length));
-            }
+                Name = name + ".stx",
+                Data = stxBytes,
+                OriginalSize = stxBytes.Length,
+                UnknownFlag = 4,
+            };
+            stxSpcContents.Add(stxArchivedFile);
         }
         
         // Generate the output SPCs.

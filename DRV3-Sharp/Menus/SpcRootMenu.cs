@@ -71,11 +71,7 @@ internal sealed class SpcRootMenu : IMenu
                 Directory.CreateDirectory(outputDir);
                 await using BinaryWriter writer = new(new FileStream(Path.Combine(outputDir, file.Name), FileMode.Create, FileAccess.ReadWrite, FileShare.Read));
 
-                var fileContents = file.Data;
-                if (file.IsCompressed)
-                {
-                    fileContents = SpcCompressor.Decompress(fileContents);
-                }
+                var fileContents = file.Data.ToArray();
             
                 writer.Write(fileContents);
                 writer.Close();
@@ -115,10 +111,17 @@ internal sealed class SpcRootMenu : IMenu
             var files = dir.GetFiles("*", SearchOption.AllDirectories);
             foreach (var file in files)
             {
-                // Load the data but do not compress it, that will be done when saving to save on performance.
+                // Load the data
                 var data = File.ReadAllBytes(file.FullName);
                 string shortenedName = file.FullName.Replace(dir.FullName + Path.DirectorySeparatorChar, "");
-                archivedFiles.Add(new(shortenedName, data, 4, false, data.Length));
+                ArchivedFile archivedFile = new()
+                {
+                    Name = shortenedName,
+                    Data = data, // This will auto-compress the data if possible
+                    OriginalSize = data.Length,
+                    UnknownFlag = 4,
+                };
+                archivedFiles.Add(archivedFile);
             }
             Console.Write($"Loaded the directory {info.Name} as a new SPC archive, not yet saved.");
             Utils.PromptForEnterKey(false);

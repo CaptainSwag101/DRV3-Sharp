@@ -19,6 +19,15 @@ public class ArchivedFile
           _rawData = rawData;
      }
 
+     public ArchivedFile()
+     {
+          Name = string.Empty;
+          UnknownFlag = 4;
+          OriginalSize = 0;
+          IsCompressed = false;
+          _rawData = Array.Empty<byte>();
+     }
+
      public bool IsCompressed
      {
           get;
@@ -49,7 +58,7 @@ public class ArchivedFile
      }
 };
 
-public struct SpcData : IDanganV3Data
+public class SpcData : IDanganV3Data
 {
      public int Unknown2C;
      public List<ArchivedFile> Files;

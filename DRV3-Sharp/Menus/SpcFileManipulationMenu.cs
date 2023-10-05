@@ -58,7 +58,7 @@ internal sealed class SpcFileManipulationMenu : IMenu
         }
 
         int index = spcReference.Files.IndexOf(file);
-        spcReference.Files[index] = file with { Name = newName };
+        spcReference.Files[index].Name = newName;
     }
 
     private void ReplaceData()
@@ -76,7 +76,7 @@ internal sealed class SpcFileManipulationMenu : IMenu
         byte[] newData = File.ReadAllBytes(info.FullName);
         var file = fileQueue.Peek();
         int index = spcReference.Files.IndexOf(file);
-        spcReference.Files[index] = file with { Data = newData, IsCompressed = false, OriginalSize = newData.Length };
+        spcReference.Files[index].Data = newData;   // This auto-compresses the data if possible
     }
 
     private void Delete()
