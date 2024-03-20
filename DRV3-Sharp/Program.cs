@@ -129,10 +129,25 @@ internal static class Program
             {
                 // Single-entry scroll
                 case ConsoleKey.UpArrow:
-                    if (currentMenu.FocusedEntry > 0) --currentMenu.FocusedEntry;
+                    if (currentMenu.FocusedEntry > 0)
+                    {
+                        --currentMenu.FocusedEntry;
+                    }
+                    else if (currentMenu.FocusedEntry == 0)
+                    {
+                        currentMenu.FocusedEntry = cachedEntries.Length - 1; // loop menu to bottom
+                    }
                     break;
+
                 case ConsoleKey.DownArrow:
-                    if (currentMenu.FocusedEntry < (cachedEntries.Length - 1)) ++currentMenu.FocusedEntry;
+                    if (currentMenu.FocusedEntry < cachedEntries.Length - 1)
+                    {
+                        ++currentMenu.FocusedEntry;
+                    }
+                    else if (currentMenu.FocusedEntry == cachedEntries.Length - 1)
+                    {
+                        currentMenu.FocusedEntry = 0; // loop menu to top
+                    }
                     break;
 
                 // Fast scroll
