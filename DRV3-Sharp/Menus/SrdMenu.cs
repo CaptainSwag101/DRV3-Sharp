@@ -198,7 +198,7 @@ internal sealed class SrdMenu : IMenu
         List<Mesh> constructedMeshes = new();
         if (meshResources.Count != vertexResources.Count)
         {
-            throw new InvalidDataException("The number of meshes did not match the number of vertices.");
+            //throw new InvalidDataException("The number of meshes did not match the number of vertices.");
         }
         
         // Iterate through the meshes and construct Assimp meshes based on them and their vertices.
