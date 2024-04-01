@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>DRV3_Sharp_Library</RootNamespace>
     <Nullable>enable</Nullable>
     <Version>$(VersionPrefix)3.0.0</Version>
