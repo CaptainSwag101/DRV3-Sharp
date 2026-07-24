@@ -102,7 +102,8 @@ internal sealed class WrdMenu : IMenu
                     ushort argValue = command.Arguments[i];
                     var commandInfo = WrdCommandConstants.CommandInfo[command.Name];
                     string parsedArg;
-                    switch (commandInfo.ArgTypes?[i % commandInfo.ArgTypes.Length])
+                    //old version switched which index of ArgTypes to check depending on i % commandInfo.ArgTypes.Length -> changed so that it won't naively loop and miss the extra plaintext parameter value caused by the || or && used to achieve variable arg count
+                    switch (i % (commandInfo.ArgTypes?.Length + 1) == commandInfo.ArgTypes?.Length ? 0 : commandInfo.ArgTypes?[i % (commandInfo.ArgTypes.Length + 1)])
                     {
                         case 0:
                             parsedArg = wrd.Parameters[argValue];
@@ -211,7 +212,7 @@ internal sealed class WrdMenu : IMenu
                     string argString = splitLine[argNum + 1];
                     
                     // Append to the argIndices list first so that we don't need to subtract 1 from the respective counts each time.
-                    switch (info.ArgTypes?[argNum % info.ArgTypes.Length])
+                    switch (argNum % (info.ArgTypes?.Length + 1) == info.ArgTypes?.Length ? 0 : info.ArgTypes?[argNum % (info.ArgTypes.Length + 1)]) //Fixed importing to match
                     {
                         case 0:
                             argIndices.Add((ushort)DeduplicateAndAddToList(ref parameters, argString));
